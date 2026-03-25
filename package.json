@@ -10,6 +10,8 @@
     "build": "turbo run build",
     "lint": "eslint .",
     "test": "turbo run test",
+    "test:watch": "turbo run test --watch",
+    "test:coverage": "turbo run test:coverage",
     "typecheck": "turbo run typecheck",
     "clean": "turbo run clean"
   },

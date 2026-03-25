@@ -10,6 +10,7 @@ export default defineConfig({
     "runtime/queue": "src/runtime/queue.ts",
     "runtime/execute": "src/runtime/execute.ts",
     "runtime/retry-poller": "src/runtime/retry-poller.ts",
+    "runtime/internals": "src/runtime/internals.ts",
     "context/create-context": "src/context/create-context.ts",
     "context/logger": "src/context/logger.ts",
     "context/step": "src/context/step.ts",

@@ -168,6 +168,16 @@
                 "default": "./dist/runtime/retry-poller.cjs"
             }
         },
+        "./runtime/internals": {
+            "import": {
+                "types": "./dist/runtime/internals.d.ts",
+                "default": "./dist/runtime/internals.js"
+            },
+            "require": {
+                "types": "./dist/runtime/internals.d.cts",
+                "default": "./dist/runtime/internals.cjs"
+            }
+        },
         "./context/create-context": {
             "import": {
                 "types": "./dist/context/create-context.d.ts",
@@ -316,6 +326,7 @@
         "build": "tsup",
         "typecheck": "tsc --noEmit",
         "test": "vitest run",
+        "test:coverage": "vitest run --coverage",
         "test:watch": "vitest",
         "clean": "rm -rf dist"
     },
@@ -326,6 +337,7 @@
     "devDependencies": {
         "@types/node": "^25.5.0",
         "@types/pg": "^8.20.0",
+        "@vitest/coverage-v8": "4.1.1",
         "tsup": "^8.5.1",
         "typescript": "^6.0.2",
         "vite": "^8.0.2",

@@ -2,6 +2,7 @@ import type { Pool } from "pg";
 import { StepStatus } from "../types/event.js";
 import { findStepByName, upsertStep } from "../persistence/steps.repo.js";
 import { StepError } from "../errors/index.js";
+import type { RelayOSSignal } from "../runtime/internals.js";
 
 /**
  * Core step runtime.
@@ -18,6 +19,7 @@ export async function runStep<T>(
   executionId: string,
   stepName: string,
   fn: () => Promise<T>,
+  emitSignal: (signal: RelayOSSignal) => void,
 ): Promise<T> {
   const existing = await findStepByName(pool, schema, executionId, stepName);
 
@@ -29,6 +31,7 @@ export async function runStep<T>(
     status: StepStatus.Running,
     startedAt: new Date(),
   });
+  emitSignal({ type: "step_started", executionId, stepName });
 
   try {
     const result = await fn();
@@ -38,6 +41,7 @@ export async function runStep<T>(
       output: result,
       finishedAt: new Date(),
     });
+    emitSignal({ type: "step_completed", executionId, stepName });
 
     return result;
   } catch (err) {

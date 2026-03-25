@@ -14,8 +14,9 @@ export type RelayOSOptions = RelayConfig & {
 };
 
 export function relayos(options: RelayOSOptions): RelayOS {
-  const { plugins, ...config } = options;
-  return createRelayOS(config, plugins);
+  const runtime = createRelayOS(options);
+  void runtime.start();
+  return runtime;
 }
 
 export type {

@@ -15,6 +15,7 @@ import { findStepByName, upsertStep } from "../persistence/steps.repo.js";
 const mockPool = {} as Pool;
 const schema = "relayos";
 const executionId = "exec-1";
+const emitSignal = vi.fn();
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -24,7 +25,14 @@ describe("runStep", () => {
   it("executes fn and checkpoints result when step is new", async () => {
     vi.mocked(findStepByName).mockResolvedValue(null);
 
-    const result = await runStep(mockPool, schema, executionId, "send-email", async () => 42);
+    const result = await runStep(
+      mockPool,
+      schema,
+      executionId,
+      "send-email",
+      async () => 42,
+      emitSignal,
+    );
 
     expect(result).toBe(42);
     expect(upsertStep).toHaveBeenCalledWith(
@@ -57,7 +65,7 @@ describe("runStep", () => {
     });
 
     const fn = vi.fn().mockResolvedValue("new-value");
-    const result = await runStep(mockPool, schema, executionId, "send-email", fn);
+    const result = await runStep(mockPool, schema, executionId, "send-email", fn, emitSignal);
 
     expect(result).toBe("cached-value");
     expect(fn).not.toHaveBeenCalled();
@@ -69,7 +77,7 @@ describe("runStep", () => {
     const fn = vi.fn().mockRejectedValue(new Error("downstream failure"));
 
     await expect(
-      runStep(mockPool, schema, executionId, "charge-card", fn),
+      runStep(mockPool, schema, executionId, "charge-card", fn, emitSignal),
     ).rejects.toThrow(StepError);
 
     expect(upsertStep).toHaveBeenCalledWith(
@@ -78,6 +86,24 @@ describe("runStep", () => {
       executionId,
       "charge-card",
       expect.objectContaining({ status: StepStatus.Failed, errorMessage: "downstream failure" }),
+    );
+  });
+
+  it("stringifies non-Error failures before persisting the step failure", async () => {
+    vi.mocked(findStepByName).mockResolvedValue(null);
+
+    const fn = vi.fn().mockRejectedValue("timeout");
+
+    await expect(
+      runStep(mockPool, schema, executionId, "notify-user", fn, emitSignal),
+    ).rejects.toThrow("timeout");
+
+    expect(upsertStep).toHaveBeenCalledWith(
+      mockPool,
+      schema,
+      executionId,
+      "notify-user",
+      expect.objectContaining({ status: StepStatus.Failed, errorMessage: "timeout" }),
     );
   });
 
@@ -95,7 +121,7 @@ describe("runStep", () => {
     });
 
     const fn = vi.fn().mockResolvedValue("fresh-result");
-    const result = await runStep(mockPool, schema, executionId, "send-email", fn);
+    const result = await runStep(mockPool, schema, executionId, "send-email", fn, emitSignal);
 
     expect(fn).toHaveBeenCalled();
     expect(result).toBe("fresh-result");

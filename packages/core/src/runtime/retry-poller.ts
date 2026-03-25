@@ -40,7 +40,8 @@ export function createRetryPoller(
   }
 
   return {
-    start(): void {
+    async start(): Promise<void> {
+      await poll();
       timer = setInterval(() => {
         poll().catch((err) => {
           console.error("[RelayOS] Retry poller error:", err);

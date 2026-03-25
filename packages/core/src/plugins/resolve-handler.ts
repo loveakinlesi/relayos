@@ -14,5 +14,5 @@ export function resolveHandler(
   plugin: RelayPlugin,
   eventName: string,
 ): HandlerFn | null {
-  return plugin.resolveHandler(eventName);
+  return plugin.resolveHandler(eventName) ?? plugin.onEvent ?? null;
 }

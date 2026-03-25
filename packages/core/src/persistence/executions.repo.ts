@@ -2,6 +2,20 @@ import type { Pool } from "pg";
 import type { DbExecution } from "../types/execution.js";
 import { ExecutionStatus } from "../types/event.js";
 
+const VALID_EXECUTION_TRANSITIONS: Record<ExecutionStatus, ExecutionStatus[]> = {
+  [ExecutionStatus.Pending]: [ExecutionStatus.Running, ExecutionStatus.Cancelled],
+  [ExecutionStatus.Running]: [
+    ExecutionStatus.Completed,
+    ExecutionStatus.Failed,
+    ExecutionStatus.Retrying,
+    ExecutionStatus.Cancelled,
+  ],
+  [ExecutionStatus.Completed]: [],
+  [ExecutionStatus.Failed]: [ExecutionStatus.Pending, ExecutionStatus.Retrying, ExecutionStatus.Cancelled],
+  [ExecutionStatus.Retrying]: [ExecutionStatus.Pending, ExecutionStatus.Cancelled],
+  [ExecutionStatus.Cancelled]: [],
+};
+
 export async function createExecution(
   pool: Pool,
   schema: string,
@@ -36,6 +50,18 @@ export async function updateExecutionStatus(
   status: ExecutionStatus,
   options: UpdateExecutionStatusOptions = {},
 ): Promise<DbExecution> {
+  const current = await findExecutionById(pool, schema, id);
+  if (!current) {
+    throw new Error(`Execution "${id}" not found before status update`);
+  }
+
+  const validTargets = VALID_EXECUTION_TRANSITIONS[current.status];
+  if (current.status !== status && !validTargets.includes(status)) {
+    throw new Error(
+      `Invalid execution status transition from "${current.status}" to "${status}" for "${id}"`,
+    );
+  }
+
   const result = await pool.query<DbExecution>(
     `UPDATE ${schema}.executions
      SET status        = $2,
@@ -82,5 +108,20 @@ export async function findExecutionsByEventId(
     `SELECT * FROM ${schema}.executions WHERE event_id = $1 ORDER BY created_at ASC`,
     [eventId],
   );
+  return result.rows;
+}
+
+export async function findExecutionsByStatus(
+  pool: Pool,
+  schema: string,
+  statuses: ExecutionStatus[],
+): Promise<DbExecution[]> {
+  const result = await pool.query<DbExecution>(
+    `SELECT * FROM ${schema}.executions
+     WHERE status = ANY($1::text[])
+     ORDER BY created_at ASC`,
+    [statuses],
+  );
+
   return result.rows;
 }

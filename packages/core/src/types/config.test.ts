@@ -29,6 +29,6 @@ describe("RelayConfigSchema", () => {
       RelayConfigSchema.parse({
         database: { connectionString: "" },
       }),
-    ).toThrow("database.connectionString is required");
+    ).toThrow();
   });
 });

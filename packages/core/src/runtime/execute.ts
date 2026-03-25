@@ -2,6 +2,7 @@ import type { Pool } from "pg";
 import type { RelayConfig } from "../types/config.js";
 import type { PluginRegistry } from "../plugins/registry.js";
 import type { NormalizedEvent } from "../types/event.js";
+import type { RelayOSSignal } from "./internals.js";
 import { ExecutionStatus } from "../types/event.js";
 import {
   findExecutionById,
@@ -24,6 +25,7 @@ export async function runExecution(
   config: RelayConfig,
   registry: PluginRegistry,
   executionId: string,
+  emitSignal: (signal: RelayOSSignal) => void,
 ): Promise<void> {
   const execution = await findExecutionById(pool, schema, executionId);
   if (!execution) return;
@@ -39,6 +41,7 @@ export async function runExecution(
     ExecutionStatus.Running,
     { startedAt: new Date() },
   );
+  emitSignal({ type: "execution_started", executionId, eventId: dbEvent.id });
 
   // Resolve handler via plugin
   const plugin = registry.get(dbEvent.provider);
@@ -73,7 +76,7 @@ export async function runExecution(
     createdAt: dbEvent.created_at,
   };
 
-  const ctx = createContext(pool, schema, runningExecution, normalizedEvent);
+  const ctx = createContext(pool, schema, runningExecution, normalizedEvent, emitSignal);
 
   // Stage 8 — invoke handler; steps are checkpointed inside ctx.step()
   try {
@@ -83,6 +86,7 @@ export async function runExecution(
     await updateExecutionStatus(pool, schema, executionId, ExecutionStatus.Completed, {
       finishedAt: new Date(),
     });
+    emitSignal({ type: "execution_completed", executionId });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
 
@@ -91,8 +95,9 @@ export async function runExecution(
       finishedAt: new Date(),
       errorMessage: message,
     });
+    emitSignal({ type: "execution_failed", executionId, errorMessage: message });
 
     // Stage 11 — retry scheduling
-    await scheduleRetry(pool, schema, runningExecution, config.retry);
+    await scheduleRetry(pool, schema, runningExecution, config.retry, emitSignal);
   }
 }

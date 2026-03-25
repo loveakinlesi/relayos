@@ -17,6 +17,36 @@
                 "types": "./dist/index.d.cts",
                 "default": "./dist/index.cjs"
             }
+        },
+        "./core": {
+            "import": {
+                "types": "./core/dist/index.d.ts",
+                "default": "./core/dist/index.js"
+            },
+            "require": {
+                "types": "./core/dist/index.d.cts",
+                "default": "./core/dist/index.cjs"
+            }
+        },
+        "./core/*": {
+            "import": {
+                "types": "./core/dist/*.d.ts",
+                "default": "./core/dist/*.js"
+            },
+            "require": {
+                "types": "./core/dist/*.d.cts",
+                "default": "./core/dist/*.cjs"
+            }
+        },
+        "./nestjs": {
+            "import": {
+                "types": "./nestjs/dist/index.d.ts",
+                "default": "./nestjs/dist/index.js"
+            },
+            "require": {
+                "types": "./nestjs/dist/index.d.cts",
+                "default": "./nestjs/dist/index.cjs"
+            }
         }
     },
     "files": [
@@ -25,6 +55,7 @@
     "scripts": {
         "build": "tsup",
         "test": "vitest run",
+        "test:coverage": "vitest run --coverage",
         "test:watch": "vitest",
         "typecheck": "tsc --noEmit",
         "clean": "rm -rf dist"
@@ -33,6 +64,7 @@
         "relayos/core": "workspace:*"
     },
     "devDependencies": {
+        "@vitest/coverage-v8": "4.1.1",
         "@types/node": "^25.5.0",
         "tsup": "^8.5.1",
         "typescript": "^6.0.2",

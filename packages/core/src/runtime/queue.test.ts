@@ -1,7 +1,11 @@
-import { describe, it, expect } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { ConcurrencyQueue } from "./queue.js";
 
 describe("ConcurrencyQueue", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("runs tasks up to maxConcurrent immediately", () => {
     const queue = new ConcurrencyQueue(2);
     const started: number[] = [];
@@ -21,6 +25,7 @@ describe("ConcurrencyQueue", () => {
   });
 
   it("drains the queue as tasks complete", async () => {
+    vi.useFakeTimers();
     const queue = new ConcurrencyQueue(1);
     const order: number[] = [];
 
@@ -33,7 +38,7 @@ describe("ConcurrencyQueue", () => {
     queue.enqueue(makeTask(2, 5));
     queue.enqueue(makeTask(3, 5));
 
-    await new Promise<void>((r) => setTimeout(r, 60));
+    await vi.advanceTimersByTimeAsync(60);
 
     expect(order).toEqual([1, 2, 3]);
     expect(queue.active).toBe(0);
@@ -41,6 +46,7 @@ describe("ConcurrencyQueue", () => {
   });
 
   it("releases slot on task failure and continues draining", async () => {
+    vi.useFakeTimers();
     const queue = new ConcurrencyQueue(1);
     const completed: number[] = [];
 
@@ -51,7 +57,7 @@ describe("ConcurrencyQueue", () => {
       completed.push(2);
     });
 
-    await new Promise<void>((r) => setTimeout(r, 20));
+    await vi.runAllTimersAsync();
 
     expect(completed).toEqual([2]);
     expect(queue.active).toBe(0);

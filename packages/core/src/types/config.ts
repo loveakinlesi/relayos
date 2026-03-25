@@ -1,5 +1,9 @@
 import { z } from "zod";
 
+export const LogLevelSchema = z.enum(["info", "warn", "error"]);
+
+export type LogLevel = z.infer<typeof LogLevelSchema>;
+
 export const RetryPolicySchema = z.object({
   maxAttempts: z.number().int().positive().default(3),
   backoffBaseMs: z.number().int().positive().default(1000),
@@ -17,7 +21,8 @@ export type ConcurrencyConfig = z.infer<typeof ConcurrencyConfigSchema>;
 
 export const RelayConfigSchema = z.object({
   database: z.object({
-    connectionString: z.string().min(1, "database.connectionString is required"),
+    pool: z.unknown().optional(),
+    connectionString: z.string().min(1).optional(),
     /**
      * Postgres schema name for all RelayOS tables.
      * Validated against [a-zA-Z_][a-zA-Z0-9_]* to prevent SQL injection.
@@ -32,8 +37,17 @@ export const RelayConfigSchema = z.object({
   }),
   retry: z.preprocess((value) => value ?? {}, RetryPolicySchema),
   concurrency: z.preprocess((value) => value ?? {}, ConcurrencyConfigSchema),
+  logLevel: LogLevelSchema.default("info"),
   /** Interval in ms that the retry poller checks for due retries. Default 5000. */
   retryPollIntervalMs: z.number().int().positive().default(5000),
+}).superRefine((config, ctx) => {
+  if (!config.database.connectionString && !config.database.pool) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "database.connectionString or database.pool is required",
+      path: ["database"],
+    });
+  }
 });
 
 export type RelayConfig = z.infer<typeof RelayConfigSchema>;

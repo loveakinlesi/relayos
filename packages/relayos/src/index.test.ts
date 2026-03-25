@@ -30,6 +30,7 @@ describe("relayos", () => {
 
   it("forwards config and plugins to core createRelayOS", () => {
     const runtime = {
+      start: vi.fn().mockResolvedValue(undefined),
       processEvent: vi.fn(),
       shutdown: vi.fn(),
     };
@@ -44,6 +45,26 @@ describe("relayos", () => {
       },
       retry: {
         maxAttempts: 5,
+        backoffBaseMs: 1000,
+        backoffMultiplier: 2,
+        backoffMaxMs: 60000,
+      },
+      concurrency: {
+        maxConcurrent: 20,
+      },
+      retryPollIntervalMs: 5000,
+      plugins: [plugin as never],
+      logLevel: "error"
+    });
+
+    expect(createRelayOS).toHaveBeenCalledTimes(1);
+    expect(createRelayOS).toHaveBeenCalledWith({
+      database: {
+        connectionString: "postgres://localhost:5432/relayos",
+        schema: "relayos",
+      },
+      retry: {
+        maxAttempts: 5,
         backoffBaseMs: 1_000,
         backoffMultiplier: 2,
         backoffMaxMs: 60_000,
@@ -52,29 +73,9 @@ describe("relayos", () => {
         maxConcurrent: 20,
       },
       retryPollIntervalMs: 5_000,
-      plugins: [plugin as never],
+      plugins: [plugin],
     });
-
-    expect(createRelayOS).toHaveBeenCalledTimes(1);
-    expect(createRelayOS).toHaveBeenCalledWith(
-      {
-        database: {
-          connectionString: "postgres://localhost:5432/relayos",
-          schema: "relayos",
-        },
-        retry: {
-          maxAttempts: 5,
-          backoffBaseMs: 1_000,
-          backoffMultiplier: 2,
-          backoffMaxMs: 60_000,
-        },
-        concurrency: {
-          maxConcurrent: 20,
-        },
-        retryPollIntervalMs: 5_000,
-      },
-      [plugin],
-    );
+    expect(runtime.start).toHaveBeenCalledTimes(1);
     expect(result).toBe(runtime);
   });
 });

@@ -30,4 +30,9 @@ export type RelayPlugin = {
    * Returns null if no handler is registered for this event (no-op execution).
    */
   resolveHandler(eventName: string): HandlerFn | null;
+
+  /**
+   * Optional generic fallback when no semantic handler is registered.
+   */
+  onEvent?: HandlerFn;
 };

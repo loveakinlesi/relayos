@@ -21,7 +21,7 @@ export async function insertEvent(
   pool: Pool,
   schema: string,
   input: InsertEventInput,
-): Promise<DbEvent> {
+): Promise<{ event: DbEvent; inserted: boolean }> {
   const { provider, eventName, externalEventId, payload, rawPayload, headers } = input;
 
   const result = await pool.query<DbEvent>(
@@ -30,7 +30,7 @@ export async function insertEvent(
      VALUES ($1, $2, $3, $4::jsonb, $5::jsonb, $6::jsonb)
      ON CONFLICT (provider, external_event_id)
        WHERE external_event_id IS NOT NULL
-       DO UPDATE SET created_at = ${schema}.events.created_at
+       DO NOTHING
      RETURNING *`,
     [
       provider,
@@ -43,11 +43,27 @@ export async function insertEvent(
   );
 
   const event = result.rows[0];
-  if (!event) {
-    throw new Error("Failed to insert event");
+
+  if (event) {
+    return { event, inserted: true };
   }
 
-  return event;
+  if (externalEventId !== null) {
+    const existing = await pool.query<DbEvent>(
+      `SELECT * FROM ${schema}.events
+       WHERE provider = $1 AND external_event_id = $2`,
+      [provider, externalEventId],
+    );
+
+    const existingEvent = existing.rows[0];
+    if (!existingEvent) {
+      throw new Error("Failed to resolve duplicate event");
+    }
+
+    return { event: existingEvent, inserted: false };
+  }
+
+  throw new Error("Failed to insert event");
 }
 
 export async function findEventById(
