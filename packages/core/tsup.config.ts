@@ -1,0 +1,47 @@
+import { defineConfig } from "tsup";
+
+export default defineConfig({
+  entry: {
+    index: "src/index.ts",
+    "errors/index": "src/errors/index.ts",
+    "plugins/registry": "src/plugins/registry.ts",
+    "plugins/resolve-handler": "src/plugins/resolve-handler.ts",
+    "runtime/engine": "src/runtime/engine.ts",
+    "runtime/queue": "src/runtime/queue.ts",
+    "runtime/execute": "src/runtime/execute.ts",
+    "runtime/retry-poller": "src/runtime/retry-poller.ts",
+    "context/create-context": "src/context/create-context.ts",
+    "context/logger": "src/context/logger.ts",
+    "context/step": "src/context/step.ts",
+    "persistence/index": "src/persistence/index.ts",
+    "persistence/client": "src/persistence/client.ts",
+    "persistence/migrate": "src/persistence/migrate.ts",
+    "persistence/events.repo": "src/persistence/events.repo.ts",
+    "persistence/executions.repo": "src/persistence/executions.repo.ts",
+    "persistence/steps.repo": "src/persistence/steps.repo.ts",
+    "persistence/retry-schedules.repo": "src/persistence/retry-schedules.repo.ts",
+    "persistence/execution-logs.repo": "src/persistence/execution-logs.repo.ts",
+    "replay/replay": "src/replay/replay.ts",
+    "replay/resume": "src/replay/resume.ts",
+    "retry/backoff": "src/retry/backoff.ts",
+    "retry/policy": "src/retry/policy.ts",
+    "retry/scheduler": "src/retry/scheduler.ts",
+    "types/index": "src/types/index.ts",
+    "types/config": "src/types/config.ts",
+    "types/context": "src/types/context.ts",
+    "types/event": "src/types/event.ts",
+    "types/execution": "src/types/execution.ts",
+    "types/plugin": "src/types/plugin.ts",
+  },
+  format: ["esm", "cjs"],
+  dts: true,
+  clean: true,
+  sourcemap: true,
+  splitting: false,
+  treeshake: true,
+  outExtension({ format }) {
+    return {
+      js: format === "cjs" ? ".cjs" : ".js",
+    };
+  },
+});

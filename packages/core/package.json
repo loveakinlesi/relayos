@@ -1,0 +1,337 @@
+{
+    "name": "relayos/core",
+    "version": "0.0.1",
+    "private": true,
+    "type": "module",
+    "sideEffects": false,
+    "main": "./dist/index.cjs",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "import": {
+                "types": "./dist/index.d.ts",
+                "default": "./dist/index.js"
+            },
+            "require": {
+                "types": "./dist/index.d.cts",
+                "default": "./dist/index.cjs"
+            }
+        },
+        "./errors": {
+            "import": {
+                "types": "./dist/errors/index.d.ts",
+                "default": "./dist/errors/index.js"
+            },
+            "require": {
+                "types": "./dist/errors/index.d.cts",
+                "default": "./dist/errors/index.cjs"
+            }
+        },
+        "./persistence": {
+            "import": {
+                "types": "./dist/persistence/index.d.ts",
+                "default": "./dist/persistence/index.js"
+            },
+            "require": {
+                "types": "./dist/persistence/index.d.cts",
+                "default": "./dist/persistence/index.cjs"
+            }
+        },
+        "./persistence/client": {
+            "import": {
+                "types": "./dist/persistence/client.d.ts",
+                "default": "./dist/persistence/client.js"
+            },
+            "require": {
+                "types": "./dist/persistence/client.d.cts",
+                "default": "./dist/persistence/client.cjs"
+            }
+        },
+        "./persistence/migrate": {
+            "import": {
+                "types": "./dist/persistence/migrate.d.ts",
+                "default": "./dist/persistence/migrate.js"
+            },
+            "require": {
+                "types": "./dist/persistence/migrate.d.cts",
+                "default": "./dist/persistence/migrate.cjs"
+            }
+        },
+        "./persistence/events.repo": {
+            "import": {
+                "types": "./dist/persistence/events.repo.d.ts",
+                "default": "./dist/persistence/events.repo.js"
+            },
+            "require": {
+                "types": "./dist/persistence/events.repo.d.cts",
+                "default": "./dist/persistence/events.repo.cjs"
+            }
+        },
+        "./persistence/executions.repo": {
+            "import": {
+                "types": "./dist/persistence/executions.repo.d.ts",
+                "default": "./dist/persistence/executions.repo.js"
+            },
+            "require": {
+                "types": "./dist/persistence/executions.repo.d.cts",
+                "default": "./dist/persistence/executions.repo.cjs"
+            }
+        },
+        "./persistence/steps.repo": {
+            "import": {
+                "types": "./dist/persistence/steps.repo.d.ts",
+                "default": "./dist/persistence/steps.repo.js"
+            },
+            "require": {
+                "types": "./dist/persistence/steps.repo.d.cts",
+                "default": "./dist/persistence/steps.repo.cjs"
+            }
+        },
+        "./persistence/retry-schedules.repo": {
+            "import": {
+                "types": "./dist/persistence/retry-schedules.repo.d.ts",
+                "default": "./dist/persistence/retry-schedules.repo.js"
+            },
+            "require": {
+                "types": "./dist/persistence/retry-schedules.repo.d.cts",
+                "default": "./dist/persistence/retry-schedules.repo.cjs"
+            }
+        },
+        "./persistence/execution-logs.repo": {
+            "import": {
+                "types": "./dist/persistence/execution-logs.repo.d.ts",
+                "default": "./dist/persistence/execution-logs.repo.js"
+            },
+            "require": {
+                "types": "./dist/persistence/execution-logs.repo.d.cts",
+                "default": "./dist/persistence/execution-logs.repo.cjs"
+            }
+        },
+        "./plugins/registry": {
+            "import": {
+                "types": "./dist/plugins/registry.d.ts",
+                "default": "./dist/plugins/registry.js"
+            },
+            "require": {
+                "types": "./dist/plugins/registry.d.cts",
+                "default": "./dist/plugins/registry.cjs"
+            }
+        },
+        "./plugins/resolve-handler": {
+            "import": {
+                "types": "./dist/plugins/resolve-handler.d.ts",
+                "default": "./dist/plugins/resolve-handler.js"
+            },
+            "require": {
+                "types": "./dist/plugins/resolve-handler.d.cts",
+                "default": "./dist/plugins/resolve-handler.cjs"
+            }
+        },
+        "./runtime/engine": {
+            "import": {
+                "types": "./dist/runtime/engine.d.ts",
+                "default": "./dist/runtime/engine.js"
+            },
+            "require": {
+                "types": "./dist/runtime/engine.d.cts",
+                "default": "./dist/runtime/engine.cjs"
+            }
+        },
+        "./runtime/queue": {
+            "import": {
+                "types": "./dist/runtime/queue.d.ts",
+                "default": "./dist/runtime/queue.js"
+            },
+            "require": {
+                "types": "./dist/runtime/queue.d.cts",
+                "default": "./dist/runtime/queue.cjs"
+            }
+        },
+        "./runtime/execute": {
+            "import": {
+                "types": "./dist/runtime/execute.d.ts",
+                "default": "./dist/runtime/execute.js"
+            },
+            "require": {
+                "types": "./dist/runtime/execute.d.cts",
+                "default": "./dist/runtime/execute.cjs"
+            }
+        },
+        "./runtime/retry-poller": {
+            "import": {
+                "types": "./dist/runtime/retry-poller.d.ts",
+                "default": "./dist/runtime/retry-poller.js"
+            },
+            "require": {
+                "types": "./dist/runtime/retry-poller.d.cts",
+                "default": "./dist/runtime/retry-poller.cjs"
+            }
+        },
+        "./context/create-context": {
+            "import": {
+                "types": "./dist/context/create-context.d.ts",
+                "default": "./dist/context/create-context.js"
+            },
+            "require": {
+                "types": "./dist/context/create-context.d.cts",
+                "default": "./dist/context/create-context.cjs"
+            }
+        },
+        "./context/logger": {
+            "import": {
+                "types": "./dist/context/logger.d.ts",
+                "default": "./dist/context/logger.js"
+            },
+            "require": {
+                "types": "./dist/context/logger.d.cts",
+                "default": "./dist/context/logger.cjs"
+            }
+        },
+        "./context/step": {
+            "import": {
+                "types": "./dist/context/step.d.ts",
+                "default": "./dist/context/step.js"
+            },
+            "require": {
+                "types": "./dist/context/step.d.cts",
+                "default": "./dist/context/step.cjs"
+            }
+        },
+        "./retry/backoff": {
+            "import": {
+                "types": "./dist/retry/backoff.d.ts",
+                "default": "./dist/retry/backoff.js"
+            },
+            "require": {
+                "types": "./dist/retry/backoff.d.cts",
+                "default": "./dist/retry/backoff.cjs"
+            }
+        },
+        "./retry/policy": {
+            "import": {
+                "types": "./dist/retry/policy.d.ts",
+                "default": "./dist/retry/policy.js"
+            },
+            "require": {
+                "types": "./dist/retry/policy.d.cts",
+                "default": "./dist/retry/policy.cjs"
+            }
+        },
+        "./retry/scheduler": {
+            "import": {
+                "types": "./dist/retry/scheduler.d.ts",
+                "default": "./dist/retry/scheduler.js"
+            },
+            "require": {
+                "types": "./dist/retry/scheduler.d.cts",
+                "default": "./dist/retry/scheduler.cjs"
+            }
+        },
+        "./replay/replay": {
+            "import": {
+                "types": "./dist/replay/replay.d.ts",
+                "default": "./dist/replay/replay.js"
+            },
+            "require": {
+                "types": "./dist/replay/replay.d.cts",
+                "default": "./dist/replay/replay.cjs"
+            }
+        },
+        "./replay/resume": {
+            "import": {
+                "types": "./dist/replay/resume.d.ts",
+                "default": "./dist/replay/resume.js"
+            },
+            "require": {
+                "types": "./dist/replay/resume.d.cts",
+                "default": "./dist/replay/resume.cjs"
+            }
+        },
+        "./types": {
+            "import": {
+                "types": "./dist/types/index.d.ts",
+                "default": "./dist/types/index.js"
+            },
+            "require": {
+                "types": "./dist/types/index.d.cts",
+                "default": "./dist/types/index.cjs"
+            }
+        },
+        "./types/config": {
+            "import": {
+                "types": "./dist/types/config.d.ts",
+                "default": "./dist/types/config.js"
+            },
+            "require": {
+                "types": "./dist/types/config.d.cts",
+                "default": "./dist/types/config.cjs"
+            }
+        },
+        "./types/context": {
+            "import": {
+                "types": "./dist/types/context.d.ts",
+                "default": "./dist/types/context.js"
+            },
+            "require": {
+                "types": "./dist/types/context.d.cts",
+                "default": "./dist/types/context.cjs"
+            }
+        },
+        "./types/event": {
+            "import": {
+                "types": "./dist/types/event.d.ts",
+                "default": "./dist/types/event.js"
+            },
+            "require": {
+                "types": "./dist/types/event.d.cts",
+                "default": "./dist/types/event.cjs"
+            }
+        },
+        "./types/execution": {
+            "import": {
+                "types": "./dist/types/execution.d.ts",
+                "default": "./dist/types/execution.js"
+            },
+            "require": {
+                "types": "./dist/types/execution.d.cts",
+                "default": "./dist/types/execution.cjs"
+            }
+        },
+        "./types/plugin": {
+            "import": {
+                "types": "./dist/types/plugin.d.ts",
+                "default": "./dist/types/plugin.js"
+            },
+            "require": {
+                "types": "./dist/types/plugin.d.cts",
+                "default": "./dist/types/plugin.cjs"
+            }
+        }
+    },
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "build": "tsup",
+        "typecheck": "tsc --noEmit",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "clean": "rm -rf dist"
+    },
+    "dependencies": {
+        "pg": "^8.20.0",
+        "zod": "^4.3.6"
+    },
+    "devDependencies": {
+        "@types/node": "^25.5.0",
+        "@types/pg": "^8.20.0",
+        "tsup": "^8.5.1",
+        "typescript": "^6.0.2",
+        "vite": "^8.0.2",
+        "vitest": "^4.1.1"
+    },
+    "engines": {
+        "node": ">=20.0.0"
+    }
+}
