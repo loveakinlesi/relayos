@@ -3,10 +3,11 @@
   "compilerOptions": {
     "baseUrl": ".",
     "outDir": "./dist",
-    "rootDir": "./src",
+    "rootDir": "..",
+    "types": ["node"],
     "paths": {
-      "relayos/core": ["../core/dist/index.d.ts"],
-      "relayos/core/*": ["../core/dist/*"]
+      "relayos/core": ["../core/src/index.ts"],
+      "relayos/core/*": ["../core/src/*"]
     }
   },
   "include": ["src/**/*"],

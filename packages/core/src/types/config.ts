@@ -1,3 +1,4 @@
+import type { Pool } from "pg";
 import { z } from "zod";
 
 export const LogLevelSchema = z.enum(["info", "warn", "error"]);
@@ -21,7 +22,7 @@ export type ConcurrencyConfig = z.infer<typeof ConcurrencyConfigSchema>;
 
 export const RelayConfigSchema = z.object({
   database: z.object({
-    pool: z.unknown().optional(),
+    pool: z.custom<Pool>((value) => value !== undefined).optional(),
     connectionString: z.string().min(1).optional(),
     /**
      * Postgres schema name for all RelayOS tables.
@@ -33,11 +34,12 @@ export const RelayConfigSchema = z.object({
         /^[a-zA-Z_][a-zA-Z0-9_]*$/,
         "database.schema must match [a-zA-Z_][a-zA-Z0-9_]*",
       )
+      .optional()
       .default("relayos"),
   }),
   retry: z.preprocess((value) => value ?? {}, RetryPolicySchema),
   concurrency: z.preprocess((value) => value ?? {}, ConcurrencyConfigSchema),
-  logLevel: LogLevelSchema.default("info"),
+  logLevel: LogLevelSchema.optional().default("info"),
   /** Interval in ms that the retry poller checks for due retries. Default 5000. */
   retryPollIntervalMs: z.number().int().positive().default(5000),
 }).superRefine((config, ctx) => {

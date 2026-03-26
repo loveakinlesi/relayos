@@ -4,6 +4,8 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
+    include: ["__tests__/**/*.spec.ts"],
+    exclude: ["__tests__/**/*.integration.spec.ts"],
     coverage: {
       provider: "v8",
       reporter: ["text", "json-summary", "html"],
@@ -22,8 +24,8 @@ export default defineConfig({
         "src/runtime/*.ts",
       ],
       exclude: [
-        "src/**/*.test.ts",
-        "src/**/__tests__/**",
+        "__tests__/**/*.spec.ts",
+        "__tests__/**/*.integration.spec.ts",
         "src/persistence/postgres/sql/**",
       ],
     },

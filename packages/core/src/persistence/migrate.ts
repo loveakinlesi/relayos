@@ -1,12 +1,17 @@
 import type { Pool } from "pg";
 
+export type MigrationResult = {
+  schema: string;
+  tables: string[];
+};
+
 /**
  * Runs the RelayOS schema migration against the given Postgres pool.
  *
  * Schema name is validated at config-parse time (RelayConfigSchema) and
  * additionally checked here before interpolation — no user input reaches SQL.
  */
-export async function migrate(pool: Pool, schema: string): Promise<void> {
+export async function migrate(pool: Pool, schema: string): Promise<MigrationResult> {
   // Double-check even though zod config schema already validates this.
   if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(schema)) {
     throw new Error(
@@ -15,11 +20,33 @@ export async function migrate(pool: Pool, schema: string): Promise<void> {
   }
 
   const sql = buildSchemaSql(schema);
-  await pool.query(sql);
+
+  await pool.query("BEGIN");
+
+  try {
+    await pool.query(sql);
+    await pool.query("COMMIT");
+  } catch (error) {
+    await pool.query("ROLLBACK");
+    throw error;
+  }
+
+  return {
+    schema,
+    tables: [
+      "events",
+      "executions",
+      "steps",
+      "retry_schedules",
+      "execution_logs",
+    ],
+  };
 }
 
 function buildSchemaSql(s: string): string {
   return `
+    CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
     CREATE SCHEMA IF NOT EXISTS ${s};
 
     CREATE TABLE IF NOT EXISTS ${s}.events (

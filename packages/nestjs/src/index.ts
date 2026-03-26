@@ -3,10 +3,10 @@ import {
   Injectable,
   Module,
   type DynamicModule,
+  type FactoryProvider,
   type InjectionToken,
   type ModuleMetadata,
   type OnModuleDestroy,
-  type Provider,
 } from "@nestjs/common";
 import {
   createRelayOS,
@@ -292,7 +292,7 @@ export class RelayOSModule {
   }
 
   static forRootAsync(options: RelayOSModuleAsyncOptions): DynamicModule {
-    const optionsProvider: Provider = {
+    const optionsProvider: FactoryProvider<RelayOSModuleOptions> = {
       provide: RELAYOS_MODULE_OPTIONS,
       useFactory: options.useFactory,
       inject: options.inject ?? [],
@@ -306,7 +306,7 @@ export class RelayOSModule {
   }
 }
 
-function createRuntimeProvider(optionsToken: typeof RELAYOS_MODULE_OPTIONS): Provider {
+function createRuntimeProvider(optionsToken: typeof RELAYOS_MODULE_OPTIONS): FactoryProvider<RelayOS> {
   return {
     provide: RELAYOS_RUNTIME,
     useFactory: async (options: RelayOSModuleOptions): Promise<RelayOS> => {

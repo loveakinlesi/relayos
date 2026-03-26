@@ -10,14 +10,14 @@ This package provides the ergonomic application-facing entrypoint:
 import { relayos } from "relayos";
 ```
 
-It wraps `relayos/core` without changing runtime behavior.
+It wraps `relayos/core` and can auto-load application config from `relayos.config.ts`.
 
 ## Usage
 
 ```ts
-import { relayos } from "relayos";
+import { relayos, defineRelayConfig } from "relayos";
 
-const relay = relayos({
+export default defineRelayConfig({
   database: {
     connectionString: process.env.DATABASE_URL!,
     schema: "relayos",
@@ -36,9 +36,20 @@ const relay = relayos({
 });
 ```
 
+Then start the runtime from your app:
+
+```ts
+import { relayos } from "relayos";
+
+const relay = await relayos();
+```
+
+You can still construct the runtime directly with `relayos({...})` if you do not want config auto-loading.
+
 ## Exports
 
 - `relayos()`
+- `defineRelayConfig()`
 - `RelayPlugin`
 - `RelayConfig`
 - `IncomingWebhook`

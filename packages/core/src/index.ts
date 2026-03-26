@@ -228,5 +228,10 @@ export type { RelayConfig, RetryPolicy, ConcurrencyConfig } from "./types/config
 export type { ExecutionContext, LogLevel } from "./types/context.js";
 export type { NormalizedEvent, RawNormalizedEvent } from "./types/event.js";
 export type { IncomingWebhook } from "./runtime/engine.js";
+export { RelayConfigSchema } from "./types/config.js";
+export { createPool } from "./persistence/client.js";
+export { migrate } from "./persistence/migrate.js";
+export { replayEvent } from "./replay/replay.js";
+export { resumeFailedExecution } from "./replay/resume.js";
 export { ExecutionStatus, StepStatus } from "./types/event.js";
 export type { RelayOSSignal, RelayOSSignalListener } from "./runtime/internals.js";

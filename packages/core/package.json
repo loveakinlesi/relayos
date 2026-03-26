@@ -18,6 +18,26 @@
                 "default": "./dist/index.cjs"
             }
         },
+        "./persistence/migrate": {
+            "import": {
+                "types": "./dist/persistence/migrate.d.ts",
+                "default": "./dist/persistence/migrate.js"
+            },
+            "require": {
+                "types": "./dist/persistence/migrate.d.cts",
+                "default": "./dist/persistence/migrate.cjs"
+            }
+        },
+        "./persistence/client": {
+            "import": {
+                "types": "./dist/persistence/client.d.ts",
+                "default": "./dist/persistence/client.js"
+            },
+            "require": {
+                "types": "./dist/persistence/client.d.cts",
+                "default": "./dist/persistence/client.cjs"
+            }
+        },
         "./errors": {
             "import": {
                 "types": "./dist/errors/index.d.ts",
@@ -36,26 +56,6 @@
             "require": {
                 "types": "./dist/persistence/index.d.cts",
                 "default": "./dist/persistence/index.cjs"
-            }
-        },
-        "./persistence/client": {
-            "import": {
-                "types": "./dist/persistence/client.d.ts",
-                "default": "./dist/persistence/client.js"
-            },
-            "require": {
-                "types": "./dist/persistence/client.d.cts",
-                "default": "./dist/persistence/client.cjs"
-            }
-        },
-        "./persistence/migrate": {
-            "import": {
-                "types": "./dist/persistence/migrate.d.ts",
-                "default": "./dist/persistence/migrate.js"
-            },
-            "require": {
-                "types": "./dist/persistence/migrate.d.cts",
-                "default": "./dist/persistence/migrate.cjs"
             }
         },
         "./persistence/events.repo": {
@@ -324,9 +324,11 @@
     ],
     "scripts": {
         "build": "tsup",
+        "build:watch": "tsup --watch",
         "typecheck": "tsc --noEmit",
         "test": "vitest run",
         "test:coverage": "vitest run --coverage",
+        "test:integration": "vitest run --config vitest.integration.config.ts",
         "test:watch": "vitest",
         "clean": "rm -rf dist"
     },
@@ -338,6 +340,7 @@
         "@types/node": "^25.5.0",
         "@types/pg": "^8.20.0",
         "@vitest/coverage-v8": "4.1.1",
+        "testcontainers": "^11.13.0",
         "tsup": "^8.5.1",
         "typescript": "^6.0.2",
         "vite": "^8.0.2",
