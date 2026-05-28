@@ -25,7 +25,9 @@
     "build": "tsup",
     "dev": "tsup --watch",
     "lint": "tsc --noEmit",
-    "clean": "rimraf dist tsconfig.tsbuildinfo"
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "clean": "rimraf dist coverage tsconfig.tsbuildinfo"
   },
   "devDependencies": {
     "rimraf": "^6.0.0",
