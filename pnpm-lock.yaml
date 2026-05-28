@@ -80,6 +80,25 @@ importers:
         specifier: ^5.0.0
         version: 5.9.3
 
+  packages/relayos:
+    dependencies:
+      '@relayos/core':
+        specifier: workspace:*
+        version: link:../core
+      '@relayos/types':
+        specifier: workspace:*
+        version: link:../types
+    devDependencies:
+      rimraf:
+        specifier: ^6.0.0
+        version: 6.1.3
+      tsup:
+        specifier: ^8.0.0
+        version: 8.5.1(postcss@8.5.15)(tsx@4.22.3)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.0.0
+        version: 5.9.3
+
   packages/types:
     devDependencies:
       rimraf:
