@@ -1,3 +1,5 @@
-export function createRelayCore() {
+export interface RelayCoreOptions {}
+
+export function createRelayCore(_options?: RelayCoreOptions) {
   //
 }
