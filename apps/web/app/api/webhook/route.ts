@@ -1,10 +1,5 @@
-import { createRelay, type NormalizedEvent } from 'relayos';
-
-const relay = createRelay();
-
-relay.on('test.ping', async (event) => {
-  console.log('[relayos] handled test.ping', event);
-});
+import type { NormalizedEvent } from 'relayos';
+import { relay } from '@/lib/relay';
 
 export async function POST(request: Request) {
   const body = (await request.json()) as Partial<NormalizedEvent>;
@@ -16,7 +11,7 @@ export async function POST(request: Request) {
     receivedAt: new Date().toISOString(),
   };
 
-  await relay.ingest(event);
+  const execution = await relay.ingest(event);
 
-  return Response.json({ received: event });
+  return Response.json({ received: event, execution });
 }
