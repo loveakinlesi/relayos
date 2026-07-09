@@ -29,10 +29,6 @@
     "test:coverage": "vitest run --coverage",
     "clean": "rimraf dist coverage tsconfig.tsbuildinfo"
   },
-  "dependencies": {
-    "@relayos/core": "workspace:*",
-    "@relayos/types": "workspace:*"
-  },
   "devDependencies": {
     "rimraf": "^6.0.0",
     "tsup": "^8.0.0",
