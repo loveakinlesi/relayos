@@ -15,6 +15,13 @@
       "when": 1783638937634,
       "tag": "0001_salty_komodo",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1783641259710,
+      "tag": "0002_giant_stick",
+      "breakpoints": true
     }
   ]
 }

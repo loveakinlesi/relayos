@@ -5,7 +5,28 @@ export type NormalizedEvent = {
   receivedAt: string;
 };
 
-export type EventHandler = (event: NormalizedEvent) => void | Promise<void>;
+export type StepStatus = 'completed' | 'failed';
+
+export type ExecutionStep = {
+  id: string;
+  executionId: string;
+  name: string;
+  status: StepStatus;
+  output?: unknown;
+  error?: string;
+  createdAt: string;
+};
+
+export type RuntimeContext = {
+  step: {
+    run: <T>(name: string, fn: () => T | Promise<T>) => Promise<T>;
+  };
+};
+
+export type EventHandler = (
+  event: NormalizedEvent,
+  ctx: RuntimeContext,
+) => void | Promise<void>;
 
 export type ExecutionStatus = 'pending' | 'completed' | 'failed';
 
@@ -13,6 +34,7 @@ export type Execution = {
   id: string;
   eventId: string;
   eventType: string;
+  eventData: Record<string, unknown>;
   status: ExecutionStatus;
   createdAt: string;
   completedAt?: string;
@@ -23,11 +45,16 @@ export type ExecutionStore = {
   create: (execution: Execution) => Promise<void>;
   update: (id: string, patch: Partial<Execution>) => Promise<void>;
   list: () => Promise<Execution[]>;
+  get: (id: string) => Promise<Execution | undefined>;
   findByEventId: (eventId: string) => Promise<Execution | undefined>;
+  getStep: (executionId: string, name: string) => Promise<ExecutionStep | undefined>;
+  saveStep: (step: ExecutionStep) => Promise<void>;
+  listSteps: (executionId: string) => Promise<ExecutionStep[]>;
 };
 
 export function createMemoryExecutionStore(): ExecutionStore {
   const executions = new Map<string, Execution>();
+  const steps = new Map<string, ExecutionStep>();
 
   return {
     async create(execution) {
@@ -43,8 +70,20 @@ export function createMemoryExecutionStore(): ExecutionStore {
         b.createdAt.localeCompare(a.createdAt),
       );
     },
+    async get(id) {
+      return executions.get(id);
+    },
     async findByEventId(eventId) {
       return Array.from(executions.values()).find((execution) => execution.eventId === eventId);
+    },
+    async getStep(executionId, name) {
+      return steps.get(`${executionId}:${name}`);
+    },
+    async saveStep(step) {
+      steps.set(`${step.executionId}:${step.name}`, step);
+    },
+    async listSteps(executionId) {
+      return Array.from(steps.values()).filter((step) => step.executionId === executionId);
     },
   };
 }
@@ -63,7 +102,9 @@ export type RelayHandlerContext = {
 export type Relay = {
   on: (type: string, handler: EventHandler) => void;
   ingest: (event: NormalizedEvent) => Promise<Execution>;
+  retryExecution: (executionId: string) => Promise<Execution>;
   listExecutions: () => Promise<Execution[]>;
+  listSteps: (executionId: string) => Promise<ExecutionStep[]>;
   handler: (req: Request, ctx: RelayHandlerContext) => Promise<Response>;
 };
 
@@ -76,6 +117,64 @@ export function createRelay(config: RelayConfig = {}): Relay {
   const handlers = new Map<string, EventHandler[]>();
   const store = config.database ?? createMemoryExecutionStore();
   const plugins = new Map((config.plugins ?? []).map((plugin) => [plugin.id, plugin]));
+
+  function createStepRunner(executionId: string): RuntimeContext['step'] {
+    return {
+      async run(name, fn) {
+        const existing = await store.getStep(executionId, name);
+        // A step that already completed is never re-run - its cached output
+        // is returned as-is. A step with no record, or one that previously
+        // failed, is (re)run so a retry can actually make progress past it.
+        if (existing?.status === 'completed') {
+          return existing.output as Awaited<ReturnType<typeof fn>>;
+        }
+
+        try {
+          const output = await fn();
+          await store.saveStep({
+            id: existing?.id ?? crypto.randomUUID(),
+            executionId,
+            name,
+            status: 'completed',
+            output,
+            createdAt: new Date().toISOString(),
+          });
+          return output;
+        } catch (err) {
+          await store.saveStep({
+            id: existing?.id ?? crypto.randomUUID(),
+            executionId,
+            name,
+            status: 'failed',
+            error: err instanceof Error ? err.message : String(err),
+            createdAt: new Date().toISOString(),
+          });
+          throw err;
+        }
+      },
+    };
+  }
+
+  async function runHandlers(execution: Execution, event: NormalizedEvent): Promise<Execution> {
+    const matched = handlers.get(event.type) ?? [];
+    const ctx: RuntimeContext = { step: createStepRunner(execution.id) };
+
+    try {
+      for (const handler of matched) {
+        await handler(event, ctx);
+      }
+      execution.status = 'completed';
+      execution.completedAt = new Date().toISOString();
+      execution.error = undefined;
+    } catch (err) {
+      execution.status = 'failed';
+      execution.completedAt = new Date().toISOString();
+      execution.error = err instanceof Error ? err.message : String(err);
+    }
+    await store.update(execution.id, execution);
+
+    return execution;
+  }
 
   async function ingest(event: NormalizedEvent): Promise<Execution> {
     // Best-effort dedup: providers redeliver on timeout, so a retry arriving
@@ -91,26 +190,29 @@ export function createRelay(config: RelayConfig = {}): Relay {
       id: crypto.randomUUID(),
       eventId: event.id,
       eventType: event.type,
+      eventData: event.data,
       status: 'pending',
       createdAt: new Date().toISOString(),
     };
     await store.create(execution);
 
-    const matched = handlers.get(event.type) ?? [];
-    try {
-      for (const handler of matched) {
-        await handler(event);
-      }
-      execution.status = 'completed';
-      execution.completedAt = new Date().toISOString();
-    } catch (err) {
-      execution.status = 'failed';
-      execution.completedAt = new Date().toISOString();
-      execution.error = err instanceof Error ? err.message : String(err);
-    }
-    await store.update(execution.id, execution);
+    return runHandlers(execution, event);
+  }
 
-    return execution;
+  async function retryExecution(executionId: string): Promise<Execution> {
+    const execution = await store.get(executionId);
+    if (!execution) {
+      throw new Error(`no execution found with id "${executionId}"`);
+    }
+
+    const event: NormalizedEvent = {
+      id: execution.eventId,
+      type: execution.eventType,
+      data: execution.eventData,
+      receivedAt: execution.createdAt,
+    };
+
+    return runHandlers(execution, event);
   }
 
   return {
@@ -120,8 +222,12 @@ export function createRelay(config: RelayConfig = {}): Relay {
       handlers.set(type, existing);
     },
     ingest,
+    retryExecution,
     listExecutions() {
       return store.list();
+    },
+    listSteps(executionId) {
+      return store.listSteps(executionId);
     },
     async handler(req, ctx) {
       const pluginId = ctx.params.all[0];

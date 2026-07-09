@@ -66,3 +66,31 @@ relay.on('stripe.charge.succeeded', async (event) => {
 relay.on('github.push', async (event) => {
   console.log('[relayos] handled github.push', event);
 });
+
+/**
+ * Demonstrates ctx.step.run(): step1 has an observable side effect
+ * (incrementing a counter) that should only ever happen once per execution,
+ * even across a failed attempt + retryExecution(). step2 fails on its first
+ * attempt and succeeds on retry, proving a failed step actually re-runs
+ * instead of being cached like a completed one.
+ */
+let step1RunCount = 0;
+let step2AttemptCount = 0;
+
+relay.on('test.steps', async (_event, ctx) => {
+  const step1Result = await ctx.step.run('step1', async () => {
+    step1RunCount += 1;
+    return { ranTimes: step1RunCount };
+  });
+  console.log('[relayos] test.steps step1 result', step1Result);
+
+  await ctx.step.run('step2', async () => {
+    step2AttemptCount += 1;
+    if (step2AttemptCount < 2) {
+      throw new Error(`step2 transient failure (attempt ${step2AttemptCount})`);
+    }
+    return { attempt: step2AttemptCount };
+  });
+
+  console.log('[relayos] test.steps handler completed');
+});
