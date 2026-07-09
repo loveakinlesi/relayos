@@ -19,15 +19,45 @@ export type Execution = {
   error?: string;
 };
 
+export type ExecutionStore = {
+  create: (execution: Execution) => Promise<void>;
+  update: (id: string, patch: Partial<Execution>) => Promise<void>;
+  list: () => Promise<Execution[]>;
+};
+
+export function createMemoryExecutionStore(): ExecutionStore {
+  const executions = new Map<string, Execution>();
+
+  return {
+    async create(execution) {
+      executions.set(execution.id, execution);
+    },
+    async update(id, patch) {
+      const existing = executions.get(id);
+      if (!existing) return;
+      executions.set(id, { ...existing, ...patch });
+    },
+    async list() {
+      return Array.from(executions.values()).sort((a, b) =>
+        b.createdAt.localeCompare(a.createdAt),
+      );
+    },
+  };
+}
+
 export type Relay = {
   on: (type: string, handler: EventHandler) => void;
   ingest: (event: NormalizedEvent) => Promise<Execution>;
-  listExecutions: () => Execution[];
+  listExecutions: () => Promise<Execution[]>;
 };
 
-export function createRelay(): Relay {
+export type CreateRelayOptions = {
+  store?: ExecutionStore;
+};
+
+export function createRelay(options: CreateRelayOptions = {}): Relay {
   const handlers = new Map<string, EventHandler[]>();
-  const executions = new Map<string, Execution>();
+  const store = options.store ?? createMemoryExecutionStore();
 
   return {
     on(type, handler) {
@@ -43,7 +73,7 @@ export function createRelay(): Relay {
         status: 'pending',
         createdAt: new Date().toISOString(),
       };
-      executions.set(execution.id, execution);
+      await store.create(execution);
 
       const matched = handlers.get(event.type) ?? [];
       try {
@@ -57,13 +87,12 @@ export function createRelay(): Relay {
         execution.completedAt = new Date().toISOString();
         execution.error = err instanceof Error ? err.message : String(err);
       }
+      await store.update(execution.id, execution);
 
       return execution;
     },
     listExecutions() {
-      return Array.from(executions.values()).sort((a, b) =>
-        b.createdAt.localeCompare(a.createdAt),
-      );
+      return store.list();
     },
   };
 }
