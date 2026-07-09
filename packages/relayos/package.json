@@ -13,6 +13,26 @@
         "types": "./dist/index.d.cts",
         "default": "./dist/index.cjs"
       }
+    },
+    "./next-js": {
+      "import": {
+        "types": "./dist/next-js.d.ts",
+        "default": "./dist/next-js.js"
+      },
+      "require": {
+        "types": "./dist/next-js.d.cts",
+        "default": "./dist/next-js.cjs"
+      }
+    },
+    "./plugins/stripe": {
+      "import": {
+        "types": "./dist/plugins/stripe.d.ts",
+        "default": "./dist/plugins/stripe.js"
+      },
+      "require": {
+        "types": "./dist/plugins/stripe.d.cts",
+        "default": "./dist/plugins/stripe.cjs"
+      }
     }
   },
   "main": "./dist/index.cjs",

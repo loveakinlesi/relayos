@@ -45,19 +45,60 @@ export function createMemoryExecutionStore(): ExecutionStore {
   };
 }
 
+export type RelayPlugin = {
+  /** Also the URL segment providers are mounted at, e.g. "stripe" -> /api/relay/stripe */
+  id: string;
+  verify: (req: Request) => Promise<boolean>;
+  normalize: (rawBody: unknown, headers: Headers) => NormalizedEvent;
+};
+
+export type RelayHandlerContext = {
+  params: { all: string[] };
+};
+
 export type Relay = {
   on: (type: string, handler: EventHandler) => void;
   ingest: (event: NormalizedEvent) => Promise<Execution>;
   listExecutions: () => Promise<Execution[]>;
+  handler: (req: Request, ctx: RelayHandlerContext) => Promise<Response>;
 };
 
-export type CreateRelayOptions = {
-  store?: ExecutionStore;
+export type RelayConfig = {
+  database?: ExecutionStore;
+  plugins?: RelayPlugin[];
 };
 
-export function createRelay(options: CreateRelayOptions = {}): Relay {
+export function createRelay(config: RelayConfig = {}): Relay {
   const handlers = new Map<string, EventHandler[]>();
-  const store = options.store ?? createMemoryExecutionStore();
+  const store = config.database ?? createMemoryExecutionStore();
+  const plugins = new Map((config.plugins ?? []).map((plugin) => [plugin.id, plugin]));
+
+  async function ingest(event: NormalizedEvent): Promise<Execution> {
+    const execution: Execution = {
+      id: crypto.randomUUID(),
+      eventId: event.id,
+      eventType: event.type,
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+    };
+    await store.create(execution);
+
+    const matched = handlers.get(event.type) ?? [];
+    try {
+      for (const handler of matched) {
+        await handler(event);
+      }
+      execution.status = 'completed';
+      execution.completedAt = new Date().toISOString();
+    } catch (err) {
+      execution.status = 'failed';
+      execution.completedAt = new Date().toISOString();
+      execution.error = err instanceof Error ? err.message : String(err);
+    }
+    await store.update(execution.id, execution);
+
+    return execution;
+  }
 
   return {
     on(type, handler) {
@@ -65,34 +106,27 @@ export function createRelay(options: CreateRelayOptions = {}): Relay {
       existing.push(handler);
       handlers.set(type, existing);
     },
-    async ingest(event) {
-      const execution: Execution = {
-        id: crypto.randomUUID(),
-        eventId: event.id,
-        eventType: event.type,
-        status: 'pending',
-        createdAt: new Date().toISOString(),
-      };
-      await store.create(execution);
-
-      const matched = handlers.get(event.type) ?? [];
-      try {
-        for (const handler of matched) {
-          await handler(event);
-        }
-        execution.status = 'completed';
-        execution.completedAt = new Date().toISOString();
-      } catch (err) {
-        execution.status = 'failed';
-        execution.completedAt = new Date().toISOString();
-        execution.error = err instanceof Error ? err.message : String(err);
-      }
-      await store.update(execution.id, execution);
-
-      return execution;
-    },
+    ingest,
     listExecutions() {
       return store.list();
+    },
+    async handler(req, ctx) {
+      const pluginId = ctx.params.all[0];
+      const plugin = pluginId ? plugins.get(pluginId) : undefined;
+      if (!plugin) {
+        return Response.json({ error: `unknown provider "${pluginId}"` }, { status: 404 });
+      }
+
+      const verified = await plugin.verify(req.clone());
+      if (!verified) {
+        return Response.json({ error: 'invalid signature' }, { status: 401 });
+      }
+
+      const rawBody = await req.json();
+      const event = plugin.normalize(rawBody, req.headers);
+      const execution = await ingest(event);
+
+      return Response.json({ execution });
     },
   };
 }
