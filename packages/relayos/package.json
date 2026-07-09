@@ -33,6 +33,16 @@
         "types": "./dist/plugins/stripe.d.cts",
         "default": "./dist/plugins/stripe.cjs"
       }
+    },
+    "./plugins/github": {
+      "import": {
+        "types": "./dist/plugins/github.d.ts",
+        "default": "./dist/plugins/github.js"
+      },
+      "require": {
+        "types": "./dist/plugins/github.d.cts",
+        "default": "./dist/plugins/github.cjs"
+      }
     }
   },
   "main": "./dist/index.cjs",

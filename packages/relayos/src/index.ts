@@ -23,6 +23,7 @@ export type ExecutionStore = {
   create: (execution: Execution) => Promise<void>;
   update: (id: string, patch: Partial<Execution>) => Promise<void>;
   list: () => Promise<Execution[]>;
+  findByEventId: (eventId: string) => Promise<Execution | undefined>;
 };
 
 export function createMemoryExecutionStore(): ExecutionStore {
@@ -41,6 +42,9 @@ export function createMemoryExecutionStore(): ExecutionStore {
       return Array.from(executions.values()).sort((a, b) =>
         b.createdAt.localeCompare(a.createdAt),
       );
+    },
+    async findByEventId(eventId) {
+      return Array.from(executions.values()).find((execution) => execution.eventId === eventId);
     },
   };
 }
@@ -74,6 +78,15 @@ export function createRelay(config: RelayConfig = {}): Relay {
   const plugins = new Map((config.plugins ?? []).map((plugin) => [plugin.id, plugin]));
 
   async function ingest(event: NormalizedEvent): Promise<Execution> {
+    // Best-effort dedup: providers redeliver on timeout, so a retry arriving
+    // after the first attempt started should return the existing execution
+    // instead of running handlers again. Concurrent duplicates within the
+    // same instant can still race past this check (no locking yet).
+    const existing = await store.findByEventId(event.id);
+    if (existing) {
+      return existing;
+    }
+
     const execution: Execution = {
       id: crypto.randomUUID(),
       eventId: event.id,
