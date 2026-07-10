@@ -60,7 +60,13 @@ export type Execution = {
 };
 
 export type ExecutionStore = {
-  create: (execution: Execution) => Promise<void>;
+  /**
+   * Inserts an execution, returning false instead of throwing if one with
+   * the same eventId already exists (an atomic insert-or-detect-conflict,
+   * not a separate check-then-insert - the latter races under concurrent
+   * calls for the same eventId).
+   */
+  create: (execution: Execution) => Promise<boolean>;
   update: (id: string, patch: Partial<Execution>) => Promise<void>;
   list: () => Promise<Execution[]>;
   get: (id: string) => Promise<Execution | undefined>;
@@ -79,7 +85,14 @@ export function createMemoryExecutionStore(): ExecutionStore {
 
   return {
     async create(execution) {
+      // No await between the check and the set, so nothing can interleave -
+      // this is atomic against other concurrent calls in this process.
+      const conflict = Array.from(executions.values()).some(
+        (existing) => existing.eventId === execution.eventId,
+      );
+      if (conflict) return false;
       executions.set(execution.id, execution);
+      return true;
     },
     async update(id, patch) {
       const existing = executions.get(id);
@@ -235,6 +248,27 @@ export function createRelay(config: RelayConfig = {}): Relay {
     };
   }
 
+  // Ensures only one runHandlers() is ever active for a given execution id at
+  // once. Without this, an auto-retry timer firing at the same moment as a
+  // manual retry call (or two manual retries in quick succession) would both
+  // run the handler concurrently - double-executing side effects and racing
+  // on step/log writes and the final store.update(). A second concurrent
+  // call piggybacks on the first's in-flight promise instead of starting a
+  // redundant attempt. This only guards a single process; a multi-instance
+  // deployment would need a database-level lock instead.
+  const inFlight = new Map<string, Promise<Execution>>();
+
+  function runExclusive(executionId: string, fn: () => Promise<Execution>): Promise<Execution> {
+    const existing = inFlight.get(executionId);
+    if (existing) return existing;
+
+    const promise = fn().finally(() => {
+      inFlight.delete(executionId);
+    });
+    inFlight.set(executionId, promise);
+    return promise;
+  }
+
   function scheduleRetry(executionId: string, delayMs: number) {
     setTimeout(() => {
       retryExecution(executionId).catch((err) => {
@@ -271,10 +305,8 @@ export function createRelay(config: RelayConfig = {}): Relay {
   }
 
   async function ingest(event: NormalizedEvent): Promise<Execution> {
-    // Best-effort dedup: providers redeliver on timeout, so a retry arriving
-    // after the first attempt started should return the existing execution
-    // instead of running handlers again. Concurrent duplicates within the
-    // same instant can still race past this check (no locking yet).
+    // Fast path: providers redeliver seconds apart on timeout, so this
+    // avoids a wasted insert attempt for the common sequential-retry case.
     const existing = await store.findByEventId(event.id);
     if (existing) {
       return existing;
@@ -289,26 +321,39 @@ export function createRelay(config: RelayConfig = {}): Relay {
       attempt: 1,
       createdAt: new Date().toISOString(),
     };
-    await store.create(execution);
 
-    return runHandlers(execution, event);
+    // Authoritative guard: if two requests for the same eventId raced past
+    // the check above, only one of these inserts actually lands - create()
+    // is atomic (a single INSERT ... ON CONFLICT DO NOTHING at the Postgres
+    // store), so the loser detects the conflict here instead of both
+    // proceeding to run handlers.
+    const created = await store.create(execution);
+    if (!created) {
+      const winner = await store.findByEventId(event.id);
+      if (winner) return winner;
+      throw new Error(`event "${event.id}" is already being ingested`);
+    }
+
+    return runExclusive(execution.id, () => runHandlers(execution, event));
   }
 
   async function retryExecution(executionId: string): Promise<Execution> {
-    const execution = await store.get(executionId);
-    if (!execution) {
-      throw new Error(`no execution found with id "${executionId}"`);
-    }
+    return runExclusive(executionId, async () => {
+      const execution = await store.get(executionId);
+      if (!execution) {
+        throw new Error(`no execution found with id "${executionId}"`);
+      }
 
-    execution.attempt += 1;
-    const event: NormalizedEvent = {
-      id: execution.eventId,
-      type: execution.eventType,
-      data: execution.eventData,
-      receivedAt: execution.createdAt,
-    };
+      execution.attempt += 1;
+      const event: NormalizedEvent = {
+        id: execution.eventId,
+        type: execution.eventType,
+        data: execution.eventData,
+        receivedAt: execution.createdAt,
+      };
 
-    return runHandlers(execution, event);
+      return runHandlers(execution, event);
+    });
   }
 
   return {

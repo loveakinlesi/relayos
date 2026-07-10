@@ -51,11 +51,13 @@ function toLog(row: typeof executionLogs.$inferSelect): ExecutionLog {
 export function createPostgresExecutionStore(db: Db): ExecutionStore {
   return {
     async create(execution) {
-      // onConflictDoNothing is defense-in-depth against the race window in
-      // ingest()'s findByEventId check: if a duplicate does slip through
-      // concurrently, this fails silently instead of throwing a unique
-      // violation back to the webhook caller as a 500.
-      await db
+      // A single INSERT ... ON CONFLICT DO NOTHING is atomic at the database
+      // level, so this is safe even across concurrent requests hitting
+      // different server processes/replicas - not just within one process.
+      // .returning() tells the caller whether *this* call actually won the
+      // insert, so ingest() knows whether it's responsible for running
+      // handlers or lost the race to a concurrent duplicate.
+      const rows = await db
         .insert(executions)
         .values({
           id: execution.id,
@@ -68,7 +70,9 @@ export function createPostgresExecutionStore(db: Db): ExecutionStore {
           completedAt: execution.completedAt ? new Date(execution.completedAt) : null,
           error: execution.error ?? null,
         })
-        .onConflictDoNothing({ target: executions.eventId });
+        .onConflictDoNothing({ target: executions.eventId })
+        .returning({ id: executions.id });
+      return rows.length > 0;
     },
     async update(id, patch) {
       await db
