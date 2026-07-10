@@ -29,6 +29,13 @@
       "when": 1783642466122,
       "tag": "0003_third_nick_fury",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1783643203778,
+      "tag": "0004_steady_vulcan",
+      "breakpoints": true
     }
   ]
 }

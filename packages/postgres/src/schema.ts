@@ -27,3 +27,14 @@ export const executionSteps = pgTable(
   },
   (table) => [unique().on(table.executionId, table.name)],
 );
+
+export const executionLogs = pgTable('execution_logs', {
+  id: text('id').primaryKey(),
+  executionId: text('execution_id')
+    .notNull()
+    .references(() => executions.id),
+  level: text('level').notNull(),
+  message: text('message').notNull(),
+  data: jsonb('data'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
+});

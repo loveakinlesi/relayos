@@ -17,9 +17,26 @@ export type ExecutionStep = {
   createdAt: string;
 };
 
+export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+
+export type ExecutionLog = {
+  id: string;
+  executionId: string;
+  level: LogLevel;
+  message: string;
+  data?: unknown;
+  createdAt: string;
+};
+
 export type RuntimeContext = {
   step: {
     run: <T>(name: string, fn: () => T | Promise<T>) => Promise<T>;
+  };
+  log: {
+    debug: (message: string, data?: unknown) => void;
+    info: (message: string, data?: unknown) => void;
+    warn: (message: string, data?: unknown) => void;
+    error: (message: string, data?: unknown) => void;
   };
 };
 
@@ -51,11 +68,14 @@ export type ExecutionStore = {
   getStep: (executionId: string, name: string) => Promise<ExecutionStep | undefined>;
   saveStep: (step: ExecutionStep) => Promise<void>;
   listSteps: (executionId: string) => Promise<ExecutionStep[]>;
+  saveLog: (log: ExecutionLog) => Promise<void>;
+  listLogs: (executionId: string) => Promise<ExecutionLog[]>;
 };
 
 export function createMemoryExecutionStore(): ExecutionStore {
   const executions = new Map<string, Execution>();
   const steps = new Map<string, ExecutionStep>();
+  const logs: ExecutionLog[] = [];
 
   return {
     async create(execution) {
@@ -86,6 +106,12 @@ export function createMemoryExecutionStore(): ExecutionStore {
     async listSteps(executionId) {
       return Array.from(steps.values()).filter((step) => step.executionId === executionId);
     },
+    async saveLog(log) {
+      logs.push(log);
+    },
+    async listLogs(executionId) {
+      return logs.filter((log) => log.executionId === executionId);
+    },
   };
 }
 
@@ -106,6 +132,7 @@ export type Relay = {
   retryExecution: (executionId: string) => Promise<Execution>;
   listExecutions: () => Promise<Execution[]>;
   listSteps: (executionId: string) => Promise<ExecutionStep[]>;
+  listLogs: (executionId: string) => Promise<ExecutionLog[]>;
   handler: (req: Request, ctx: RelayHandlerContext) => Promise<Response>;
 };
 
@@ -169,6 +196,45 @@ export function createRelay(config: RelayConfig = {}): Relay {
     };
   }
 
+  function createLogger(executionId: string): {
+    log: RuntimeContext['log'];
+    flush: () => Promise<void>;
+  } {
+    const pending: Promise<void>[] = [];
+    const consoleByLevel: Record<LogLevel, (...args: unknown[]) => void> = {
+      debug: console.debug,
+      info: console.log,
+      warn: console.warn,
+      error: console.error,
+    };
+
+    function write(level: LogLevel, message: string, data?: unknown) {
+      consoleByLevel[level](`[relayos:${level}]`, message, data ?? '');
+      pending.push(
+        store.saveLog({
+          id: crypto.randomUUID(),
+          executionId,
+          level,
+          message,
+          data,
+          createdAt: new Date().toISOString(),
+        }),
+      );
+    }
+
+    return {
+      log: {
+        debug: (message, data) => write('debug', message, data),
+        info: (message, data) => write('info', message, data),
+        warn: (message, data) => write('warn', message, data),
+        error: (message, data) => write('error', message, data),
+      },
+      async flush() {
+        await Promise.all(pending);
+      },
+    };
+  }
+
   function scheduleRetry(executionId: string, delayMs: number) {
     setTimeout(() => {
       retryExecution(executionId).catch((err) => {
@@ -179,7 +245,8 @@ export function createRelay(config: RelayConfig = {}): Relay {
 
   async function runHandlers(execution: Execution, event: NormalizedEvent): Promise<Execution> {
     const matched = handlers.get(event.type) ?? [];
-    const ctx: RuntimeContext = { step: createStepRunner(execution.id) };
+    const { log, flush } = createLogger(execution.id);
+    const ctx: RuntimeContext = { step: createStepRunner(execution.id), log };
 
     try {
       for (const handler of matched) {
@@ -193,6 +260,7 @@ export function createRelay(config: RelayConfig = {}): Relay {
       execution.completedAt = new Date().toISOString();
       execution.error = err instanceof Error ? err.message : String(err);
     }
+    await flush();
     await store.update(execution.id, execution);
 
     if (execution.status === 'failed' && execution.attempt < retryPolicy.maxAttempts) {
@@ -256,6 +324,9 @@ export function createRelay(config: RelayConfig = {}): Relay {
     },
     listSteps(executionId) {
       return store.listSteps(executionId);
+    },
+    listLogs(executionId) {
+      return store.listLogs(executionId);
     },
     async handler(req, ctx) {
       const pluginId = ctx.params.all[0];

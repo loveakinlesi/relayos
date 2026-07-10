@@ -51,20 +51,21 @@ export const relay = createRelay({
   plugins,
 });
 
-relay.on('test.ping', async (event) => {
-  console.log('[relayos] handled test.ping', event);
+relay.on('test.ping', async (event, ctx) => {
+  ctx.log.info('handled test.ping', event);
 });
 
-relay.on('test.fail', async () => {
+relay.on('test.fail', async (_event, ctx) => {
+  ctx.log.warn('about to fail on purpose');
   throw new Error('simulated handler failure');
 });
 
-relay.on('stripe.charge.succeeded', async (event) => {
-  console.log('[relayos] handled stripe.charge.succeeded', event);
+relay.on('stripe.charge.succeeded', async (event, ctx) => {
+  ctx.log.info('handled stripe.charge.succeeded', event);
 });
 
-relay.on('github.push', async (event) => {
-  console.log('[relayos] handled github.push', event);
+relay.on('github.push', async (event, ctx) => {
+  ctx.log.info('handled github.push', event);
 });
 
 /**
@@ -82,7 +83,7 @@ relay.on('test.steps', async (_event, ctx) => {
     step1RunCount += 1;
     return { ranTimes: step1RunCount };
   });
-  console.log('[relayos] test.steps step1 result', step1Result);
+  ctx.log.info('step1 result', step1Result);
 
   await ctx.step.run('step2', async () => {
     step2AttemptCount += 1;
@@ -92,5 +93,5 @@ relay.on('test.steps', async (_event, ctx) => {
     return { attempt: step2AttemptCount };
   });
 
-  console.log('[relayos] test.steps handler completed');
+  ctx.log.info('test.steps handler completed');
 });

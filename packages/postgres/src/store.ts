@@ -1,7 +1,15 @@
 import { and, eq } from 'drizzle-orm';
-import type { Execution, ExecutionStatus, ExecutionStep, ExecutionStore, StepStatus } from 'relayos';
+import type {
+  Execution,
+  ExecutionLog,
+  ExecutionStatus,
+  ExecutionStep,
+  ExecutionStore,
+  LogLevel,
+  StepStatus,
+} from 'relayos';
 import type { Db } from './client';
-import { executions, executionSteps } from './schema';
+import { executions, executionSteps, executionLogs } from './schema';
 
 function toExecution(row: typeof executions.$inferSelect): Execution {
   return {
@@ -25,6 +33,17 @@ function toStep(row: typeof executionSteps.$inferSelect): ExecutionStep {
     status: row.status as StepStatus,
     output: row.output ?? undefined,
     error: row.error ?? undefined,
+    createdAt: row.createdAt.toISOString(),
+  };
+}
+
+function toLog(row: typeof executionLogs.$inferSelect): ExecutionLog {
+  return {
+    id: row.id,
+    executionId: row.executionId,
+    level: row.level as LogLevel,
+    message: row.message,
+    data: row.data ?? undefined,
     createdAt: row.createdAt.toISOString(),
   };
 }
@@ -112,6 +131,24 @@ export function createPostgresExecutionStore(db: Db): ExecutionStore {
         .where(eq(executionSteps.executionId, executionId))
         .orderBy(executionSteps.createdAt);
       return rows.map(toStep);
+    },
+    async saveLog(log) {
+      await db.insert(executionLogs).values({
+        id: log.id,
+        executionId: log.executionId,
+        level: log.level,
+        message: log.message,
+        data: log.data ?? null,
+        createdAt: new Date(log.createdAt),
+      });
+    },
+    async listLogs(executionId) {
+      const rows = await db
+        .select()
+        .from(executionLogs)
+        .where(eq(executionLogs.executionId, executionId))
+        .orderBy(executionLogs.createdAt);
+      return rows.map(toLog);
     },
   };
 }
