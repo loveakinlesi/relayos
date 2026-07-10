@@ -10,6 +10,7 @@ function toExecution(row: typeof executions.$inferSelect): Execution {
     eventType: row.eventType,
     eventData: row.eventData as Record<string, unknown>,
     status: row.status as ExecutionStatus,
+    attempt: row.attempt,
     createdAt: row.createdAt.toISOString(),
     completedAt: row.completedAt?.toISOString(),
     error: row.error ?? undefined,
@@ -43,6 +44,7 @@ export function createPostgresExecutionStore(db: Db): ExecutionStore {
           eventType: execution.eventType,
           eventData: execution.eventData,
           status: execution.status,
+          attempt: execution.attempt,
           createdAt: new Date(execution.createdAt),
           completedAt: execution.completedAt ? new Date(execution.completedAt) : null,
           error: execution.error ?? null,
@@ -54,6 +56,7 @@ export function createPostgresExecutionStore(db: Db): ExecutionStore {
         .update(executions)
         .set({
           ...(patch.status !== undefined ? { status: patch.status } : {}),
+          ...(patch.attempt !== undefined ? { attempt: patch.attempt } : {}),
           ...('completedAt' in patch
             ? { completedAt: patch.completedAt ? new Date(patch.completedAt) : null }
             : {}),

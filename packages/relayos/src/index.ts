@@ -36,6 +36,7 @@ export type Execution = {
   eventType: string;
   eventData: Record<string, unknown>;
   status: ExecutionStatus;
+  attempt: number;
   createdAt: string;
   completedAt?: string;
   error?: string;
@@ -108,15 +109,28 @@ export type Relay = {
   handler: (req: Request, ctx: RelayHandlerContext) => Promise<Response>;
 };
 
+export type RetryPolicy = {
+  maxAttempts: number;
+  /** Delay in ms before the next attempt, given the attempt number that just failed. */
+  backoff: (attempt: number) => number;
+};
+
+const defaultRetryPolicy: RetryPolicy = {
+  maxAttempts: 3,
+  backoff: (attempt) => Math.min(1000 * 2 ** (attempt - 1), 30_000),
+};
+
 export type RelayConfig = {
   database?: ExecutionStore;
   plugins?: RelayPlugin[];
+  retry?: RetryPolicy;
 };
 
 export function createRelay(config: RelayConfig = {}): Relay {
   const handlers = new Map<string, EventHandler[]>();
   const store = config.database ?? createMemoryExecutionStore();
   const plugins = new Map((config.plugins ?? []).map((plugin) => [plugin.id, plugin]));
+  const retryPolicy = config.retry ?? defaultRetryPolicy;
 
   function createStepRunner(executionId: string): RuntimeContext['step'] {
     return {
@@ -155,6 +169,14 @@ export function createRelay(config: RelayConfig = {}): Relay {
     };
   }
 
+  function scheduleRetry(executionId: string, delayMs: number) {
+    setTimeout(() => {
+      retryExecution(executionId).catch((err) => {
+        console.error(`[relayos] scheduled retry failed for execution ${executionId}`, err);
+      });
+    }, delayMs);
+  }
+
   async function runHandlers(execution: Execution, event: NormalizedEvent): Promise<Execution> {
     const matched = handlers.get(event.type) ?? [];
     const ctx: RuntimeContext = { step: createStepRunner(execution.id) };
@@ -172,6 +194,10 @@ export function createRelay(config: RelayConfig = {}): Relay {
       execution.error = err instanceof Error ? err.message : String(err);
     }
     await store.update(execution.id, execution);
+
+    if (execution.status === 'failed' && execution.attempt < retryPolicy.maxAttempts) {
+      scheduleRetry(execution.id, retryPolicy.backoff(execution.attempt));
+    }
 
     return execution;
   }
@@ -192,6 +218,7 @@ export function createRelay(config: RelayConfig = {}): Relay {
       eventType: event.type,
       eventData: event.data,
       status: 'pending',
+      attempt: 1,
       createdAt: new Date().toISOString(),
     };
     await store.create(execution);
@@ -205,6 +232,7 @@ export function createRelay(config: RelayConfig = {}): Relay {
       throw new Error(`no execution found with id "${executionId}"`);
     }
 
+    execution.attempt += 1;
     const event: NormalizedEvent = {
       id: execution.eventId,
       type: execution.eventType,

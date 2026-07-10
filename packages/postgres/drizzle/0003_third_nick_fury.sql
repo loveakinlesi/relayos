@@ -1,0 +1,1 @@
+ALTER TABLE "executions" ADD COLUMN "attempt" integer DEFAULT 1 NOT NULL;

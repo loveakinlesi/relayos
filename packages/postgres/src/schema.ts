@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, jsonb, unique } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, jsonb, integer, unique } from 'drizzle-orm/pg-core';
 
 export const executions = pgTable('executions', {
   id: text('id').primaryKey(),
@@ -6,6 +6,7 @@ export const executions = pgTable('executions', {
   eventType: text('event_type').notNull(),
   eventData: jsonb('event_data').notNull(),
   status: text('status').notNull(),
+  attempt: integer('attempt').notNull().default(1),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
   completedAt: timestamp('completed_at', { withTimezone: true }),
   error: text('error'),
