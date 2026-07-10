@@ -16,7 +16,8 @@
     "clean": "rimraf dist tsconfig.tsbuildinfo"
   },
   "dependencies": {
-    "@relayos/postgres": "workspace:*"
+    "@relayos/postgres": "workspace:*",
+    "drizzle-orm": "^0.43.0"
   },
   "devDependencies": {
     "rimraf": "^6.0.0",

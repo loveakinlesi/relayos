@@ -75,6 +75,9 @@ importers:
       '@relayos/postgres':
         specifier: workspace:*
         version: link:../postgres
+      drizzle-orm:
+        specifier: ^0.43.0
+        version: 0.43.1(@types/pg@8.20.0)(pg@8.22.0)
     devDependencies:
       rimraf:
         specifier: ^6.0.0
