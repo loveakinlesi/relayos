@@ -1,4 +1,4 @@
 import { toNextJsHandler } from 'relayos/next-js';
-import { relay } from '@/lib/relay';
+import { relay } from '@/relayos.config';
 
 export const { POST } = toNextJsHandler(relay);
