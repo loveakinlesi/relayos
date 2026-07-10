@@ -1,0 +1,26 @@
+{
+  "name": "@relayos/cli",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "relay": "./dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup && chmod +x dist/index.js",
+    "dev": "tsup --watch",
+    "lint": "tsc --noEmit",
+    "clean": "rimraf dist tsconfig.tsbuildinfo"
+  },
+  "dependencies": {
+    "@relayos/postgres": "workspace:*"
+  },
+  "devDependencies": {
+    "rimraf": "^6.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0"
+  }
+}

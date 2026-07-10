@@ -12,6 +12,7 @@
     "format:check": "prettier --check \"**/*.{ts,tsx,json,md,yaml}\""
   },
   "devDependencies": {
+    "@relayos/cli": "workspace:*",
     "@types/node": "^22.0.0",
     "@vitest/coverage-v8": "^4.1.7",
     "prettier": "^3.0.0",
