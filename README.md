@@ -85,6 +85,54 @@ This is a Turborepo monorepo:
 | [`@relayos/cli`](./packages/cli) | `relay migrate`, `relay dev`, `relay trigger`, `relay inspect`, `relay replay`. |
 | [`apps/web`](./apps/web) | A Next.js app used as the local dev/test harness for the runtime, wired up in `apps/web/relayos.config.ts`. |
 
+## Local Development
+
+Setting up this monorepo (not just consuming the published packages) to hack on the runtime itself:
+
+**1. Prerequisites**
+- Node >=20, pnpm >=9
+- A local Postgres (for running `apps/web`). Separately, running `@relayos/postgres`'s tests wants a container runtime (Docker, Colima, or Podman) — see [Testing](#testing) below if you don't have one.
+
+**2. Clone and check out the active branch** — development happens on `refresh`, not `main`:
+```sh
+git clone <repo-url> && cd relayos
+git checkout refresh
+pnpm install
+```
+
+**3. Create a database and apply migrations:**
+```sh
+createdb relayos_dev   # or: psql -c "CREATE DATABASE relayos_dev"
+DATABASE_URL=postgres://localhost:5432/relayos_dev pnpm exec relay migrate
+```
+This creates the `relayos` schema and its tables. `relay` won't be on your `$PATH` the first time — `pnpm install` links it into the workspace root's `node_modules/.bin`, so `pnpm exec relay ...` (or `pnpm exec` from any workspace package) always resolves it.
+
+**4. Build everything once:**
+```sh
+STRIPE_WEBHOOK_SECRET=whsec_dev GITHUB_WEBHOOK_SECRET=ghsec_dev pnpm build
+```
+The webhook secrets are only required for a *production* build (`next build` fails closed if they're missing — see `apps/web/relayos.config.ts`). Plain `pnpm dev`/`relay dev` doesn't need them; it falls back to fixed dev-only secrets automatically.
+
+**5. Run the app:**
+```sh
+DATABASE_URL=postgres://localhost:5432/relayos_dev pnpm exec relay dev --dir apps/web
+```
+This starts `apps/web`'s dev server and tails new executions live to the terminal.
+
+**6. Confirm it's working**, from another terminal, using the dev-only `test` provider (no signature needed) or a real one:
+```sh
+curl -X POST http://localhost:3000/api/relay/test -H "Content-Type: application/json" -d '{"type":"ping"}'
+
+# or simulate a real signed Stripe event:
+pnpm exec relay trigger stripe charge.succeeded --data '{"id":"ch_1","amount":1000,"currency":"usd"}'
+```
+⚠️ **Gotcha**: if you set `STRIPE_WEBHOOK_SECRET`/`GITHUB_WEBHOOK_SECRET` for one of `relay dev` or `relay trigger` but not the other, signatures won't match (each falls back to the *same* fixed dev secret only when the variable is unset on *both* sides). Simplest in dev: don't set them at all, for anything.
+
+Then inspect what happened:
+```sh
+DATABASE_URL=postgres://localhost:5432/relayos_dev pnpm exec relay inspect <eventId>
+```
+
 ## Testing
 
 ```sh
