@@ -2,9 +2,10 @@ import { spawn } from 'node:child_process';
 import { resolve } from 'node:path';
 import { gt } from 'drizzle-orm';
 import { createDb, createPostgresExecutionStore, executions, runMigrations } from '@relayos/postgres';
-import type { Execution, ExecutionStep, ExecutionStore, RelayPlugin } from 'relayos';
+import type { Execution, ExecutionStore, RelayPlugin } from 'relayos';
 import { stripe } from 'relayos/plugins/stripe';
 import { github } from 'relayos/plugins/github';
+import { getFlag, hasFlag, resolveRuntimeUrl, statusIcon, formatDuration, latestStepsByName } from './utils';
 
 const USAGE = `Usage: relay <command>
 
@@ -32,21 +33,6 @@ relay events list - see TODOs in packages/cli/src/index.ts.
 // steps/logs. relay events list is nearly free (wraps listExecutions()) but
 // deferred to land alongside the others rather than piecemeal.
 
-function getFlag(args: string[], name: string): string | undefined {
-  const index = args.indexOf(name);
-  return index !== -1 ? args[index + 1] : undefined;
-}
-
-function hasFlag(args: string[], name: string): boolean {
-  return args.includes(name);
-}
-
-function resolveRuntimeUrl(args: string[]): string {
-  return (
-    getFlag(args, '--forward') ?? process.env['RELAYOS_RUNTIME_URL'] ?? 'http://localhost:3000'
-  );
-}
-
 function requireDatabaseUrl(): string | undefined {
   const connectionString = process.env['DATABASE_URL'];
   if (!connectionString) {
@@ -59,27 +45,6 @@ function requireDatabaseUrl(): string | undefined {
 
 async function resolveExecution(store: ExecutionStore, id: string): Promise<Execution | undefined> {
   return (await store.findByEventId(id)) ?? (await store.get(id));
-}
-
-function statusIcon(status: string): string {
-  if (status === 'completed') return '✔';
-  if (status === 'failed') return '✖';
-  return '…';
-}
-
-function formatDuration(startIso: string, endIso?: string): string {
-  if (!endIso) return '(in progress)';
-  return `${new Date(endIso).getTime() - new Date(startIso).getTime()}ms`;
-}
-
-function latestStepsByName(steps: ExecutionStep[]): ExecutionStep[] {
-  // steps are already ordered ascending by createdAt, so the last write for
-  // a given name in this loop is that step's most recent attempt.
-  const latest = new Map<string, ExecutionStep>();
-  for (const step of steps) {
-    latest.set(step.name, step);
-  }
-  return Array.from(latest.values());
 }
 
 async function migrate() {
