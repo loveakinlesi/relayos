@@ -13,12 +13,14 @@
     "lint": {},
     "test": {
       "dependsOn": ["^build", "build"],
-      "cache": false
+      "cache": false,
+      "env": ["TEST_DATABASE_URL"]
     },
     "test:coverage": {
       "dependsOn": ["^build", "build"],
       "outputs": ["coverage/**"],
-      "cache": false
+      "cache": false,
+      "env": ["TEST_DATABASE_URL"]
     },
     "clean": {
       "cache": false

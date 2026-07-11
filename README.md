@@ -91,13 +91,13 @@ This is a Turborepo monorepo:
 pnpm test
 ```
 
-`relayos`'s tests are pure unit tests (in-memory store, no I/O). `@relayos/postgres`'s tests are integration tests against a real database — create one first:
+`relayos`'s tests are pure unit tests (in-memory store, no I/O). `@relayos/postgres`'s tests are integration tests against a real database and need a container runtime (Docker, Colima, Podman) — they spin up a disposable Postgres via [testcontainers](https://node.testcontainers.org), run migrations against it, and tear it down after. No manual database setup required.
+
+If your environment can't run containers (e.g. a CI runner without Docker-in-Docker), set `TEST_DATABASE_URL` to point at a real Postgres instead — testcontainers is skipped entirely when it's set:
 
 ```sh
-createdb relayos_test   # or: psql -c "CREATE DATABASE relayos_test"
+TEST_DATABASE_URL=postgres://localhost:5432/relayos_test pnpm test
 ```
-
-Override the connection with `TEST_DATABASE_URL` if `postgres://localhost:5432/relayos_test` doesn't fit your setup. Migrations run automatically before the suite.
 
 ## Status
 

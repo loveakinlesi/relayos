@@ -1,12 +1,10 @@
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { sql } from 'drizzle-orm';
+import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import type { Execution } from 'relayos';
-import { createDb } from './client';
+import { createDb, type Db } from './client';
 import { createPostgresExecutionStore } from './store';
 import { runMigrations } from './migrate';
-
-const TEST_DATABASE_URL =
-  process.env['TEST_DATABASE_URL'] ?? 'postgres://localhost:5432/relayos_test';
 
 function makeExecution(overrides: Partial<Execution> = {}): Execution {
   const id = crypto.randomUUID();
@@ -23,12 +21,33 @@ function makeExecution(overrides: Partial<Execution> = {}): Execution {
 }
 
 describe('createPostgresExecutionStore', () => {
-  const db = createDb(TEST_DATABASE_URL);
-  const store = createPostgresExecutionStore(db);
+  let container: StartedPostgreSqlContainer | undefined;
+  let db: Db;
+  let store: ReturnType<typeof createPostgresExecutionStore>;
 
   beforeAll(async () => {
+    // Prefer TEST_DATABASE_URL when set - CI environments that provide
+    // Postgres as a service container (e.g. GitHub Actions' `services:`)
+    // often can't do Docker-in-Docker, so testcontainers wouldn't work
+    // there. Locally (or anywhere with a real container runtime), this
+    // spins up a fresh, disposable Postgres with no manual setup at all.
+    const explicitUrl = process.env['TEST_DATABASE_URL'];
+    let connectionString: string;
+    if (explicitUrl) {
+      connectionString = explicitUrl;
+    } else {
+      container = await new PostgreSqlContainer('postgres:16-alpine').start();
+      connectionString = container.getConnectionUri();
+    }
+
+    db = createDb(connectionString);
+    store = createPostgresExecutionStore(db);
     await runMigrations(db);
-  }, 30_000);
+  }, 120_000);
+
+  afterAll(async () => {
+    await container?.stop();
+  });
 
   it('create() returns true on first insert, false on a duplicate eventId', async () => {
     const execution = makeExecution();
@@ -148,12 +167,8 @@ describe('createPostgresExecutionStore', () => {
     expect(schemas).toContain('relayos');
     expect(schemas).not.toContain('public');
   });
-});
 
-describe('runMigrations', () => {
-  it('is idempotent - running it twice does not error', async () => {
-    const db = createDb(TEST_DATABASE_URL);
-    await expect(runMigrations(db)).resolves.not.toThrow();
+  it('runMigrations is idempotent - running it again does not error', async () => {
     await expect(runMigrations(db)).resolves.not.toThrow();
   });
 });
