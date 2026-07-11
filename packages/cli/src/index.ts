@@ -22,19 +22,23 @@ Commands:
   inspect <eventId|executionId>           Show an execution's status, steps, and logs
     [--json] [--history]                  (reads DATABASE_URL directly, no running app needed)
   replay <eventId|executionId>            Replay a historical execution as a new one
-    [--forward <url>]                     (resolves via DATABASE_URL, replays via --forward)
+    [--forward <url>] [--print]           (resolves via DATABASE_URL; --print dry-runs with no
+                                          HTTP call; otherwise replays via --forward)
+  events list [--json] [--limit <n>]      List recent executions, newest first
+                                          (reads DATABASE_URL directly, no running app needed)
 
-Planned, not yet available: relay resume <id>, relay stop <id>, relay progress <id>,
-relay events list - see TODOs in packages/cli/src/index.ts.
+Planned, not yet available: relay resume <id>, relay stop <id>, relay progress <id> -
+see the TODO comment near main() in packages/cli/src/index.ts.
 `;
 
 // TODO: relay resume <id> / relay stop <id> / relay progress <id> - deferred.
 // These need SDK-level capabilities that don't exist yet: a distinct "resume"
 // beyond retryExecution/restartExecution, real "stop" semantics (halt an
-// execution permanently, including any pending scheduled retry), and a
+// execution permanently, including any pending scheduled retry - which needs
+// the runtime to track cancellable timer handles, not just fire-and-forget
+// setTimeout calls, since nothing today can cancel a scheduled retry), and a
 // per-execution "progress" concept beyond what inspect already shows via
-// steps/logs. relay events list is nearly free (wraps listExecutions()) but
-// deferred to land alongside the others rather than piecemeal.
+// steps/logs.
 
 function requireDatabaseUrl(): string | undefined {
   const connectionString = process.env['DATABASE_URL'];
@@ -281,14 +285,10 @@ async function inspect(args: string[]) {
 async function replay(args: string[]) {
   const [id] = args;
   if (!id) {
-    console.error('Usage: relay replay <eventId|executionId> [--forward <url>]');
+    console.error('Usage: relay replay <eventId|executionId> [--forward <url>] [--print]');
     process.exitCode = 1;
     return;
   }
-
-  // TODO: --print - dry-run mode that resolves and prints what would be
-  // replayed (source execution's event type/data) without making the HTTP
-  // call. Deferred; needs no new SDK support, just CLI-side formatting.
 
   const connectionString = requireDatabaseUrl();
   if (!connectionString) return;
@@ -299,6 +299,14 @@ async function replay(args: string[]) {
   if (!execution) {
     console.error(`No execution found matching "${id}" (checked eventId and execution id).`);
     process.exitCode = 1;
+    return;
+  }
+
+  if (hasFlag(args, '--print')) {
+    console.log('Would replay (dry run - no request sent, nothing was replayed):');
+    console.log(`  source execution: ${execution.id}`);
+    console.log(`  event type:       ${execution.eventType}`);
+    console.log(`  event data:       ${JSON.stringify(execution.eventData, null, 2)}`);
     return;
   }
 
@@ -315,6 +323,45 @@ async function replay(args: string[]) {
     return;
   }
   console.log(`[relay replay] ${response.status}`, JSON.stringify(json, null, 2));
+}
+
+async function eventsList(args: string[]) {
+  const connectionString = requireDatabaseUrl();
+  if (!connectionString) return;
+
+  const db = createDb(connectionString);
+  const store = createPostgresExecutionStore(db);
+  const all = await store.list();
+
+  const limitFlag = getFlag(args, '--limit');
+  const limit = limitFlag ? Number(limitFlag) : undefined;
+  const rows = limit !== undefined && Number.isFinite(limit) ? all.slice(0, limit) : all;
+
+  if (hasFlag(args, '--json')) {
+    console.log(JSON.stringify(rows, null, 2));
+    return;
+  }
+
+  if (rows.length === 0) {
+    console.log('(no executions)');
+    return;
+  }
+
+  for (const execution of rows) {
+    console.log(
+      `${statusIcon(execution.status)} ${execution.eventType.padEnd(28)} attempt ${execution.attempt}  ${execution.createdAt}  ${execution.id}`,
+    );
+  }
+}
+
+async function events(args: string[]) {
+  const [subcommand, ...rest] = args;
+  if (subcommand !== 'list') {
+    console.error('Usage: relay events list [--json] [--limit <n>]');
+    process.exitCode = 1;
+    return;
+  }
+  await eventsList(rest);
 }
 
 async function main() {
@@ -338,6 +385,9 @@ async function main() {
       return;
     case 'replay':
       await replay(rest);
+      return;
+    case 'events':
+      await events(rest);
       return;
     case undefined:
     case '--help':
