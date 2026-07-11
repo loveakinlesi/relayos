@@ -1,5 +1,6 @@
 {
   "name": "relayos",
+  "description": "A durable webhook execution platform for building reliable, replayable, and observable event-driven backends.",
   "private": true,
   "scripts": {
     "build": "turbo build",

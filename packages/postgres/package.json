@@ -1,6 +1,7 @@
 {
   "name": "@relayos/postgres",
   "version": "0.0.1",
+  "description": "Postgres storage adapter for RelayOS - schema, migrations, and the ExecutionStore implementation.",
   "private": true,
   "type": "module",
   "exports": {

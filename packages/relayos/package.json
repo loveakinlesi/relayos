@@ -1,6 +1,7 @@
 {
   "name": "relayos",
   "version": "0.0.1",
+  "description": "The RelayOS runtime: durable, replayable webhook and event execution for TypeScript backends.",
   "private": true,
   "type": "module",
   "exports": {
