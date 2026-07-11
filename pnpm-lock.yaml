@@ -78,6 +78,9 @@ importers:
       drizzle-orm:
         specifier: ^0.43.0
         version: 0.43.1(@types/pg@8.20.0)(pg@8.22.0)
+      relayos:
+        specifier: workspace:*
+        version: link:../relayos
     devDependencies:
       rimraf:
         specifier: ^6.0.0

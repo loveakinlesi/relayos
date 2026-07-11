@@ -145,6 +145,17 @@ export type RelayPlugin = {
   id: string;
   verify: (req: Request) => Promise<boolean>;
   normalize: (rawBody: unknown, headers: Headers) => NormalizedEvent;
+  /** Signs a raw body the way this provider would, for CLI-simulated deliveries (relay trigger). */
+  sign: (rawBody: string, secret: string) => Record<string, string>;
+  /**
+   * Builds a minimal-but-valid body (and any extra headers, e.g. GitHub's
+   * X-GitHub-Event) for a human-typed event type, so `relay trigger` can
+   * simulate a delivery without hand-writing this provider's wire shape.
+   */
+  buildTestPayload: (
+    eventType: string,
+    data: Record<string, unknown>,
+  ) => { body: unknown; headers?: Record<string, string> };
 };
 
 export type RelayHandlerContext = {

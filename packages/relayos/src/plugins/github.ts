@@ -37,5 +37,22 @@ export function github(options: GitHubPluginOptions): RelayPlugin {
         receivedAt: new Date().toISOString(),
       };
     },
+    sign(rawBody, secret) {
+      const signature = createHmac('sha256', secret).update(rawBody).digest('hex');
+      return { 'X-Hub-Signature-256': `sha256=${signature}` };
+    },
+    buildTestPayload(eventType, data) {
+      // GitHub has no "type" field in the body - the event name is a header,
+      // and sub-events (e.g. "pull_request.opened") carry the action in the
+      // body itself, so "push" and "pull_request.opened" both need parsing.
+      const [eventName, action] = eventType.split('.');
+      return {
+        body: action ? { ...data, action } : data,
+        headers: {
+          'X-GitHub-Event': eventName ?? eventType,
+          'X-GitHub-Delivery': crypto.randomUUID(),
+        },
+      };
+    },
   };
 }

@@ -36,6 +36,12 @@ const testPlugin: RelayPlugin = {
       receivedAt: new Date().toISOString(),
     };
   },
+  sign() {
+    return {};
+  },
+  buildTestPayload(eventType, data) {
+    return { body: { type: eventType, data } };
+  },
 };
 
 const plugins: RelayPlugin[] = [

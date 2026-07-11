@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@relayos/postgres": "workspace:*",
+    "relayos": "workspace:*",
     "drizzle-orm": "^0.43.0"
   },
   "devDependencies": {

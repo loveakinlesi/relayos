@@ -52,5 +52,21 @@ export function stripe(options: StripePluginOptions): RelayPlugin {
         receivedAt: new Date().toISOString(),
       };
     },
+    sign(rawBody, secret) {
+      const timestamp = Math.floor(Date.now() / 1000);
+      const signature = createHmac('sha256', secret)
+        .update(`${timestamp}.${rawBody}`)
+        .digest('hex');
+      return { 'Stripe-Signature': `t=${timestamp},v1=${signature}` };
+    },
+    buildTestPayload(eventType, data) {
+      return {
+        body: {
+          id: `evt_${crypto.randomUUID()}`,
+          type: eventType,
+          data: { object: data },
+        },
+      };
+    },
   };
 }
