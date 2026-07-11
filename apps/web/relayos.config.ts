@@ -60,8 +60,62 @@ relay.on('test.fail', async (_event, ctx) => {
   throw new Error('simulated handler failure');
 });
 
+type StripeCharge = {
+  id: string;
+  amount: number;
+  currency: string;
+  customer?: string | null;
+};
+
+// Demo-only: makes "send-receipt" fail exactly once per charge so a retry
+// has something real to resume past. A production app wouldn't need this -
+// the flakiness would come from an actual email provider timing out.
+const receiptAttemptsByCharge = new Map<string, number>();
+
+/**
+ * A real post-payment workflow: receiving the money is only the trigger,
+ * everything after it is a sequence of steps that each need to survive a
+ * crash/retry independently. record-payment and calculate-fee are pure and
+ * cheap, so re-running them on retry would be harmless - but send-receipt
+ * calls a flaky external provider, and notify-fulfillment shouldn't fire
+ * twice for the same charge. ctx.step.run() gives each step that guarantee
+ * without any of this handler needing to know it's being retried.
+ */
 relay.on('stripe.charge.succeeded', async (event, ctx) => {
-  ctx.log.info('handled stripe.charge.succeeded', event);
+  const charge = (event.data['object'] ?? {}) as StripeCharge;
+
+  const payment = await ctx.step.run('record-payment', async () => {
+    // In a real app: INSERT into a payments/ledger table here.
+    ctx.log.info('recorded payment', charge);
+    return { chargeId: charge.id, amount: charge.amount, currency: charge.currency };
+  });
+
+  const fee = await ctx.step.run('calculate-fee', async () => {
+    // Chains off record-payment's output - a common workflow shape.
+    const feeAmount = Math.round(payment.amount * 0.029 + 30);
+    const netAmount = payment.amount - feeAmount;
+    ctx.log.info('calculated platform fee', { feeAmount, netAmount });
+    return { feeAmount, netAmount };
+  });
+
+  await ctx.step.run('send-receipt', async () => {
+    const attempts = (receiptAttemptsByCharge.get(payment.chargeId) ?? 0) + 1;
+    receiptAttemptsByCharge.set(payment.chargeId, attempts);
+    if (attempts === 1) {
+      throw new Error('receipt email provider timed out (simulated)');
+    }
+    ctx.log.info('sent receipt email', {
+      chargeId: payment.chargeId,
+      to: charge.customer ?? 'unknown customer',
+    });
+  });
+
+  await ctx.step.run('notify-fulfillment', async () => {
+    ctx.log.info('notified fulfillment', {
+      chargeId: payment.chargeId,
+      netAmount: fee.netAmount,
+    });
+  });
 });
 
 relay.on('github.push', async (event, ctx) => {
