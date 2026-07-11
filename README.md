@@ -82,7 +82,7 @@ This is a Turborepo monorepo:
 |---|---|
 | [`relayos`](./packages/relayos) | The runtime: `createRelay`, provider plugins (`relayos/plugins/stripe`, `relayos/plugins/github`), framework handlers (`relayos/next-js`). Storage-agnostic — ships an in-memory store by default. |
 | [`@relayos/postgres`](./packages/postgres) | The Postgres storage adapter: schema, migrations, and the `ExecutionStore` implementation. |
-| [`@relayos/cli`](./packages/cli) | `relay migrate`, `relay dev`, `relay trigger`, `relay inspect`, `relay replay`. |
+| [`@relayos/cli`](./packages/cli) | `relay init`, `relay migrate`, `relay dev`, `relay trigger`, `relay inspect`, `relay replay`. |
 | [`apps/web`](./apps/web) | A Next.js app used as the local dev/test harness for the runtime, wired up in `apps/web/relayos.config.ts`. |
 
 ## Local Development

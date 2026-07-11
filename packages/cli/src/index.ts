@@ -1,15 +1,18 @@
 import { spawn } from 'node:child_process';
-import { resolve } from 'node:path';
+import { resolve, join } from 'node:path';
+import { writeFile, access } from 'node:fs/promises';
 import { gt } from 'drizzle-orm';
 import { createDb, createPostgresExecutionStore, executions, runMigrations } from '@relayos/postgres';
 import type { Execution, ExecutionStore, RelayPlugin } from 'relayos';
 import { stripe } from 'relayos/plugins/stripe';
 import { github } from 'relayos/plugins/github';
 import { getFlag, hasFlag, resolveRuntimeUrl, statusIcon, formatDuration, latestStepsByName } from './utils';
+import { RELAYOS_CONFIG_TEMPLATE, INIT_NEXT_STEPS } from './templates';
 
 const USAGE = `Usage: relay <command>
 
 Commands:
+  init [--force]                          Scaffold relayos.config.ts in the current directory
   migrate                                Apply RelayOS's Postgres migrations (reads DATABASE_URL)
   dev [--dir <path>]                      Run the app's dev server and tail new executions live
                                           (tailing requires DATABASE_URL; --dir defaults to cwd)
@@ -45,6 +48,26 @@ function requireDatabaseUrl(): string | undefined {
 
 async function resolveExecution(store: ExecutionStore, id: string): Promise<Execution | undefined> {
   return (await store.findByEventId(id)) ?? (await store.get(id));
+}
+
+async function init(args: string[]) {
+  const path = join(process.cwd(), 'relayos.config.ts');
+  const force = hasFlag(args, '--force');
+
+  if (!force) {
+    try {
+      await access(path);
+      console.error(`${path} already exists. Use --force to overwrite.`);
+      process.exitCode = 1;
+      return;
+    } catch {
+      // Doesn't exist - clear to write.
+    }
+  }
+
+  await writeFile(path, RELAYOS_CONFIG_TEMPLATE, 'utf8');
+  console.log(`Created ${path}`);
+  console.log(INIT_NEXT_STEPS);
 }
 
 async function migrate() {
@@ -298,6 +321,9 @@ async function main() {
   const [, , command, ...rest] = process.argv;
 
   switch (command) {
+    case 'init':
+      await init(rest);
+      return;
     case 'migrate':
       await migrate();
       return;
