@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 import type {
   Execution,
   ExecutionLog,
@@ -6,6 +6,7 @@ import type {
   ExecutionStep,
   ExecutionStore,
   LogLevel,
+  LogSource,
   StepStatus,
 } from 'relayos';
 import type { Db } from './client';
@@ -19,6 +20,7 @@ function toExecution(row: typeof executions.$inferSelect): Execution {
     eventData: row.eventData as Record<string, unknown>,
     status: row.status as ExecutionStatus,
     attempt: row.attempt,
+    replayedFrom: row.replayedFrom ?? undefined,
     createdAt: row.createdAt.toISOString(),
     completedAt: row.completedAt?.toISOString(),
     error: row.error ?? undefined,
@@ -42,6 +44,7 @@ function toLog(row: typeof executionLogs.$inferSelect): ExecutionLog {
     id: row.id,
     executionId: row.executionId,
     level: row.level as LogLevel,
+    source: row.source as LogSource,
     message: row.message,
     data: row.data ?? undefined,
     createdAt: row.createdAt.toISOString(),
@@ -66,6 +69,7 @@ export function createPostgresExecutionStore(db: Db): ExecutionStore {
           eventData: execution.eventData,
           status: execution.status,
           attempt: execution.attempt,
+          replayedFrom: execution.replayedFrom ?? null,
           createdAt: new Date(execution.createdAt),
           completedAt: execution.completedAt ? new Date(execution.completedAt) : null,
           error: execution.error ?? null,
@@ -103,30 +107,22 @@ export function createPostgresExecutionStore(db: Db): ExecutionStore {
       const [row] = await db
         .select()
         .from(executionSteps)
-        .where(and(eq(executionSteps.executionId, executionId), eq(executionSteps.name, name)));
+        .where(and(eq(executionSteps.executionId, executionId), eq(executionSteps.name, name)))
+        .orderBy(desc(executionSteps.createdAt))
+        .limit(1);
       return row ? toStep(row) : undefined;
     },
     async saveStep(step) {
-      await db
-        .insert(executionSteps)
-        .values({
-          id: step.id,
-          executionId: step.executionId,
-          name: step.name,
-          status: step.status,
-          output: step.output ?? null,
-          error: step.error ?? null,
-          createdAt: new Date(step.createdAt),
-        })
-        .onConflictDoUpdate({
-          target: [executionSteps.executionId, executionSteps.name],
-          set: {
-            status: step.status,
-            output: step.output ?? null,
-            error: step.error ?? null,
-            createdAt: new Date(step.createdAt),
-          },
-        });
+      // Always a plain insert - step history is append-only, never upserted.
+      await db.insert(executionSteps).values({
+        id: step.id,
+        executionId: step.executionId,
+        name: step.name,
+        status: step.status,
+        output: step.output ?? null,
+        error: step.error ?? null,
+        createdAt: new Date(step.createdAt),
+      });
     },
     async listSteps(executionId) {
       const rows = await db
@@ -141,6 +137,7 @@ export function createPostgresExecutionStore(db: Db): ExecutionStore {
         id: log.id,
         executionId: log.executionId,
         level: log.level,
+        source: log.source,
         message: log.message,
         data: log.data ?? null,
         createdAt: new Date(log.createdAt),

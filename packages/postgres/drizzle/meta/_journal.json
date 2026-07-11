@@ -5,36 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1783633757542,
-      "tag": "0000_bright_enchantress",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1783638937634,
-      "tag": "0001_salty_komodo",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1783641259710,
-      "tag": "0002_giant_stick",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1783642466122,
-      "tag": "0003_third_nick_fury",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1783643203778,
-      "tag": "0004_steady_vulcan",
+      "when": 1783779883533,
+      "tag": "0000_unknown_pyro",
       "breakpoints": true
     }
   ]

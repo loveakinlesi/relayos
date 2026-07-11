@@ -19,10 +19,15 @@ export type ExecutionStep = {
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
+/** "system" entries are written by the runtime itself (ingest/retry/restart/replay
+ *  lifecycle events); "handler" entries come from a handler's own ctx.log calls. */
+export type LogSource = 'system' | 'handler';
+
 export type ExecutionLog = {
   id: string;
   executionId: string;
   level: LogLevel;
+  source: LogSource;
   message: string;
   data?: unknown;
   createdAt: string;
@@ -54,6 +59,8 @@ export type Execution = {
   eventData: Record<string, unknown>;
   status: ExecutionStatus;
   attempt: number;
+  /** Set when this execution was created by replayExecution(), pointing at the source. */
+  replayedFrom?: string;
   createdAt: string;
   completedAt?: string;
   error?: string;
@@ -71,7 +78,9 @@ export type ExecutionStore = {
   list: () => Promise<Execution[]>;
   get: (id: string) => Promise<Execution | undefined>;
   findByEventId: (eventId: string) => Promise<Execution | undefined>;
+  /** The most recent attempt recorded for this step name, if any. */
   getStep: (executionId: string, name: string) => Promise<ExecutionStep | undefined>;
+  /** Always appends a new row - step history is an audit trail, never overwritten. */
   saveStep: (step: ExecutionStep) => Promise<void>;
   listSteps: (executionId: string) => Promise<ExecutionStep[]>;
   saveLog: (log: ExecutionLog) => Promise<void>;
@@ -80,7 +89,7 @@ export type ExecutionStore = {
 
 export function createMemoryExecutionStore(): ExecutionStore {
   const executions = new Map<string, Execution>();
-  const steps = new Map<string, ExecutionStep>();
+  const steps: ExecutionStep[] = [];
   const logs: ExecutionLog[] = [];
 
   return {
@@ -111,13 +120,16 @@ export function createMemoryExecutionStore(): ExecutionStore {
       return Array.from(executions.values()).find((execution) => execution.eventId === eventId);
     },
     async getStep(executionId, name) {
-      return steps.get(`${executionId}:${name}`);
+      const matches = steps.filter((step) => step.executionId === executionId && step.name === name);
+      return matches.sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
     },
     async saveStep(step) {
-      steps.set(`${step.executionId}:${step.name}`, step);
+      steps.push(step);
     },
     async listSteps(executionId) {
-      return Array.from(steps.values()).filter((step) => step.executionId === executionId);
+      return steps
+        .filter((step) => step.executionId === executionId)
+        .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
     },
     async saveLog(log) {
       logs.push(log);
@@ -142,7 +154,13 @@ export type RelayHandlerContext = {
 export type Relay = {
   on: (type: string, handler: EventHandler) => void;
   ingest: (event: NormalizedEvent) => Promise<Execution>;
-  retryExecution: (executionId: string) => Promise<Execution>;
+  /** Resumes an execution in place, skipping steps that already completed. */
+  retryExecution: (executionId: string, reason?: 'manual' | 'scheduled') => Promise<Execution>;
+  /** Resumes an execution in place, but re-runs every step regardless of prior state. */
+  restartExecution: (executionId: string) => Promise<Execution>;
+  /** Creates a brand-new execution from a historical one's event data, leaving
+   *  the original untouched. Linked back via Execution.replayedFrom. */
+  replayExecution: (executionId: string) => Promise<Execution>;
   listExecutions: () => Promise<Execution[]>;
   listSteps: (executionId: string) => Promise<ExecutionStep[]>;
   listLogs: (executionId: string) => Promise<ExecutionLog[]>;
@@ -172,13 +190,29 @@ export function createRelay(config: RelayConfig = {}): Relay {
   const plugins = new Map((config.plugins ?? []).map((plugin) => [plugin.id, plugin]));
   const retryPolicy = config.retry ?? defaultRetryPolicy;
 
-  function createStepRunner(executionId: string): RuntimeContext['step'] {
+  function logSystemEvent(executionId: string, message: string, data?: unknown): Promise<void> {
+    return store.saveLog({
+      id: crypto.randomUUID(),
+      executionId,
+      level: 'info',
+      source: 'system',
+      message,
+      data,
+      createdAt: new Date().toISOString(),
+    });
+  }
+
+  function createStepRunner(
+    executionId: string,
+    options: { forceRerun?: boolean } = {},
+  ): RuntimeContext['step'] {
     return {
       async run(name, fn) {
-        const existing = await store.getStep(executionId, name);
-        // A step that already completed is never re-run - its cached output
-        // is returned as-is. A step with no record, or one that previously
-        // failed, is (re)run so a retry can actually make progress past it.
+        const existing = options.forceRerun ? undefined : await store.getStep(executionId, name);
+        // A step whose most recent attempt completed is never re-run - its
+        // cached output is returned as-is. A step with no record, one that
+        // previously failed, or any step at all when forceRerun (restart) is
+        // set, is (re)run so progress can actually resume past it.
         if (existing?.status === 'completed') {
           return existing.output as Awaited<ReturnType<typeof fn>>;
         }
@@ -186,7 +220,7 @@ export function createRelay(config: RelayConfig = {}): Relay {
         try {
           const output = await fn();
           await store.saveStep({
-            id: existing?.id ?? crypto.randomUUID(),
+            id: crypto.randomUUID(),
             executionId,
             name,
             status: 'completed',
@@ -196,7 +230,7 @@ export function createRelay(config: RelayConfig = {}): Relay {
           return output;
         } catch (err) {
           await store.saveStep({
-            id: existing?.id ?? crypto.randomUUID(),
+            id: crypto.randomUUID(),
             executionId,
             name,
             status: 'failed',
@@ -228,6 +262,7 @@ export function createRelay(config: RelayConfig = {}): Relay {
           id: crypto.randomUUID(),
           executionId,
           level,
+          source: 'handler',
           message,
           data,
           createdAt: new Date().toISOString(),
@@ -271,16 +306,20 @@ export function createRelay(config: RelayConfig = {}): Relay {
 
   function scheduleRetry(executionId: string, delayMs: number) {
     setTimeout(() => {
-      retryExecution(executionId).catch((err) => {
+      retryExecution(executionId, 'scheduled').catch((err) => {
         console.error(`[relayos] scheduled retry failed for execution ${executionId}`, err);
       });
     }, delayMs);
   }
 
-  async function runHandlers(execution: Execution, event: NormalizedEvent): Promise<Execution> {
+  async function runHandlers(
+    execution: Execution,
+    event: NormalizedEvent,
+    stepOptions: { forceRerun?: boolean } = {},
+  ): Promise<Execution> {
     const matched = handlers.get(event.type) ?? [];
     const { log, flush } = createLogger(execution.id);
-    const ctx: RuntimeContext = { step: createStepRunner(execution.id), log };
+    const ctx: RuntimeContext = { step: createStepRunner(execution.id, stepOptions), log };
 
     try {
       for (const handler of matched) {
@@ -334,10 +373,18 @@ export function createRelay(config: RelayConfig = {}): Relay {
       throw new Error(`event "${event.id}" is already being ingested`);
     }
 
+    await logSystemEvent(execution.id, 'event ingested', {
+      eventId: event.id,
+      eventType: event.type,
+    });
+
     return runExclusive(execution.id, () => runHandlers(execution, event));
   }
 
-  async function retryExecution(executionId: string): Promise<Execution> {
+  async function retryExecution(
+    executionId: string,
+    reason: 'manual' | 'scheduled' = 'manual',
+  ): Promise<Execution> {
     return runExclusive(executionId, async () => {
       const execution = await store.get(executionId);
       if (!execution) {
@@ -345,6 +392,8 @@ export function createRelay(config: RelayConfig = {}): Relay {
       }
 
       execution.attempt += 1;
+      await logSystemEvent(execution.id, `retrying (attempt ${execution.attempt}, ${reason})`);
+
       const event: NormalizedEvent = {
         id: execution.eventId,
         type: execution.eventType,
@@ -356,6 +405,69 @@ export function createRelay(config: RelayConfig = {}): Relay {
     });
   }
 
+  async function restartExecution(executionId: string): Promise<Execution> {
+    return runExclusive(executionId, async () => {
+      const execution = await store.get(executionId);
+      if (!execution) {
+        throw new Error(`no execution found with id "${executionId}"`);
+      }
+
+      execution.attempt += 1;
+      await logSystemEvent(
+        execution.id,
+        `restarting (attempt ${execution.attempt}) - all steps will re-run`,
+      );
+
+      const event: NormalizedEvent = {
+        id: execution.eventId,
+        type: execution.eventType,
+        data: execution.eventData,
+        receivedAt: execution.createdAt,
+      };
+
+      return runHandlers(execution, event, { forceRerun: true });
+    });
+  }
+
+  async function replayExecution(executionId: string): Promise<Execution> {
+    const source = await store.get(executionId);
+    if (!source) {
+      throw new Error(`no execution found with id "${executionId}"`);
+    }
+
+    // A fresh eventId, not the source's - this is an intentional, explicit
+    // re-processing of historical event data, not a redelivery of the same
+    // webhook, so it shouldn't be deduped against (or dedupe) the original.
+    const event: NormalizedEvent = {
+      id: crypto.randomUUID(),
+      type: source.eventType,
+      data: source.eventData,
+      receivedAt: new Date().toISOString(),
+    };
+
+    const execution: Execution = {
+      id: crypto.randomUUID(),
+      eventId: event.id,
+      eventType: event.type,
+      eventData: event.data,
+      status: 'pending',
+      attempt: 1,
+      replayedFrom: source.id,
+      createdAt: new Date().toISOString(),
+    };
+
+    const created = await store.create(execution);
+    if (!created) {
+      throw new Error('failed to create replay execution (unexpected eventId collision)');
+    }
+
+    await logSystemEvent(execution.id, `replayed from execution ${source.id}`, {
+      sourceExecutionId: source.id,
+    });
+
+    return runExclusive(execution.id, () => runHandlers(execution, event));
+  }
+
   return {
     on(type, handler) {
       const existing = handlers.get(type) ?? [];
@@ -364,6 +476,8 @@ export function createRelay(config: RelayConfig = {}): Relay {
     },
     ingest,
     retryExecution,
+    restartExecution,
+    replayExecution,
     listExecutions() {
       return store.list();
     },
