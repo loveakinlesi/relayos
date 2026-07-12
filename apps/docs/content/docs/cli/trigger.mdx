@@ -1,0 +1,128 @@
+---
+title: relay trigger
+description: Simulate a signed provider webhook delivery for testing.
+---
+
+Build a properly signed webhook payload and POST it to your running RelayOS instance. Useful for testing handlers without a real provider.
+
+## Usage
+
+```sh
+relay trigger <provider> <eventType> [--data '<json>'] [--forward <url>]
+```
+
+## Arguments
+
+| Argument | Required | Description |
+|----------|----------|-------------|
+| `<provider>` | Yes | The plugin ID: `stripe`, `github`, or a custom plugin |
+| `<eventType>` | Yes | The event name, e.g. `charge.succeeded` for Stripe, `push` or `pull_request.opened` for GitHub |
+| `--data '<json>'` | No | JSON payload to include in the event. Default is `{}` |
+| `--forward <url>` | No | URL to POST to. Default is `RELAYOS_RUNTIME_URL` or `http://localhost:3000` |
+
+## Environment variables
+
+| Variable | Required when | Purpose |
+|----------|-----------------|---------|
+| `STRIPE_WEBHOOK_SECRET` | `relay trigger stripe ...` | Signs the webhook for Stripe verification |
+| `GITHUB_WEBHOOK_SECRET` | `relay trigger github ...` | Signs the webhook for GitHub verification |
+| `RELAYOS_RUNTIME_URL` | No `--forward` specified | Where to POST the webhook. Defaults to `http://localhost:3000` |
+
+## Examples
+
+### Stripe
+
+Trigger a `charge.succeeded` event:
+
+```sh
+relay trigger stripe charge.succeeded \
+  --data '{"id":"ch_1234","amount":1000,"currency":"usd"}'
+```
+
+This POSTs a properly signed webhook to `/api/relay/stripe` with:
+- A valid `stripe-signature` header (timestamp + HMAC-SHA256)
+- A normalized Stripe webhook body
+
+The event type (`charge.succeeded`) is used to build the payload; `data` fills the `data.object` field.
+
+### GitHub
+
+Trigger a `push` event:
+
+```sh
+relay trigger github push \
+  --data '{"ref":"refs/heads/main","commits":[]}'
+```
+
+Trigger a `pull_request.opened` event (action-qualified):
+
+```sh
+relay trigger github pull_request.opened \
+  --data '{"title":"New feature","body":"Adds foo"}'
+```
+
+The plugin automatically extracts the action (`opened`) and includes it in the payload.
+
+### Custom providers
+
+`relay trigger` only knows the built-in providers (`stripe`, `github`) — it needs the provider's `sign`/`buildTestPayload` implementation to fabricate a valid delivery. To exercise a custom plugin in development, POST to its mount path directly (or give it a permissive dev-only `verify`, like the `test` plugin pattern in [Writing plugins](/docs/plugins/writing-plugins)):
+
+```sh
+curl -X POST http://localhost:3000/api/relay/acme \
+  -H "Content-Type: application/json" \
+  -d '{"type":"order.placed","data":{"orderId":"ord_123"}}'
+```
+
+## Dev secret gotcha
+
+`relay trigger` requires `<PROVIDER>_WEBHOOK_SECRET` to be set, and your running app must verify with the same value — see [the dev-secret gotcha](/docs/cli#dev-secret-gotcha) on the CLI overview. In short:
+
+```sh
+# ✅ Same secret on both sides
+STRIPE_WEBHOOK_SECRET=whsec_dev relay dev &
+STRIPE_WEBHOOK_SECRET=whsec_dev relay trigger stripe charge.succeeded --data '{...}'
+
+# ❌ Different secret (or unset on the app side) — fails verification with 401
+STRIPE_WEBHOOK_SECRET=whsec_other relay trigger stripe charge.succeeded --data '{...}'
+```
+
+## Forwarding to a custom URL
+
+By default, `relay trigger` POSTs to `http://localhost:3000/api/relay/<provider>`. Override with `--forward`:
+
+```sh
+relay trigger stripe charge.succeeded \
+  --data '{"id":"ch_1234","amount":1000}' \
+  --forward http://example.com
+```
+
+Or set the environment variable:
+
+```sh
+RELAYOS_RUNTIME_URL=https://api.example.com \
+relay trigger stripe charge.succeeded --data '{...}'
+```
+
+## Viewing the response
+
+The command prints the HTTP response from your handler:
+
+```
+[relay trigger] POST http://localhost:3000/api/relay/stripe
+[relay trigger] 200
+{
+  "id": "exec_...",
+  "eventId": "evt_...",
+  "status": "pending",
+  ...
+}
+```
+
+On error:
+
+```
+[relay trigger] 400
+{
+  "error": "Invalid webhook signature"
+}
+```

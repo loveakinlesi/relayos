@@ -1,0 +1,194 @@
+---
+title: Writing Plugins
+description: Build your own webhook provider adapter with event typing and signature verification.
+---
+
+A RelayPlugin is a webhook adapter: it knows how to verify a provider's signature, normalize their webhook shape, and build test payloads. You can write one for any provider using `definePlugin` and the HMAC helpers.
+
+## The RelayPlugin interface
+
+```ts
+import type { RelayPlugin, NormalizedEvent } from '@relayos/core';
+
+const myPlugin: RelayPlugin = {
+  id: 'myprovider', // Used as the URL segment: /api/relay/myprovider
+
+  // Verify the request signature, return true if valid
+  async verify(req: Request): Promise<boolean> {
+    const signature = req.headers.get('x-signature');
+    // ... verify against the raw request body
+    return true;
+  },
+
+  // Convert the provider's wire shape to a NormalizedEvent
+  normalize(rawBody: unknown, headers: Headers): NormalizedEvent {
+    return {
+      id: 'unique-webhook-id',
+      type: 'myprovider.event.name',
+      data: { /* normalized payload */ },
+      receivedAt: new Date().toISOString(),
+    };
+  },
+
+  // Sign a raw body for testing (used by relay trigger)
+  sign(rawBody: string, secret: string): Record<string, string> {
+    return { 'X-Signature': computeSignature(rawBody, secret) };
+  },
+
+  // Build a test payload from a user-typed event name
+  buildTestPayload(
+    eventType: string,
+    data: Record<string, unknown>,
+  ): { body: unknown; headers?: Record<string, string> } {
+    return {
+      body: { type: eventType, data },
+      headers: { 'X-Event-Type': eventType },
+    };
+  },
+};
+```
+
+## definePlugin and type inference
+
+Use `definePlugin<TEventMap>` to get full type inference and pin your plugin's event map:
+
+```ts
+import { definePlugin } from '@relayos/plugin';
+
+type MyEventMap = {
+  'myprovider.user.created': { userId: string; email: string };
+  'myprovider.user.deleted': { userId: string };
+};
+
+const myPlugin = definePlugin<MyEventMap>({
+  id: 'myprovider',
+  async verify(req) { /* ... */ },
+  normalize(rawBody, headers) { /* ... */ },
+  sign(rawBody, secret) { /* ... */ },
+  buildTestPayload(eventType, data) { /* ... */ },
+});
+
+// Now when you pass myPlugin to createRelay, relay.on() autocompletes the event names
+// and types event.data per event.
+```
+
+## Signature verification helpers
+
+Use `hmacSha256Hex` and `safeEqualHex` for secure signature verification:
+
+```ts
+import { hmacSha256Hex, safeEqualHex } from '@relayos/plugin';
+
+// Compute HMAC-SHA256 signature (what most providers use)
+const expected = hmacSha256Hex(secret, payload);
+
+// Constant-time comparison (prevents timing attacks)
+const isValid = safeEqualHex(expected, actualSignature);
+```
+
+- **hmacSha256Hex**: Returns the hex-encoded HMAC-SHA256 of a payload. Used by Stripe, GitHub, and most webhook providers.
+- **safeEqualHex**: Compares two hex signatures using Node's `timingSafeEqual`, returning false (not throwing) on length mismatch or invalid hex.
+
+## Worked example: dev-only pass-through plugin
+
+Here's the test plugin from `apps/web/relayos.config.ts` — it never verifies signatures, and forces all events under the `test.*` namespace so it can't spoof real providers:
+
+```ts
+import { definePlugin } from '@relayos/plugin';
+import type { RelayPlugin } from '@relayos/core';
+
+const testPlugin: RelayPlugin = {
+  id: 'test',
+  async verify() {
+    return true; // Accept everything in dev
+  },
+  normalize(rawBody) {
+    const body = rawBody as { id?: string; type?: string; data?: Record<string, unknown> };
+    const suffix = (body.type ?? 'ping').replace(/^test\./, '');
+    return {
+      id: body.id ?? crypto.randomUUID(),
+      type: `test.${suffix}`, // Force test.* namespace
+      data: body.data ?? {},
+      receivedAt: new Date().toISOString(),
+    };
+  },
+  sign() {
+    return {}; // No signature headers needed
+  },
+  buildTestPayload(eventType, data) {
+    return { body: { type: eventType, data } };
+  },
+};
+```
+
+Use it in dev only:
+
+```ts
+const isProduction = process.env.NODE_ENV === 'production';
+
+export const relay = createRelay({
+  database: createPostgresExecutionStore(db),
+  plugins: [
+    ...(isProduction ? [] : [testPlugin]),
+    stripe({ webhookSecret: process.env.STRIPE_WEBHOOK_SECRET! }),
+  ],
+});
+```
+
+## A typed example
+
+Here's a custom plugin with event typing:
+
+```ts
+import { definePlugin, hmacSha256Hex, safeEqualHex } from '@relayos/plugin';
+
+type MyEventMap = {
+  'acme.order.placed': {
+    orderId: string;
+    customerId: string;
+    total: number;
+  };
+  'acme.order.shipped': {
+    orderId: string;
+    trackingNumber: string;
+  };
+};
+
+const acmePlugin = definePlugin<MyEventMap>({
+  id: 'acme',
+  async verify(req) {
+    const signature = req.headers.get('x-acme-signature');
+    if (!signature) return false;
+
+    const rawBody = await req.text();
+    const expected = hmacSha256Hex(process.env.ACME_WEBHOOK_SECRET!, rawBody);
+    return safeEqualHex(expected, signature);
+  },
+  normalize(rawBody, headers) {
+    const body = rawBody as { eventType: string; data: Record<string, unknown> };
+    return {
+      id: headers.get('x-acme-delivery-id') ?? crypto.randomUUID(),
+      type: `acme.${body.eventType}`,
+      data: body.data,
+      receivedAt: new Date().toISOString(),
+    };
+  },
+  sign(rawBody, secret) {
+    const signature = hmacSha256Hex(secret, rawBody);
+    return { 'X-ACME-Signature': signature };
+  },
+  buildTestPayload(eventType, data) {
+    const [, event] = eventType.split('.'); // Remove 'acme.' prefix
+    return {
+      body: { eventType: event, data },
+    };
+  },
+});
+```
+
+## Key principles
+
+1. **Always verify the raw body**: Call `req.text()` once and verify before parsing. A malformed or attacker-supplied body must never crash your verify function.
+2. **Use constant-time comparison**: `safeEqualHex` prevents timing attacks by comparing every byte, not short-circuiting on mismatch.
+3. **Namespacing**: Use your plugin's `id` in event type names (e.g., `stripe.charge.succeeded`) to avoid collisions with other providers.
+4. **Event type format**: Let providers use their natural naming (e.g., GitHub's `pull_request.opened` with the dot) — just prefix it with your plugin id and normalize as needed.

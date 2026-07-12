@@ -1,0 +1,60 @@
+---
+title: relay migrate
+description: Apply RelayOS database migrations to your Postgres instance.
+---
+
+Apply RelayOS's Postgres schema to your database. This is idempotent — safe to run multiple times.
+
+## Usage
+
+```sh
+relay migrate
+```
+
+## Requirements
+
+- `DATABASE_URL` environment variable set to a valid Postgres connection string
+- Postgres instance must be running and accessible
+
+## What it does
+
+Creates the `relayos` schema (if it doesn't exist) and the following tables:
+
+- **executions** — one row per execution, tracking status, attempt, timestamps, and event data
+- **execution_steps** — append-only step history; a step that failed and later succeeded stores both attempts
+- **execution_logs** — interleaved logs from the runtime and handler
+
+All tables are namespaced under the `relayos` schema, so they never collide with your application's public schema.
+
+## Example
+
+```sh
+export DATABASE_URL="postgres://user:password@localhost:5432/myapp"
+relay migrate
+```
+
+Output:
+```
+Applying RelayOS migrations...
+Migrations applied.
+```
+
+## Idempotency
+
+Running `relay migrate` multiple times is safe — it won't re-create tables or lose data. Useful in CI/CD pipelines.
+
+## Troubleshooting
+
+**Error: "cannot connect to server"**
+- Check `DATABASE_URL` is correct
+- Verify Postgres is running
+- Check network/firewall access
+
+**Error: "permission denied"**
+- The database user must have permissions to create schemas and tables
+- Check the user role in Postgres
+
+**Error: "database does not exist"**
+- Create the database first: `createdb myapp` (or in psql: `CREATE DATABASE myapp;`)
+
+See [Postgres](/docs/database/postgres) for more setup details.

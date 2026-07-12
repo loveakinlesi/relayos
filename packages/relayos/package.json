@@ -1,8 +1,34 @@
 {
   "name": "relayos",
   "version": "0.0.1",
-  "private": true,
+  "description": "The RelayOS runtime: durable, replayable webhook and event execution for TypeScript backends.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/loveakinlesi/relayos.git",
+    "directory": "packages/relayos"
+  },
+  "homepage": "https://github.com/loveakinlesi/relayos#readme",
+  "bugs": "https://github.com/loveakinlesi/relayos/issues",
+  "keywords": [
+    "relayos",
+    "webhooks",
+    "events",
+    "durable-execution",
+    "typescript",
+    "sdk",
+    "stripe",
+    "github",
+    "nextjs"
+  ],
   "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "exports": {
     ".": {
       "import": {
@@ -30,12 +56,12 @@
     "clean": "rimraf dist coverage tsconfig.tsbuildinfo"
   },
   "dependencies": {
-    "@relayos/core": "workspace:*",
-    "@relayos/types": "workspace:*"
+    "@relayos/core": "workspace:^"
   },
   "devDependencies": {
     "rimraf": "^6.0.0",
     "tsup": "^8.0.0",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "vitest": "^4.1.7"
   }
 }

@@ -1,0 +1,95 @@
+---
+title: Retries
+description: Automatic exponential backoff and configurable retry policies
+---
+
+When a handler fails, RelayOS automatically schedules a retry—no queue infrastructure, no manual intervention needed.
+
+## Default retry policy
+
+By default, a failed execution will be retried up to 3 times total (attempt 1, 2, and 3), with exponential backoff between attempts:
+
+```
+Attempt 1: initial try (no backoff)
+Attempt 2: retry after ~1 second (1000ms)
+Attempt 3: retry after ~2 seconds (2000ms)
+```
+
+The backoff formula is:
+
+```
+delay = min(1000 * 2^(attempt - 1), 30_000) milliseconds
+```
+
+This means the delay doubles each time, capped at 30 seconds. After the 3rd attempt fails, the execution is marked as failed and stops retrying.
+
+## Customizing retry policy
+
+You can override the retry policy when creating the relay:
+
+```ts
+const relay = createRelay({
+  database: createPostgresExecutionStore(db),
+  plugins: [stripe({ webhookSecret: process.env.STRIPE_WEBHOOK_SECRET! })],
+  retry: {
+    maxAttempts: 5,  // Try up to 5 times
+    backoff: (attempt) => {
+      // Custom backoff: linear instead of exponential
+      return attempt * 1000; // 1s, 2s, 3s, 4s
+    },
+  },
+});
+```
+
+## How retries work
+
+1. Handler is called with the original event data.
+2. If any step fails (throws), the execution status becomes `failed` and the error is recorded.
+3. If `attempt < maxAttempts`, a timer schedules a retry after the backoff delay.
+4. On retry, `attempt` is incremented and the handler runs again.
+5. Any previously completed steps are cached and skipped—only failed/uncompleted steps run.
+
+## In-process coordination only
+
+**Important**: Retry scheduling and step-level deduplication (caching) are currently in-process only. If you have multiple server instances:
+
+- Each instance can retry its own in-flight executions
+- But there's no database-level lock yet to prevent two instances from running the same execution simultaneously
+
+In a multi-instance deployment, you need external coordination (Redis, etc.) to guard against concurrent execution. This is on the roadmap.
+
+## Manual retry
+
+You can also manually retry a failed execution at any time via the API:
+
+```ts
+await relay.retryExecution(executionId);
+```
+
+Or via the CLI:
+
+```sh
+relay inspect <executionId>  # Check the status
+relay events list            # Find the execution ID
+```
+
+Then use the management API routes in your app (see the `apps/web` example) to trigger a manual retry.
+
+## Viewing retry history
+
+The logs and step history show exactly when each retry was scheduled and what happened on each attempt:
+
+```sh
+$ relay inspect <executionId>
+Status: completed
+Attempt: 2
+
+Logs:
+  [system] event ingested
+  [handler] Started processing...
+  [system] retrying (attempt 2, scheduled)
+  [handler] Processing again...
+  ✓ completed
+```
+
+Each execution keeps its full lifecycle, so you can trace why it failed and why it eventually succeeded.

@@ -3,21 +3,26 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**"]
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**"],
+      "env": ["DATABASE_URL", "STRIPE_WEBHOOK_SECRET", "GITHUB_WEBHOOK_SECRET"]
     },
     "dev": {
       "cache": false,
       "persistent": true
     },
-    "lint": {},
+    "lint": {
+      "dependsOn": ["^build"]
+    },
     "test": {
       "dependsOn": ["^build", "build"],
-      "cache": false
+      "cache": false,
+      "env": ["TEST_DATABASE_URL"]
     },
     "test:coverage": {
       "dependsOn": ["^build", "build"],
       "outputs": ["coverage/**"],
-      "cache": false
+      "cache": false,
+      "env": ["TEST_DATABASE_URL"]
     },
     "clean": {
       "cache": false

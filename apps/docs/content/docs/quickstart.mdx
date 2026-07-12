@@ -1,0 +1,101 @@
+---
+title: Quickstart
+description: Build your first webhook handler with durable steps in 5 minutes
+---
+
+This quickstart walks you through setting up RelayOS in a Next.js app to process Stripe webhooks with durable steps and automatic retries.
+
+## 1. Install packages
+
+```sh
+pnpm add relayos @relayos/postgres @relayos/stripe stripe @relayos/nextjs
+```
+
+## 2. Create your relay config
+
+Create `relayos.config.ts` at your project root:
+
+```ts
+// relayos.config.ts
+import { createRelay } from 'relayos';
+import { stripe } from '@relayos/stripe';
+import { createDb, createPostgresExecutionStore } from '@relayos/postgres';
+
+const db = createDb(process.env.DATABASE_URL!);
+
+export const relay = createRelay({
+  database: createPostgresExecutionStore(db),
+  plugins: [stripe({ webhookSecret: process.env.STRIPE_WEBHOOK_SECRET! })],
+});
+
+relay.on('stripe.charge.succeeded', async (event, ctx) => {
+  const charge = event.data.object; // fully typed Stripe.Charge
+
+  const payment = await ctx.step.run('record-payment', async () => {
+    // Record the payment to your database
+    console.log('Recording payment for charge', charge.id);
+    return { chargeId: charge.id, amount: charge.amount };
+  });
+
+  await ctx.step.run('send-receipt', async () => {
+    // Send a receipt email to the customer
+    console.log('Sending receipt to', charge.customer);
+  });
+
+  ctx.log.info('payment processed', payment);
+});
+```
+
+## 3. Create the webhook route
+
+Create `app/api/relay/[...all]/route.ts` (Next.js App Router):
+
+```ts
+// app/api/relay/[...all]/route.ts
+import { toNextJsHandler } from '@relayos/nextjs';
+import { relay } from '@/relayos.config';
+
+export const { POST } = toNextJsHandler(relay);
+```
+
+## 4. Set up your database
+
+Initialize Postgres and apply migrations:
+
+```sh
+createdb relayos_dev   # or: psql -c "CREATE DATABASE relayos_dev"
+DATABASE_URL=postgres://localhost:5432/relayos_dev pnpm exec relay migrate
+```
+
+## 5. Run your app
+
+```sh
+DATABASE_URL=postgres://localhost:5432/relayos_dev \
+STRIPE_WEBHOOK_SECRET=whsec_dev \
+pnpm exec relay dev
+```
+
+This starts your app's dev server (in the current directory - pass `--dir <path>` if it lives elsewhere) and tails new executions to your terminal.
+
+## 6. Test it
+
+From another terminal, trigger a test Stripe event. `relay trigger` signs the payload exactly like Stripe would, so the same `STRIPE_WEBHOOK_SECRET` must be set here as on the server:
+
+```sh
+STRIPE_WEBHOOK_SECRET=whsec_dev pnpm exec relay trigger stripe charge.succeeded \
+  --data '{"id":"ch_test_1","amount":10000,"currency":"usd","customer":"cus_test"}'
+```
+
+You'll see the event ingested and your handler run. If you watch the database, you'll see one `Execution` and two `ExecutionSteps` (one per `ctx.step.run`).
+
+Inspect what happened:
+
+```sh
+DATABASE_URL=postgres://localhost:5432/relayos_dev pnpm exec relay inspect <eventId>
+```
+
+## Next steps
+
+- **Event types**: Learn how [Typed Events](/docs/concepts/typed-events) work and what autocomplete you get.
+- **Durable steps**: Dive into [Durable Steps](/docs/concepts/durable-steps) to understand caching, retries, and audit trails.
+- **Replay & restart**: Understand the [three retry operations](/docs/concepts/replay-restart-retry) and when to use each.

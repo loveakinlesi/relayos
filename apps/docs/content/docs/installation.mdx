@@ -1,0 +1,35 @@
+---
+title: Installation
+description: Set up RelayOS in your project with the core package and optional providers
+---
+
+You'll need Node >=20 and TypeScript >=5. Postgres is optional to start—you can develop locally with the in-memory store—but recommended for production.
+
+## Install packages
+
+```sh
+pnpm add relayos @relayos/postgres @relayos/stripe stripe @relayos/nextjs
+```
+
+Note: `stripe` is a peer dependency of `@relayos/stripe`, so your application's pinned Stripe SDK version determines the event catalog's types. If you're using GitHub webhooks instead (or in addition), add `@relayos/github`.
+
+## Core packages
+
+| Package | Purpose |
+|---|---|
+| `relayos` | The SDK: `createRelay` and the user-facing types. Ships an in-memory store by default. |
+| `@relayos/core` | The engine: durable executions, steps, retries, replay, and the contracts everything else builds on. |
+| `@relayos/plugin` | Plugin authoring kit: `definePlugin` + webhook signature helpers. |
+| `@relayos/stripe` | Stripe plugin with signature verification and a fully-typed event catalog. Peer-depends on `stripe`. |
+| `@relayos/github` | GitHub plugin with signature verification and a fully-typed event catalog. |
+| `@relayos/nextjs` | Next.js App Router adapter: `toNextJsHandler(relay)`. |
+| `@relayos/postgres` | Postgres storage adapter: schema, migrations, and the `ExecutionStore` implementation. |
+| `@relayos/cli` | Command-line tools: `relay init`, `relay migrate`, `relay dev`, `relay trigger`, etc. |
+
+## Scaffold your config
+
+```sh
+pnpm exec relay init
+```
+
+This creates a `relayos.config.ts` file in your project root with boilerplate for `createRelay`, plugins, and a database store. Read the [Quickstart](/docs/quickstart) to wire it up end-to-end.

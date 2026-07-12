@@ -1,19 +1,10 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
-import * as schema from './schema/index';
+import * as schema from './schema';
 
-export type Database = ReturnType<typeof drizzle<typeof schema>>;
-
-export interface DatabaseClient {
-  db: Database;
-  close: () => Promise<void>;
-}
-
-export function createDatabase(connectionString: string): DatabaseClient {
+export function createDb(connectionString: string) {
   const pool = new Pool({ connectionString });
-  const db = drizzle(pool, { schema });
-  return {
-    db,
-    close: () => pool.end(),
-  };
+  return drizzle(pool, { schema });
 }
+
+export type Db = ReturnType<typeof createDb>;

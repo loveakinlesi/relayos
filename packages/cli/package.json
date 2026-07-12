@@ -1,0 +1,58 @@
+{
+  "name": "@relayos/cli",
+  "version": "0.0.1",
+  "description": "CLI for RelayOS - migrations and local dev tooling.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/loveakinlesi/relayos.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://github.com/loveakinlesi/relayos#readme",
+  "bugs": "https://github.com/loveakinlesi/relayos/issues",
+  "keywords": [
+    "relayos",
+    "webhooks",
+    "events",
+    "durable-execution",
+    "typescript",
+    "cli",
+    "migrations",
+    "dev-tools"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "bin": {
+    "relay": "./dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup && chmod +x dist/index.js",
+    "dev": "tsup --watch",
+    "lint": "tsc --noEmit",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "clean": "rimraf dist tsconfig.tsbuildinfo"
+  },
+  "dependencies": {
+    "@relayos/core": "workspace:^",
+    "@relayos/postgres": "workspace:^",
+    "@relayos/stripe": "workspace:^",
+    "@relayos/github": "workspace:^",
+    "drizzle-orm": "^0.45.2"
+  },
+  "devDependencies": {
+    "rimraf": "^6.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^4.1.7"
+  }
+}

@@ -1,0 +1,80 @@
+---
+title: Stripe Plugin
+description: Receive and verify Stripe webhooks with full type safety.
+---
+
+The `@relayos/stripe` plugin handles Stripe webhook verification and provides a fully-typed event catalog. The plugin requires the `stripe` npm package as a peer dependency so event types track your installed Stripe SDK version.
+
+## Installation
+
+```sh
+pnpm add @relayos/stripe stripe
+```
+
+```ts
+import { stripe } from '@relayos/stripe';
+```
+
+## Setup
+
+```ts
+// relayos.config.ts
+import { createRelay } from 'relayos';
+import { stripe } from '@relayos/stripe';
+
+export const relay = createRelay({
+  plugins: [
+    stripe({
+      webhookSecret: process.env.STRIPE_WEBHOOK_SECRET!,
+      toleranceSeconds: 300, // optional, default 300
+    }),
+  ],
+});
+```
+
+Point your Stripe webhook endpoint to `/api/relay/stripe` in your Next.js app.
+
+## Configuration
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| webhookSecret | `string` | required | The endpoint's signing secret from the Stripe dashboard |
+| toleranceSeconds | `number` | 300 | Max age of a signed timestamp before rejection |
+
+## Signature verification
+
+The plugin verifies the `stripe-signature` header using HMAC-SHA256:
+
+1. Extracts timestamp `t` and signature `v1` from the header
+2. Rejects if the timestamp is older than `toleranceSeconds`
+3. Computes HMAC-SHA256 of `${timestamp}.${rawBody}` with your webhook secret
+4. Compares signatures using constant-time comparison to prevent timing attacks
+
+## Event types
+
+Events are namespaced as `stripe.<stripe-event-type>` (e.g., `stripe.charge.succeeded`). The plugin ships a fully-typed event catalog of ~250 Stripe events:
+
+```ts
+relay.on('stripe.charge.succeeded', async (event, ctx) => {
+  // event.data.object is a typed Stripe.Charge
+  const charge = event.data.object;
+  ctx.log.info('charge succeeded', { amount: charge.amount });
+});
+```
+
+See the Stripe API docs for the [full list of event types](https://docs.stripe.com/api/events/types).
+
+## Testing locally
+
+Use `relay trigger` to simulate a signed Stripe webhook:
+
+```sh
+relay trigger stripe charge.succeeded --data '{"id":"ch_1234","amount":1000,"currency":"usd"}'
+```
+
+This sends a properly signed POST request to `/api/relay/stripe` with:
+
+- A valid `stripe-signature` header
+- A realistic payload shape that mimics Stripe's actual webhooks
+
+Make sure `STRIPE_WEBHOOK_SECRET` is set to the same value on both `relay dev` and `relay trigger`, or unset on both — see [the Local Development gotcha](/docs/cli#dev-secret-gotcha) for why.

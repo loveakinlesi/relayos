@@ -1,8 +1,33 @@
 {
   "name": "@relayos/core",
   "version": "0.0.1",
-  "private": true,
+  "description": "The RelayOS engine: durable executions, steps, retries, replay, and the contracts every RelayOS package builds on.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/loveakinlesi/relayos.git",
+    "directory": "packages/core"
+  },
+  "homepage": "https://github.com/loveakinlesi/relayos#readme",
+  "bugs": "https://github.com/loveakinlesi/relayos/issues",
+  "keywords": [
+    "relayos",
+    "webhooks",
+    "events",
+    "durable-execution",
+    "typescript",
+    "runtime",
+    "retries",
+    "replay"
+  ],
   "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "exports": {
     ".": {
       "import": {
@@ -29,12 +54,10 @@
     "test:coverage": "vitest run --coverage",
     "clean": "rimraf dist coverage tsconfig.tsbuildinfo"
   },
-  "dependencies": {
-    "@relayos/types": "workspace:*"
-  },
   "devDependencies": {
     "rimraf": "^6.0.0",
     "tsup": "^8.0.0",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "vitest": "^4.1.7"
   }
 }

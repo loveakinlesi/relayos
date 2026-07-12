@@ -1,0 +1,73 @@
+---
+title: Executions
+description: Understanding the lifecycle of a webhook execution and how to inspect it
+---
+
+An execution is a single attempt to process a single event. It records everything that happened—whether it succeeded, failed, was retried, what steps ran, and what logs were written.
+
+## Execution shape
+
+```ts
+type Execution = {
+  id: string;           // Unique identifier for this execution attempt
+  eventId: string;      // The event's unique webhook ID (deduped by this)
+  eventType: string;    // The event type (e.g., "stripe.charge.succeeded")
+  eventData: Record<string, unknown>;  // The event payload
+  status: 'pending' | 'completed' | 'failed';
+  attempt: number;      // Attempt number (1 on first try, 2 after first retry, etc.)
+  replayedFrom?: string;  // If this is a replay, the source execution ID
+  createdAt: string;    // ISO 8601 timestamp
+  completedAt?: string; // Set when status changes from pending
+  error?: string;       // If failed, the error message
+};
+```
+
+## Lifecycle
+
+1. **Ingest**: Webhook arrives, provider signature verified, event normalized, and an `Execution` is created with `status: 'pending'` and `attempt: 1`.
+
+2. **Run**: All registered handlers for the event type run sequentially. Each handler can call `ctx.step.run()` to checkpoint work.
+
+3. **Complete or fail**: Execution completes successfully or fails with an error. `completedAt` is set and `status` changes accordingly.
+
+4. **Auto-retry** (if failed and retries remain): A timer schedules the next retry after a delay computed by the retry policy. The retry increments `attempt` and re-runs everything except completed steps.
+
+## Querying executions
+
+Use the Relay API:
+
+```ts
+// List all executions (most recent first)
+const executions = await relay.listExecutions();
+
+// Get a specific execution
+const exec = await relay.getExecution(executionId);
+
+// List all steps for an execution
+const steps = await relay.listSteps(executionId);
+
+// List all logs for an execution
+const logs = await relay.listLogs(executionId);
+```
+
+Or use the CLI:
+
+```sh
+# List recent executions
+relay events list
+
+# Inspect a specific execution with all its steps and logs
+relay inspect <executionId>
+
+# Same output as JSON
+relay inspect <executionId> --json
+
+# Show every step attempt (useful for debugging retries)
+relay inspect <executionId> --history
+```
+
+## Replayed executions
+
+When you call `replayExecution(executionId)`, a brand-new execution is created with a fresh `eventId` (so it won't be deduped against the original). The new execution records the source execution's ID in its `replayedFrom` field so you can trace the lineage.
+
+The original execution is never modified. This is useful for testing handler changes against real historical data without affecting past audit trails.

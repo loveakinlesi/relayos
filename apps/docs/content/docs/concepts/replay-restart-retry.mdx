@@ -1,0 +1,80 @@
+---
+title: Replay, Restart, and Retry
+description: Three ways to re-process an event or execution, and when to use each
+---
+
+RelayOS gives you three operations to recover from or debug failed executions. They're different operations with different semantics—it's important to know which to use when.
+
+## Three operations, one table
+
+| | Resume in place | Fresh execution | Re-run completed steps |
+|---|---|---|---|
+| **Retry** | ✓ | ✗ | ✗ |
+| **Restart** | ✓ | ✗ | ✓ |
+| **Replay** | ✗ | ✓ | ✓ |
+
+### Retry
+
+Resume the same execution, skipping completed steps.
+
+```ts
+await relay.retryExecution(executionId);
+```
+
+**When to use**: The handler is correct, but a flaky external service (email, payment gateway, etc.) timed out. Retrying continues from where it left off without re-running side effects that already succeeded.
+
+**Example**: A receipt email provider times out. You retry, the email step runs again, and it succeeds. The original execution ID and history are updated with the new attempt.
+
+### Restart
+
+Resume the same execution, but force every step to re-run from the beginning.
+
+```ts
+await relay.restartExecution(executionId);
+```
+
+**When to use**: You found a bug in the handler logic itself (not external flakiness). You fix the code, then restart to re-process the same event data under the corrected logic.
+
+**Example**: The fee calculation was wrong by one penny. You fix the code, restart the execution, and `calculate-fee` re-runs with the corrected logic. The original payment record (from `record-payment`) may be duplicated or need cleanup—restart assumes your handler is idempotent or that you'll handle side effect conflicts.
+
+**Caveat**: Unlike retry, restart re-runs every step, including ones with side effects (database inserts, API calls). Make sure your handler is idempotent or you manually clean up duplicates.
+
+### Replay
+
+Create a brand-new execution from historical event data.
+
+```ts
+await relay.replayExecution(executionId);
+```
+
+**When to use**: You want to test a handler change against real historical data without modifying the original execution's audit trail. Or you want to reprocess a high-priority order through a new fulfillment system.
+
+**What happens**:
+- A fresh `eventId` is generated (not the original's)
+- A new `Execution` is created with `attempt: 1`
+- The new execution's `replayedFrom` field points to the source execution
+- Handler runs from scratch under current code
+- Original execution is untouched
+
+**Example**: A customer reports a payment wasn't processed correctly. You replay the original charge event through your handler (after investigating and fixing bugs), and you get a fresh execution record with the full step history. If it succeeds, the customer got the benefit; if it fails differently, you have a new audit trail to debug.
+
+## Automatic vs. manual
+
+- **Automatic retry**: When a handler fails, RelayOS schedules the next retry automatically after a backoff delay. No human action needed.
+- **Manual**: You explicitly call `retryExecution`, `restartExecution`, or `replayExecution` via the API or CLI.
+
+## Implementation details
+
+All three operations:
+- Are available via the Relay API
+- Are inspectable via `relay inspect <executionId>` or the CLI
+- Are logged and appear in the execution's log stream as system events
+- Support concurrent calling (internal locking prevents race conditions in the same process)
+
+Replay also supports a dry-run mode via the CLI:
+
+```sh
+relay replay <executionId> --print
+```
+
+This shows you what *would* happen without actually posting to your webhook handler.

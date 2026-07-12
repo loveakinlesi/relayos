@@ -1,0 +1,81 @@
+---
+title: CLI
+description: Manage RelayOS from the command line with migrate, dev, trigger, inspect, replay, and more.
+---
+
+The `@relayos/cli` package provides the `relay` command for local development, testing, and production operations.
+
+## Installation
+
+```sh
+pnpm add -D @relayos/cli
+```
+
+The `relay` bin is available immediately:
+
+```sh
+pnpm exec relay <command>
+```
+
+Or if installed globally:
+
+```sh
+npm install -g @relayos/cli
+relay <command>
+```
+
+## Global environment variables
+
+| Variable | Used by | Purpose |
+|----------|---------|---------|
+| `DATABASE_URL` | `relay migrate`, `relay dev`, `relay inspect`, `relay replay`, `relay events list` | Postgres connection string, e.g. `postgres://localhost:5432/myapp` |
+| `STRIPE_WEBHOOK_SECRET` | `relay trigger stripe ...` | Webhook secret for signing test Stripe events |
+| `GITHUB_WEBHOOK_SECRET` | `relay trigger github ...` | Webhook secret for signing test GitHub events |
+| `RELAYOS_RUNTIME_URL` | `relay trigger`, `relay replay` | Where to POST webhook deliveries; defaults to `http://localhost:3000` |
+
+## Commands
+
+| Command | Purpose | Database | Requires app |
+|---------|---------|----------|--------------|
+| [`relay init`](/docs/cli/init) | Scaffold `relayos.config.ts` | No | No |
+| [`relay migrate`](/docs/cli/migrate) | Apply Postgres migrations | Yes | No |
+| [`relay dev`](/docs/cli/dev) | Run app dev server + tail executions | Yes (optional) | No |
+| [`relay trigger`](/docs/cli/trigger) | Simulate a signed webhook | No | Yes (running) |
+| [`relay inspect`](/docs/cli/inspect) | Show an execution's status, steps, logs | Yes | No |
+| [`relay replay`](/docs/cli/replay) | Replay a historical execution | Yes | Yes (running) |
+| [`relay events list`](/docs/cli/events) | List recent executions | Yes | No |
+
+## Dev-secret gotcha
+
+`relay trigger` signs payloads with `<PROVIDER>_WEBHOOK_SECRET` and **requires it to be set** — it exits with `STRIPE_WEBHOOK_SECRET must be set.` otherwise. Your app verifies with whatever secret its config passed to the plugin. Signatures only match when both sides use the same value:
+
+```sh
+# ✅ Same secret on both sides — signatures match
+STRIPE_WEBHOOK_SECRET=whsec_dev relay dev
+STRIPE_WEBHOOK_SECRET=whsec_dev relay trigger stripe charge.succeeded --data '...'
+
+# ❌ Different (or missing on one side) — verification fails with 401
+STRIPE_WEBHOOK_SECRET=whsec_dev relay dev
+STRIPE_WEBHOOK_SECRET=whsec_other relay trigger stripe charge.succeeded --data '...'
+```
+
+A common dev pattern is to have your config fall back to a fixed dev-only secret when the env var is unset (failing closed in production), so you only need to export the secret for `relay trigger`:
+
+```ts
+function requireWebhookSecret(envVar: string, devFallback: string): string {
+  const secret = process.env[envVar];
+  if (secret) return secret;
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error(`${envVar} must be set in production`);
+  }
+  return devFallback;
+}
+
+export const relay = createRelay({
+  plugins: [
+    stripe({ webhookSecret: requireWebhookSecret('STRIPE_WEBHOOK_SECRET', 'whsec_dev') }),
+  ],
+});
+```
+
+See [`relay trigger`](/docs/cli/trigger) for per-provider examples and [`relay dev`](/docs/cli/dev) for tailing live executions while testing.

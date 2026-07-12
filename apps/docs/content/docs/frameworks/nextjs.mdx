@@ -1,0 +1,104 @@
+---
+title: Next.js
+description: Wire RelayOS into a Next.js App Router catch-all route.
+---
+
+Use `@relayos/nextjs` to integrate RelayOS into your Next.js application. It provides a handler adapter that converts your Relay instance into a standard Next.js route handler.
+
+## Installation
+
+```sh
+pnpm add @relayos/nextjs
+```
+
+```ts
+import { toNextJsHandler } from '@relayos/nextjs';
+```
+
+## Setup
+
+Create a catch-all route to receive webhooks from all your plugins:
+
+```ts
+// app/api/relay/[...all]/route.ts
+import { toNextJsHandler } from '@relayos/nextjs';
+import { relay } from '@/relayos.config';
+
+export const { POST } = toNextJsHandler(relay);
+```
+
+This single route handles all plugin endpoints:
+- `/api/relay/stripe` — Stripe webhooks
+- `/api/relay/github` — GitHub webhooks
+- `/api/relay/test` — Your custom plugins
+
+## How it works
+
+`toNextJsHandler(relay)` returns a Next.js route handler object:
+
+```ts
+const handler = toNextJsHandler(relay);
+// handler.POST is a standard Next.js route handler:
+// async (req: Request, ctx: { params: Promise<{ all: string[] }> }) => Response
+```
+
+The handler:
+1. Awaits `ctx.params` (Next.js 16+ requirement for dynamic routes)
+2. Extracts the route segment (e.g., `"stripe"` from `/api/relay/stripe`)
+3. Delegates to `relay.handler(req, { params: { all } })`
+4. Returns the response
+
+## No Next.js imports needed
+
+`toNextJsHandler` uses only web-standard `Request` and `Response` objects. No `import from 'next'` is required — the code is framework-agnostic and runs in any Node.js runtime.
+
+## Management endpoints
+
+Beyond the webhook ingestion route, you'll likely want to add management endpoints to list, inspect, retry, and replay executions. Here are some examples from `apps/web`:
+
+```ts
+// app/api/executions/route.ts — List executions
+import { relay } from '@/relayos.config';
+
+export async function GET() {
+  const executions = await relay.listExecutions();
+  return Response.json(executions);
+}
+```
+
+```ts
+// app/api/executions/[id]/route.ts — Inspect one execution
+import { relay } from '@/relayos.config';
+
+export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> }) {
+  const { id } = await ctx.params;
+  const execution = await relay.listExecutions().then(e => e.find(x => x.id === id));
+  const steps = await relay.listSteps(id);
+  const logs = await relay.listLogs(id);
+  return Response.json({ execution, steps, logs });
+}
+```
+
+```ts
+// app/api/executions/[id]/retry/route.ts — Retry an execution
+import { relay } from '@/relayos.config';
+
+export async function POST(_req: Request, ctx: { params: Promise<{ id: string }> }) {
+  const { id } = await ctx.params;
+  const execution = await relay.retryExecution(id);
+  return Response.json(execution);
+}
+```
+
+```ts
+// app/api/executions/[id]/replay/route.ts — Replay an execution
+import { relay } from '@/relayos.config';
+
+export async function POST(_req: Request, ctx: { params: Promise<{ id: string }> }) {
+  const { id } = await ctx.params;
+  const execution = await relay.replayExecution(id);
+  return Response.json(execution);
+}
+```
+
+These endpoints give you HTTP access to the full Relay API. Build a dashboard on top of them, or call them from your CLI or internal tools.

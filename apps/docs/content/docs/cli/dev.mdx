@@ -1,0 +1,82 @@
+---
+title: relay dev
+description: Run your app's dev server and tail live execution activity.
+---
+
+Start your application's dev server (typically `pnpm dev`) and tail new executions as they're processed.
+
+## Usage
+
+```sh
+relay dev [--dir <path>]
+```
+
+## Options
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--dir` | current directory | Path to the project root (where `package.json` is) |
+
+## What it does
+
+1. Spawns `pnpm run dev` in the given directory (or current directory if `--dir` is not set)
+2. If `DATABASE_URL` is set, polls the database every 1 second for new executions and prints them to the terminal
+3. Captures SIGINT (Ctrl+C) and gracefully shuts down both processes
+
+The execution output includes:
+- Status icon (✓ completed, ✗ failed, ⏱ pending)
+- Event type (e.g., `stripe.charge.succeeded`)
+- Attempt number
+- Execution ID
+
+## Examples
+
+```sh
+# Run dev server in current directory, tail executions
+DATABASE_URL=postgres://localhost:5432/myapp relay dev
+
+# Run dev server in a subdirectory
+DATABASE_URL=postgres://localhost:5432/myapp relay dev --dir apps/web
+
+# Run without execution tailing (DATABASE_URL not set)
+relay dev --dir apps/web
+```
+
+Output:
+```
+[relay dev] starting dev server in /Users/alice/myapp
+[relay dev] watching for executions...
+✓ stripe.charge.succeeded (attempt 1) evt_a1b2c3d4...
+✓ test.ping (attempt 1) test_1234...
+✗ stripe.charge.succeeded (attempt 2) evt_e5f6g7h8...
+```
+
+## Requirements
+
+- The dev server must be runnable via `pnpm run dev`
+- For execution tailing: `DATABASE_URL` environment variable must be set
+
+## Without DATABASE_URL
+
+If `DATABASE_URL` is not set, `relay dev` simply runs the dev server without the execution feed:
+
+```
+[relay dev] starting dev server in /Users/alice/myapp
+[relay dev] DATABASE_URL not set - skipping live execution feed
+```
+
+This is fine for quick testing, but you won't see the live feed of executions.
+
+## Testing during dev
+
+While `relay dev` is running, you can test webhooks in another terminal:
+
+```sh
+# Test with a signed Stripe event (same secret as the running app)
+STRIPE_WEBHOOK_SECRET=whsec_dev relay trigger stripe charge.succeeded \
+  --data '{"id":"ch_1234","amount":1000,"currency":"usd"}'
+
+# Watch the execution appear in the relay dev tail
+```
+
+See [relay trigger](/docs/cli/trigger) for more testing examples.

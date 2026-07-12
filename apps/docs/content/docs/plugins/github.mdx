@@ -1,0 +1,86 @@
+---
+title: GitHub Plugin
+description: Receive and verify GitHub webhooks with full type safety.
+---
+
+The `@relayos/github` plugin handles GitHub webhook verification and provides a fully-typed event catalog for all GitHub webhook events.
+
+## Installation
+
+```sh
+pnpm add @relayos/github
+```
+
+```ts
+import { github } from '@relayos/github';
+```
+
+## Setup
+
+```ts
+// relayos.config.ts
+import { createRelay } from 'relayos';
+import { github } from '@relayos/github';
+
+export const relay = createRelay({
+  plugins: [
+    github({
+      webhookSecret: process.env.GITHUB_WEBHOOK_SECRET!,
+    }),
+  ],
+});
+```
+
+Point your GitHub webhook to `/api/relay/github` in your Next.js app and set a webhook secret.
+
+## Configuration
+
+| Option | Type | Description |
+|--------|------|-------------|
+| webhookSecret | `string` | The secret you configured on your GitHub repository's webhook settings |
+
+## Signature verification
+
+The plugin verifies the `x-hub-signature-256` header using HMAC-SHA256:
+
+1. Extracts the `sha256=...` signature from the header
+2. Computes HMAC-SHA256 of the raw request body with your webhook secret
+3. Compares signatures using constant-time comparison to prevent timing attacks
+
+## Event types
+
+GitHub events are namespaced as `github.<event-name>` or `github.<event-name>.<action>` for action-qualified events:
+
+- **Simple events** (no action): `github.push`, `github.release`, etc.
+- **Action-qualified events**: `github.pull_request.opened`, `github.issues.closed`, etc.
+
+```ts
+relay.on('github.push', async (event, ctx) => {
+  const { ref, commits } = event.data;
+  ctx.log.info('pushed to', { ref, count: commits.length });
+});
+
+relay.on('github.pull_request.opened', async (event, ctx) => {
+  const { action, pull_request } = event.data;
+  ctx.log.info('pr opened', { title: pull_request.title, action });
+});
+```
+
+The plugin automatically determines whether an event has an action by reading the `x-github-event` header and checking the payload's `action` field.
+
+See the GitHub API docs for the [full list of webhook events](https://docs.github.com/en/developers/webhooks-and-events/webhooks/webhook-events-and-payloads).
+
+## Deduplication
+
+Each GitHub webhook includes an `x-github-delivery` header (a UUID) that uniquely identifies the delivery. The plugin uses this as the event ID for dedup — if GitHub retries a delivery, it gets the same ID and won't trigger a duplicate execution.
+
+## Testing locally
+
+Use `relay trigger` to simulate a signed GitHub webhook:
+
+```sh
+relay trigger github push --data '{"ref":"refs/heads/main","commits":[]}'
+relay trigger github pull_request.opened --data '{"title":"New feature"}'
+```
+
+Make sure `GITHUB_WEBHOOK_SECRET` is set to the same value on both `relay dev` and `relay trigger`, or unset on both — see [the Local Development gotcha](/docs/cli#dev-secret-gotcha) for why.

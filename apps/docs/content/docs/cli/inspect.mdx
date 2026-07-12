@@ -1,0 +1,158 @@
+---
+title: relay inspect
+description: Show an execution's status, steps, and logs directly from the database.
+---
+
+Query the database for an execution and display its status, step history, and logs. Doesn't require the app to be running.
+
+## Usage
+
+```sh
+relay inspect <eventId|executionId> [--json] [--history]
+```
+
+## Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `<eventId\|executionId>` | Either an event ID (from `relay trigger` or webhook) or an execution ID (from a previous `relay inspect` output) |
+
+## Options
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--json` | false | Output structured JSON instead of human-readable text |
+| `--history` | false | Show every step attempt (full audit trail); default shows only the latest attempt per step |
+
+## Requirements
+
+- `DATABASE_URL` must be set to a valid Postgres connection string
+- The database must exist and have RelayOS migrations applied
+
+## Examples
+
+### Basic inspection
+
+```sh
+$ relay inspect evt_abc123xyz
+
+Execution evt_abc123xyz
+  event:      stripe.charge.succeeded (evt_abc123xyz)
+  status:     ✓ completed (attempt 1)
+  duration:   234ms
+  
+Steps:
+  ✓ record-payment completed
+  ✓ calculate-fee completed
+  ✓ send-receipt completed
+  ✓ notify-fulfillment completed
+
+Logs:
+  [system] [info] retrying (attempt 2, scheduled)
+  [handler] [info] recorded payment
+  [handler] [info] calculated platform fee
+  [handler] [info] sent receipt email
+  [handler] [info] notified fulfillment
+```
+
+### With full step history
+
+If a step failed once before succeeding, `--history` shows all attempts:
+
+```sh
+$ relay inspect evt_abc123xyz --history
+
+Execution evt_abc123xyz
+  event:      stripe.charge.succeeded (evt_abc123xyz)
+  status:     ✓ completed (attempt 2)
+  duration:   500ms
+
+Steps (full history):
+  ✗ send-receipt failed - receipt email provider timed out (attempt 1)
+  ✓ send-receipt completed (attempt 2)
+```
+
+### JSON output
+
+```sh
+$ relay inspect evt_abc123xyz --json
+
+{
+  "execution": {
+    "id": "exec_...",
+    "eventId": "evt_abc123xyz",
+    "eventType": "stripe.charge.succeeded",
+    "status": "completed",
+    "attempt": 1,
+    "createdAt": "2024-01-15T10:30:45.123Z",
+    "completedAt": "2024-01-15T10:30:46.357Z",
+    "eventData": { ... }
+  },
+  "steps": [
+    {
+      "id": "step_...",
+      "executionId": "exec_...",
+      "name": "record-payment",
+      "status": "completed",
+      "output": { "chargeId": "ch_1234", "amount": 1000 },
+      "createdAt": "2024-01-15T10:30:45.200Z"
+    },
+    ...
+  ],
+  "logs": [
+    {
+      "id": "log_...",
+      "executionId": "exec_...",
+      "level": "info",
+      "source": "handler",
+      "message": "recorded payment",
+      "createdAt": "2024-01-15T10:30:45.250Z"
+    },
+    ...
+  ]
+}
+```
+
+### Finding an execution by event ID
+
+If you have an event ID from a webhook (e.g., a Stripe event ID or GitHub delivery ID), just pass it:
+
+```sh
+relay inspect evt_1234567890abcdef
+```
+
+The command automatically looks up by both event ID and execution ID, so either works.
+
+## Understanding the output
+
+**Execution header:**
+- `event`: Event type and ID
+- `status`: Completed, failed, or pending, plus attempt number
+- `duration`: Time from creation to completion
+- `replayed from` (if applicable): The source execution this was replayed from
+- `error` (if failed): Error message from the handler
+
+**Steps:**
+- Status icon (✓/✗)
+- Step name
+- Status and optional error message
+- Without `--history`: shows only the latest attempt per step name
+- With `--history`: shows every attempt, in chronological order
+
+**Logs:**
+- `[source]` — `system` (runtime lifecycle) or `handler` (your `ctx.log` calls)
+- `[level]` — debug, info, warn, error
+- Message and optional structured data
+
+## Replayed executions
+
+If an execution was created by `relay replay`, the output includes:
+
+```
+Execution exec_new456
+  event:      stripe.charge.succeeded (evt_old123)
+  status:     ✓ completed (attempt 1)
+  replayed from: exec_old123
+```
+
+This links back to the original execution for audit purposes.

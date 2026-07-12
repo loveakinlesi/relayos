@@ -1,0 +1,105 @@
+---
+title: Durable Steps
+description: Checkpoint work with ctx.step.run() so retries skip completed steps
+---
+
+The core feature of RelayOS is `ctx.step.run(name, fn)`—a way to checkpoint work so that retries never re-run a step that already succeeded.
+
+## How it works
+
+When a handler calls `ctx.step.run(name, fn)`:
+
+1. RelayOS checks if a step with that name has ever completed for this execution.
+2. If yes, it returns the cached output without running `fn` again.
+3. If no (or if the step previously failed), `fn` runs and the output is cached.
+4. If `fn` throws, the step is recorded as failed and the exception propagates.
+
+On retry, the execution resumes at the point where it failed. Any completed steps are skipped entirely—their side effects never happen twice.
+
+## Example: the full stripe.charge.succeeded workflow
+
+Here's a real example that demonstrates why durable steps matter:
+
+```ts
+relay.on('stripe.charge.succeeded', async (event, ctx) => {
+  const charge = event.data.object;
+
+  // Step 1: record the payment
+  const payment = await ctx.step.run('record-payment', async () => {
+    // INSERT into payments table
+    return { chargeId: charge.id, amount: charge.amount, currency: charge.currency };
+  });
+
+  // Step 2: calculate fees
+  const fee = await ctx.step.run('calculate-fee', async () => {
+    // Chains off step 1's output
+    const feeAmount = Math.round(payment.amount * 0.029 + 30);
+    const netAmount = payment.amount - feeAmount;
+    return { feeAmount, netAmount };
+  });
+
+  // Step 3: send a receipt email (often flaky)
+  await ctx.step.run('send-receipt', async () => {
+    // Call flaky email API - might timeout
+    await sendReceiptEmail(charge.customer, { amount: payment.amount });
+  });
+
+  // Step 4: notify fulfillment
+  await ctx.step.run('notify-fulfillment', async () => {
+    // Publish event to fulfillment system
+    await publishToFulfillment({ chargeId: payment.chargeId, netAmount: fee.netAmount });
+  });
+
+  ctx.log.info('all steps completed', payment);
+});
+```
+
+### What happens if send-receipt times out
+
+1. Execution runs, completes steps 1 and 2, fails on step 3 (timeout).
+2. `error` is recorded and `status` becomes `failed`.
+3. A retry is automatically scheduled after a delay.
+4. On retry:
+   - Step 1 is skipped (cached output returned)
+   - Step 2 is skipped (cached output returned)
+   - Step 3 re-runs (it failed before)
+   - Step 4 runs (hasn't run yet)
+5. If step 3 succeeds this time, the execution completes and fulfillment is notified exactly once.
+
+Without durable steps, you'd have to manually track what succeeded and what didn't—or re-run everything and risk double-charging the customer or sending duplicate receipts.
+
+## Step history as an audit trail
+
+Every step attempt—success or failure—is recorded as a new row in the database, never overwritten. If a step failed on attempt 1, succeeded on attempt 2, and then failed again on attempt 3, you'll see all three attempts in the history:
+
+```sh
+$ relay inspect <executionId> --history
+Execution: <id> | Status: failed | Attempts: 3
+├─ Attempt 1
+│  ├─ step1: completed
+│  ├─ step2: completed
+│  └─ step3: failed (timeout)
+├─ Attempt 2
+│  ├─ step1: (skipped - cached)
+│  ├─ step2: (skipped - cached)
+│  ├─ step3: completed
+│  └─ step4: completed
+└─ Attempt 3
+   ├─ step1: (skipped - cached)
+   ├─ step2: (skipped - cached)
+   ├─ step3: (skipped - cached)
+   └─ step4: failed (some new error)
+```
+
+This gives you full visibility into what actually happened and when.
+
+## Forcing a re-run: restart
+
+If you discover a bug in your handler logic (not just flakiness), you can call `restartExecution(executionId)`. This forces every step to re-run from the beginning, even the ones that already succeeded:
+
+```ts
+// After fixing a bug in the send-receipt logic:
+await relay.restartExecution(failedExecutionId);
+```
+
+See [Replay, Restart, and Retry](/docs/concepts/replay-restart-retry) for the full comparison.

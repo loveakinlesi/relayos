@@ -1,0 +1,52 @@
+---
+title: relayos
+description: The main RelayOS runtime package with createRelay and re-exports of core types.
+---
+
+## Install
+
+```sh
+pnpm add relayos
+```
+
+## Exports
+
+| Export | Kind | Description |
+|--------|------|-------------|
+| `createRelay` | Function | Convenience wrapper around createRelayEngine that returns a typed relay runtime. |
+| `createMemoryExecutionStore` | Function | Creates an in-memory execution store (re-exported from @relayos/core). |
+| `NormalizedEvent` | Type | Re-exported from @relayos/core. |
+| `StepStatus` | Type | Re-exported from @relayos/core. |
+| `ExecutionStep` | Type | Re-exported from @relayos/core. |
+| `LogLevel` | Type | Re-exported from @relayos/core. |
+| `LogSource` | Type | Re-exported from @relayos/core. |
+| `ExecutionLog` | Type | Re-exported from @relayos/core. |
+| `RuntimeContext` | Type | Re-exported from @relayos/core. |
+| `EventHandler` | Type | Re-exported from @relayos/core. |
+| `ExecutionStatus` | Type | Re-exported from @relayos/core. |
+| `Execution` | Type | Re-exported from @relayos/core. |
+| `ExecutionStore` | Type | Re-exported from @relayos/core. |
+| `RelayPlugin` | Type | Re-exported from @relayos/core. |
+| `EventMapOf` | Type | Re-exported from @relayos/core. |
+| `RelayHandlerContext` | Type | Re-exported from @relayos/core. |
+| `Relay` | Type | Re-exported from @relayos/core. |
+| `RetryPolicy` | Type | Re-exported from @relayos/core. |
+| `RelayConfig` | Type | Re-exported from @relayos/core. |
+
+## Functions
+
+### createRelay
+
+```ts
+function createRelay<const TPlugins extends readonly RelayPlugin<any>[] = []>(
+  config: RelayConfig<TPlugins> = {},
+): Relay<EventMapOf<TPlugins>>;
+```
+
+Creates a RelayOS runtime instance. This is the main entry point for developers: register event handlers via `relay.on()`, receive provider webhooks through `relay.handler`, and configure persistence via `config.database`. The relay's event types are inferred from the plugins you register—typed plugins make `relay.on()` autocomplete event names and narrow event payloads.
+
+## See also
+
+- [@relayos/core](/docs/reference/core)
+- [Getting started](/docs/guides/getting-started)
+- [Plugins](/docs/concepts/plugins)

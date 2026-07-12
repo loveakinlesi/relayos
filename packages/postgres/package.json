@@ -1,8 +1,33 @@
 {
   "name": "@relayos/postgres",
   "version": "0.0.1",
-  "private": true,
+  "description": "Postgres storage adapter for RelayOS - schema, migrations, and the ExecutionStore implementation.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/loveakinlesi/relayos.git",
+    "directory": "packages/postgres"
+  },
+  "homepage": "https://github.com/loveakinlesi/relayos#readme",
+  "bugs": "https://github.com/loveakinlesi/relayos/issues",
+  "keywords": [
+    "relayos",
+    "webhooks",
+    "events",
+    "durable-execution",
+    "typescript",
+    "postgres",
+    "postgresql",
+    "drizzle"
+  ],
   "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "exports": {
     ".": {
       "import": {
@@ -19,7 +44,8 @@
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "files": [
-    "dist"
+    "dist",
+    "drizzle"
   ],
   "scripts": {
     "build": "tsup",
@@ -32,16 +58,20 @@
     "clean": "rimraf dist drizzle coverage tsconfig.tsbuildinfo"
   },
   "dependencies": {
-    "@relayos/core": "workspace:*",
-    "@relayos/types": "workspace:*",
-    "drizzle-orm": "^0.43.0",
+    "drizzle-orm": "^0.45.2",
     "pg": "^8.13.0"
   },
+  "peerDependencies": {
+    "@relayos/core": "0.x"
+  },
   "devDependencies": {
+    "@relayos/core": "workspace:^",
+    "@testcontainers/postgresql": "^12.0.4",
     "@types/pg": "^8.11.0",
     "drizzle-kit": "^0.31.0",
     "rimraf": "^6.0.0",
     "tsup": "^8.0.0",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "vitest": "^4.1.7"
   }
 }

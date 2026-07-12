@@ -1,0 +1,41 @@
+---
+title: RelayOS
+description: Durable webhook execution platform for reliable, replayable, observable event-driven backends
+---
+
+RelayOS is a durable webhook execution platform that helps developers build reliable, replayable, and observable event-driven backends. Receiving a webhook is easy—reliably processing everything that has to happen after it is the hard part.
+
+Webhook handlers are usually a pile of `if` statements with no memory of what already happened. A provider retries, and you double-charge a customer. A step three-quarters through a handler fails, and you re-run everything from scratch—or worse, nothing at all, silently. Debugging means grepping logs, because there's no record of what actually executed.
+
+## What You Get
+
+**Durable steps** — `ctx.step.run(name, fn)` checkpoints each unit of work. A retry resumes past whatever already succeeded; it never re-runs a completed step's side effects.
+
+**Automatic retries** — a failed execution schedules its own retry with exponential backoff, up to a configurable cap, with no polling or queue infrastructure to run.
+
+**Replay & restart** — `retryExecution` resumes in place, `restartExecution` forces every step to re-run (for when the step logic itself was wrong, not just flaky), and `replayExecution` reprocesses a historical event as a brand-new execution without touching the original.
+
+**A real audit trail** — every step attempt is a new row, never overwritten, so a step that failed twice before succeeding shows all three attempts. Every execution's log stream interleaves the runtime's own lifecycle events (`retrying (attempt 2, scheduled)`) with your handler's own logging, tagged so you can tell them apart.
+
+**Provider adapters with real signature verification** — Stripe and GitHub today, each doing actual HMAC verification against the raw request body, not a stub.
+
+**Fully-typed event catalogs** — `relay.on('stripe.charge.succeeded', ...)` autocompletes every event of the plugins you registered, and `event.data` is typed per event (`event.data.object` is a real `Stripe.Charge`).
+
+**A dedicated Postgres schema** — RelayOS's tables live under their own `relayos` schema, not `public`, so they never collide with your application's own tables.
+
+**First-class local dev tooling** — `relay migrate` applies the schema with one command; `relay dev` runs your app and tails live execution activity to the terminal.
+
+## Where RelayOS Fits
+
+| | Category |
+|---|---|
+| Better Auth | Authentication framework |
+| Drizzle | ORM |
+| Hono | Web framework |
+| **RelayOS** | **Webhook execution platform** |
+
+<Cards>
+  <Card title="Installation" href="/docs/installation" />
+  <Card title="Quickstart" href="/docs/quickstart" />
+  <Card title="Concepts" href="/docs/concepts/events" />
+</Cards>

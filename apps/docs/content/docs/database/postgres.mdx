@@ -1,0 +1,66 @@
+---
+title: Postgres
+description: Persist executions to Postgres using the dedicated relayos schema.
+---
+
+Use `@relayos/postgres` to store your executions, steps, and logs in a Postgres database. RelayOS creates and manages its own `relayos` schema, so your application's tables never collide.
+
+## Installation
+
+```ts
+import { createDb, createPostgresExecutionStore } from '@relayos/postgres';
+```
+
+## Setup
+
+```ts
+// relayos.config.ts
+import { createRelay } from 'relayos';
+import { createDb, createPostgresExecutionStore } from '@relayos/postgres';
+
+const db = createDb(process.env.DATABASE_URL!);
+
+export const relay = createRelay({
+  database: createPostgresExecutionStore(db),
+  plugins: [
+    // ...
+  ],
+});
+```
+
+## Migrations
+
+Run `relay migrate` to apply the schema once:
+
+```sh
+DATABASE_URL=postgres://localhost:5432/myapp pnpm exec relay migrate
+```
+
+This is idempotent — it's safe to run multiple times. It creates the `relayos` schema with three tables:
+
+- **executions** — one row per execution (original or replayed), tracking status, attempt count, error messages, and event data
+- **execution_steps** — append-only audit trail; a step that failed and later succeeded stores both attempts
+- **execution_logs** — interleaved logs from both the runtime (source: `system`) and your handler's own `ctx.log` calls (source: `handler`)
+
+## Environment variable
+
+```ts
+process.env.DATABASE_URL // required, e.g. postgres://user:pass@localhost:5432/myapp
+```
+
+The connection string is used by:
+- Your `relayos.config.ts` to initialize the store
+- `relay migrate` to apply the schema
+- `relay dev` to tail live executions
+- `relay inspect`, `relay events list`, and `relay replay` to query the database
+
+## Programmatic migrations
+
+If you prefer to run migrations directly from code:
+
+```ts
+import { createDb, runMigrations } from '@relayos/postgres';
+
+const db = createDb(process.env.DATABASE_URL!);
+await runMigrations(db);
+```
