@@ -2,13 +2,13 @@
 
 **RelayOS is a durable webhook execution platform that helps developers build reliable, replayable, and observable event-driven backends.**
 
-Receiving a webhook is easy. Reliably processing everything that has to happen *after* it — retrying the parts that failed, not re-running the parts that didn't, replaying a historical event to debug it, seeing exactly what happened and why — is the hard part. RelayOS is the runtime for that.
+Receiving a webhook is easy. Reliably processing everything that has to happen _after_ it — retrying the parts that failed, not re-running the parts that didn't, replaying a historical event to debug it, seeing exactly what happened and why — is the hard part. RelayOS is the runtime for that.
 
-|  | Category |
-|---|---|
-| Better Auth | Authentication framework |
-| Drizzle | ORM |
-| Hono | Web framework |
+|             | Category                       |
+| ----------- | ------------------------------ |
+| Better Auth | Authentication framework       |
+| Drizzle     | ORM                            |
+| Hono        | Web framework                  |
 | **RelayOS** | **Webhook execution platform** |
 
 ## Why
@@ -22,19 +22,22 @@ RelayOS gives you:
 - **Replay & restart** — `retryExecution` resumes in place, `restartExecution` forces every step to re-run (for when the step logic itself was wrong, not just flaky), and `replayExecution` reprocesses a historical event as a brand-new execution without touching the original.
 - **A real audit trail** — every step attempt is a new row, never overwritten, so a step that failed twice before succeeding shows all three attempts. Every execution's log stream interleaves the runtime's own lifecycle events (`retrying (attempt 2, scheduled)`) with your handler's own logging, tagged so you can tell them apart.
 - **Provider adapters with real signature verification** — Stripe and GitHub today, each doing actual HMAC verification against the raw request body, not a stub.
+- **Fully-typed event catalogs** — `relay.on('stripe.charge.succeeded', ...)` autocompletes every event of the plugins you registered, and `event.data` is typed per event (`event.data.object` is a real `Stripe.Charge`).
 - **A dedicated Postgres schema** — RelayOS's tables live under their own `relayos` schema, not `public`, so they never collide with your application's own tables.
 - **First-class local dev tooling** — `relay migrate` applies the schema with one command; `relay dev` runs your app and tails live execution activity to the terminal.
 
 ## Quickstart
 
 ```sh
-pnpm add relayos @relayos/postgres
+pnpm add relayos @relayos/postgres @relayos/stripe stripe @relayos/nextjs
 ```
+
+(`stripe` is a peer dependency of `@relayos/stripe` — the typed event catalog derives from whichever Stripe SDK version your app has installed.)
 
 ```ts
 // relayos.config.ts
 import { createRelay } from 'relayos';
-import { stripe } from 'relayos/plugins/stripe';
+import { stripe } from '@relayos/stripe';
 import { createDb, createPostgresExecutionStore } from '@relayos/postgres';
 
 const db = createDb(process.env.DATABASE_URL!);
@@ -45,7 +48,7 @@ export const relay = createRelay({
 });
 
 relay.on('stripe.charge.succeeded', async (event, ctx) => {
-  const charge = event.data['object'] as { id: string; amount: number };
+  const charge = event.data.object; // a fully-typed Stripe.Charge - no cast needed
 
   const payment = await ctx.step.run('record-payment', async () => {
     return { chargeId: charge.id, amount: charge.amount };
@@ -61,7 +64,7 @@ relay.on('stripe.charge.succeeded', async (event, ctx) => {
 
 ```ts
 // app/api/relay/[...all]/route.ts (Next.js)
-import { toNextJsHandler } from 'relayos/next-js';
+import { toNextJsHandler } from '@relayos/nextjs';
 import { relay } from '@/relayos.config';
 
 export const { POST } = toNextJsHandler(relay);
@@ -78,22 +81,30 @@ Point Stripe at `/api/relay/stripe`, GitHub at `/api/relay/github`. If `send-rec
 
 This is a Turborepo monorepo:
 
-| Package | Purpose |
-|---|---|
-| [`relayos`](./packages/relayos) | The runtime: `createRelay`, provider plugins (`relayos/plugins/stripe`, `relayos/plugins/github`), framework handlers (`relayos/next-js`). Storage-agnostic — ships an in-memory store by default. |
-| [`@relayos/postgres`](./packages/postgres) | The Postgres storage adapter: schema, migrations, and the `ExecutionStore` implementation. |
-| [`@relayos/cli`](./packages/cli) | `relay init`, `relay migrate`, `relay dev`, `relay trigger`, `relay inspect`, `relay replay`. |
-| [`apps/web`](./apps/web) | A Next.js app used as the local dev/test harness for the runtime, wired up in `apps/web/relayos.config.ts`. |
+| Package                                    | Purpose                                                                                                                                |
+| ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
+| [`relayos`](./packages/relayos)            | The SDK: `createRelay` and the user-facing types. Storage-agnostic — ships an in-memory store by default.                              |
+| [`@relayos/core`](./packages/core)         | The engine: durable executions, steps, retries, replay, and the contracts (`ExecutionStore`, `RelayPlugin`) everything else builds on. |
+| [`@relayos/plugin`](./packages/plugin)     | Plugin authoring kit: `definePlugin` + webhook signature helpers for building your own providers.                                      |
+| [`@relayos/stripe`](./packages/stripe)     | Stripe plugin: signature verification + a fully-typed catalog of every Stripe event (peer-depends on `stripe`).                        |
+| [`@relayos/github`](./packages/github)     | GitHub plugin: signature verification + a fully-typed catalog of every GitHub webhook event.                                           |
+| [`@relayos/nextjs`](./packages/nextjs)     | Next.js App Router adapter: `toNextJsHandler(relay)`.                                                                                  |
+| [`@relayos/postgres`](./packages/postgres) | The Postgres storage adapter: schema, migrations, and the `ExecutionStore` implementation.                                             |
+| [`@relayos/cli`](./packages/cli)           | `relay init`, `relay migrate`, `relay dev`, `relay trigger`, `relay inspect`, `relay replay`, `relay events list`.                     |
+| [`apps/web`](./apps/web)                   | A Next.js app used as the local dev/test harness for the runtime, wired up in `apps/web/relayos.config.ts`.                            |
+| [`apps/docs`](./apps/docs)                 | The documentation site (Fumadocs). `pnpm --filter docs dev` serves it on port 3001.                                                    |
 
 ## Local Development
 
 Setting up this monorepo (not just consuming the published packages) to hack on the runtime itself:
 
 **1. Prerequisites**
+
 - Node >=20, pnpm >=9
 - A local Postgres (for running `apps/web`). Separately, running `@relayos/postgres`'s tests wants a container runtime (Docker, Colima, or Podman) — see [Testing](#testing) below if you don't have one.
 
 **2. Clone and check out the active branch** — development happens on `refresh`, not `main`:
+
 ```sh
 git clone <repo-url> && cd relayos
 git checkout refresh
@@ -101,34 +112,43 @@ pnpm install
 ```
 
 **3. Create a database and apply migrations:**
+
 ```sh
 createdb relayos_dev   # or: psql -c "CREATE DATABASE relayos_dev"
 DATABASE_URL=postgres://localhost:5432/relayos_dev pnpm exec relay migrate
 ```
+
 This creates the `relayos` schema and its tables. `relay` won't be on your `$PATH` the first time — `pnpm install` links it into the workspace root's `node_modules/.bin`, so `pnpm exec relay ...` (or `pnpm exec` from any workspace package) always resolves it.
 
 **4. Build everything once:**
+
 ```sh
 STRIPE_WEBHOOK_SECRET=whsec_dev GITHUB_WEBHOOK_SECRET=ghsec_dev pnpm build
 ```
-The webhook secrets are only required for a *production* build (`next build` fails closed if they're missing — see `apps/web/relayos.config.ts`). Plain `pnpm dev`/`relay dev` doesn't need them; it falls back to fixed dev-only secrets automatically.
+
+The webhook secrets are only required for a _production_ build (`next build` fails closed if they're missing — see `apps/web/relayos.config.ts`). Plain `pnpm dev`/`relay dev` doesn't need them; it falls back to fixed dev-only secrets automatically.
 
 **5. Run the app:**
+
 ```sh
 DATABASE_URL=postgres://localhost:5432/relayos_dev pnpm exec relay dev --dir apps/web
 ```
+
 This starts `apps/web`'s dev server and tails new executions live to the terminal.
 
 **6. Confirm it's working**, from another terminal, using the dev-only `test` provider (no signature needed) or a real one:
+
 ```sh
 curl -X POST http://localhost:3000/api/relay/test -H "Content-Type: application/json" -d '{"type":"ping"}'
 
 # or simulate a real signed Stripe event:
-pnpm exec relay trigger stripe charge.succeeded --data '{"id":"ch_1","amount":1000,"currency":"usd"}'
+STRIPE_WEBHOOK_SECRET=whsec_test_secret pnpm exec relay trigger stripe charge.succeeded --data '{"id":"ch_1","amount":1000,"currency":"usd"}'
 ```
-⚠️ **Gotcha**: if you set `STRIPE_WEBHOOK_SECRET`/`GITHUB_WEBHOOK_SECRET` for one of `relay dev` or `relay trigger` but not the other, signatures won't match (each falls back to the *same* fixed dev secret only when the variable is unset on *both* sides). Simplest in dev: don't set them at all, for anything.
+
+⚠️ **Gotcha**: `relay trigger` requires `<PROVIDER>_WEBHOOK_SECRET` to be set (it signs the payload with it), while the app falls back to a fixed dev secret (`whsec_test_secret`/`ghsec_test_secret`, see `apps/web/relayos.config.ts`) when its variable is unset. Signatures only match when both sides use the same value — simplest in dev: leave the app's env unset and pass the matching fallback to trigger, e.g. `STRIPE_WEBHOOK_SECRET=whsec_test_secret pnpm exec relay trigger stripe ...`.
 
 Then inspect what happened:
+
 ```sh
 DATABASE_URL=postgres://localhost:5432/relayos_dev pnpm exec relay inspect <eventId>
 ```
