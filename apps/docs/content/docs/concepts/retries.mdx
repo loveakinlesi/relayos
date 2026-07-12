@@ -28,8 +28,8 @@ This means the delay doubles each time, capped at 30 seconds. After the 3rd atte
 You can override the retry policy when creating the relay:
 
 ```ts
-const relay = createRelay({
-  database: createPostgresExecutionStore(db),
+const relay = relayos({
+  database: pool,
   plugins: [stripe({ webhookSecret: process.env.STRIPE_WEBHOOK_SECRET! })],
   retry: {
     maxAttempts: 5,  // Try up to 5 times

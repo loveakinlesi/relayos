@@ -1,0 +1,224 @@
+---
+title: Database
+description: Persist executions, steps, and logs to Postgres, SQLite, or MySQL.
+---
+
+Pass a database client straight into `relayos({ database })` - the dialect is
+detected automatically from the client you pass, and RelayOS applies its
+schema migrations for you.
+
+## Postgres
+
+<Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
+<Tab value="pnpm">
+```sh
+pnpm add pg
+```
+</Tab>
+<Tab value="npm">
+```sh
+npm install pg
+```
+</Tab>
+<Tab value="yarn">
+```sh
+yarn add pg
+```
+</Tab>
+<Tab value="bun">
+```sh
+bun add pg
+```
+</Tab>
+</Tabs>
+
+```ts
+// relay.ts
+import { relayos } from 'relayos';
+import { Pool } from 'pg';
+
+export const relay = relayos({
+  database: new Pool({ connectionString: process.env.DATABASE_URL! }),
+  plugins: [
+    // ...
+  ],
+});
+```
+
+## SQLite
+
+<Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
+<Tab value="pnpm">
+```sh
+pnpm add better-sqlite3
+```
+</Tab>
+<Tab value="npm">
+```sh
+npm install better-sqlite3
+```
+</Tab>
+<Tab value="yarn">
+```sh
+yarn add better-sqlite3
+```
+</Tab>
+<Tab value="bun">
+```sh
+bun add better-sqlite3
+```
+</Tab>
+</Tabs>
+
+```ts
+// relay.ts
+import { relayos } from 'relayos';
+import Database from 'better-sqlite3';
+
+export const relay = relayos({
+  database: new Database('relay.db'),
+  plugins: [
+    // ...
+  ],
+});
+```
+
+Good for local development, testing, and small single-instance deployments.
+Not recommended once you're running multiple instances of your app.
+
+## MySQL
+
+<Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
+<Tab value="pnpm">
+```sh
+pnpm add mysql2
+```
+</Tab>
+<Tab value="npm">
+```sh
+npm install mysql2
+```
+</Tab>
+<Tab value="yarn">
+```sh
+yarn add mysql2
+```
+</Tab>
+<Tab value="bun">
+```sh
+bun add mysql2
+```
+</Tab>
+</Tabs>
+
+```ts
+// relay.ts
+import { relayos } from 'relayos';
+import { createPool } from 'mysql2';
+
+export const relay = relayos({
+  database: createPool({
+    uri: process.env.DATABASE_URL!,
+    timezone: 'Z', // keeps timestamps consistent in UTC
+  }),
+  plugins: [
+    // ...
+  ],
+});
+```
+
+Use `mysql2`'s pool directly, not `mysql2/promise` - RelayOS's dialect
+detection and the underlying query engine (Kysely) both expect the
+callback-style pool.
+
+## Migrations
+
+Outside production, migrations apply automatically the first time your relay
+processes an event or you call any of its methods - nothing to run by hand
+in development.
+
+In production, run them explicitly before scaling up new instances:
+
+```sh
+DATABASE_URL=<your-db> relay migrate
+```
+
+This is idempotent - safe to run multiple times, and safe to run from CI
+before a deploy. It creates three tables: `relayos_executions`,
+`relayos_execution_steps` (an append-only audit trail - a step that failed
+and later succeeded stores both attempts), and `relayos_execution_logs`
+(interleaved system and handler logs).
+
+## Writing a custom store
+
+Implement the `ExecutionStore` interface yourself for any other persistence
+layer - `database` also accepts a plain `ExecutionStore` directly:
+
+```ts
+import type { ExecutionStore } from '@relayos/core';
+
+const myStore: ExecutionStore = {
+  // Create an execution, returning true if this call won the insert race.
+  // Multiple concurrent ingest() calls for the same eventId must collapse
+  // to a single execution - this is the atomic dedup check.
+  async create(execution) {
+    // Atomic insert-or-detect-conflict: if the eventId already exists,
+    // return false without throwing. Only the first caller should return true.
+  },
+
+  async update(id, patch) {
+    // Patch status, attempt, completedAt, or error.
+  },
+
+  async list() {
+    // Return all executions, newest first.
+  },
+
+  async get(id) {
+    // Return one execution by ID.
+  },
+
+  async findByEventId(eventId) {
+    // Return the execution for a given event ID, if any.
+  },
+
+  async getStep(executionId, name) {
+    // Return the most recent attempt at this step (newest createdAt), or undefined.
+  },
+
+  async saveStep(step) {
+    // Always append - never upsert. Step history is an audit trail.
+  },
+
+  async listSteps(executionId) {
+    // Return all steps for an execution, in createdAt order.
+  },
+
+  async saveLog(log) {
+    // Append a log line.
+  },
+
+  async listLogs(executionId) {
+    // Return all logs for an execution, in createdAt order.
+  },
+};
+
+export const relay = relayos({
+  database: myStore,
+  plugins: [
+    // ...
+  ],
+});
+```
+
+Key invariants:
+
+- **create() must be atomic**: concurrent calls for the same `eventId` must
+  result in exactly one execution. The winner returns `true`; losers return
+  `false`.
+- **saveStep() is append-only**: never update or overwrite an existing step.
+- **getStep() returns the latest attempt**: `ctx.step.run()` needs the most
+  recent one by `createdAt` to know its status.
+
+A custom store's `migrate()` is a no-op - RelayOS has no schema to apply for
+a persistence layer it doesn't own.

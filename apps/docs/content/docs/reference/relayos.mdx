@@ -1,6 +1,6 @@
 ---
 title: relayos
-description: The main RelayOS runtime package with createRelay and re-exports of core types.
+description: The main RelayOS runtime package with relayos() and re-exports of core types.
 ---
 
 ## Install
@@ -32,8 +32,7 @@ bun add relayos
 
 | Export | Kind | Description |
 |--------|------|-------------|
-| `createRelay` | Function | Convenience wrapper around createRelayEngine that returns a typed relay runtime. |
-| `createMemoryExecutionStore` | Function | Creates an in-memory execution store (re-exported from @relayos/core). |
+| `relayos` | Function | Convenience wrapper around createRelayEngine that returns a typed relay runtime. |
 | `NormalizedEvent` | Type | Re-exported from @relayos/core. |
 | `StepStatus` | Type | Re-exported from @relayos/core. |
 | `ExecutionStep` | Type | Re-exported from @relayos/core. |
@@ -54,15 +53,15 @@ bun add relayos
 
 ## Functions
 
-### createRelay
+### relayos
 
 ```ts
-function createRelay<const TPlugins extends readonly RelayPlugin<any>[] = []>(
-  config: RelayConfig<TPlugins> = {},
+function relayos<const TPlugins extends readonly RelayPlugin<any>[] = []>(
+  config: RelayConfig<TPlugins>,
 ): Relay<EventMapOf<TPlugins>>;
 ```
 
-Creates a RelayOS runtime instance. This is the main entry point for developers: register event handlers via `relay.on()`, receive provider webhooks through `relay.handler`, and configure persistence via `config.database`. The relay's event types are inferred from the plugins you register—typed plugins make `relay.on()` autocomplete event names and narrow event payloads.
+Creates a RelayOS runtime instance. This is the main entry point for developers: register event handlers via `relay.on()`, receive provider webhooks through `relay.handler`, and configure persistence via `config.database` - a Postgres/SQLite/MySQL client (auto-detected), a `{ dialect }` Kysely escape hatch, or a custom `ExecutionStore`. The relay's event types are inferred from the plugins you register—typed plugins make `relay.on()` autocomplete event names and narrow event payloads.
 
 ## `relayos/next-js`
 
@@ -85,7 +84,7 @@ Adapts a relay instance to a Next.js App Router catch-all route. Returns an obje
 ```ts
 // app/api/relay/[...all]/route.ts
 import { toNextJsHandler } from 'relayos/next-js';
-import { relay } from '@/relayos.config';
+import { relay } from '@/relay';
 
 export const { POST } = toNextJsHandler(relay);
 ```
@@ -95,6 +94,6 @@ Provider webhooks are then received at `/api/relay/<provider>` (e.g., `/api/rela
 ## See also
 
 - [@relayos/core](/docs/reference/core)
-- [Quickstart](/docs/quickstart)
+- [Installation](/docs/installation)
 - [Next.js guide](/docs/frameworks/nextjs)
 - [Plugins](/docs/plugins/stripe)

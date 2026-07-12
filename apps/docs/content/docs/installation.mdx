@@ -1,11 +1,11 @@
 ---
 title: Installation
-description: Set up RelayOS in your project - one package to start, everything else is optional
+description: Set up RelayOS step by step, from install to your first mounted webhook route
 ---
 
 You'll need Node >=20 and TypeScript >=5.
 
-## Install
+## 1. Install the package
 
 <Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
 <Tab value="pnpm">
@@ -30,49 +30,172 @@ bun add relayos
 </Tab>
 </Tabs>
 
-That's it. `relayos` includes the engine, an in-memory execution store, and Next.js support (`relayos/next-js`) - nothing else is required to register a handler and run an event through it. Everything below is an optional add-on you install only when you need it.
+`relayos` includes the engine and Next.js support (`relayos/next-js`) - this guide adds a database and the CLI as you go.
 
-## Packages
+## 2. Set environment variables
 
-| Package | Purpose | When you need it |
-|---|---|---|
-| `relayos` | The SDK: `createRelay`, the user-facing types, and `relayos/next-js`. Ships an in-memory store by default. | Always - this is the only required install. |
-| `@relayos/core` | The engine: durable executions, steps, retries, replay, and the contracts everything else builds on. | Pulled in automatically by `relayos`; install directly only if you're building a custom storage adapter or plugin. |
-| `@relayos/postgres` | Postgres storage adapter: schema, migrations, and the `ExecutionStore` implementation. | Once you need executions to survive a restart. See [Database](/docs/database/postgres). |
-| `@relayos/stripe` | Stripe plugin with signature verification and a fully-typed event catalog. Peer-depends on `stripe`. | Once you're receiving real Stripe webhooks. See [Plugins](/docs/plugins/stripe). |
-| `@relayos/github` | GitHub plugin with signature verification and a fully-typed event catalog. | Once you're receiving real GitHub webhooks. See [Plugins](/docs/plugins/github). |
-| `@relayos/plugin` | Plugin authoring kit: `definePlugin` + webhook signature helpers. | Only if you're writing your own provider plugin. See [Writing plugins](/docs/plugins/writing-plugins). |
-| `@relayos/cli` | Command-line tools: `relay init`, `relay migrate`, `relay dev`, `relay trigger`, etc. | Recommended for local development, not required at runtime. |
+Create a `.env` file in the root of your project and add the following environment variable:
 
-If you add Stripe, note that `stripe` is a peer dependency of `@relayos/stripe`: `pnpm add @relayos/stripe stripe` - your application's pinned Stripe SDK version determines the event catalog's types.
+```txt title=".env"
+RELAYOS_BASE_URL=http://localhost:3000 # Base URL of your app
+```
 
-## Scaffold your config
+`RELAYOS_BASE_URL` is how the CLI (`relay trigger`, `relay replay`) knows where your app is running once it's mounted (step 7).
+
+## 3. Create a relay instance
+
+Create `relay.ts` at your project root. This file stays wiring-only - it creates the relay and nothing else. Every relay needs a `database`; the fastest way to get started is SQLite, which needs no separate server:
+
+<Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
+<Tab value="pnpm">
+```sh
+pnpm add better-sqlite3
+```
+</Tab>
+<Tab value="npm">
+```sh
+npm install better-sqlite3
+```
+</Tab>
+<Tab value="yarn">
+```sh
+yarn add better-sqlite3
+```
+</Tab>
+<Tab value="bun">
+```sh
+bun add better-sqlite3
+```
+</Tab>
+</Tabs>
+
+```ts
+// relay.ts
+import { relayos } from 'relayos';
+import Database from 'better-sqlite3';
+import { registerHandlers } from './relay.handlers';
+
+export const relay = relayos({
+  database: new Database('relay.db'),
+});
+
+// The concrete relay type, including any typed event catalogs inferred from
+// plugins you add later - exported so relay.handlers.ts can register
+// handlers with full event.data typing.
+export type AppRelay = typeof relay;
+
+registerHandlers(relay);
+```
+
+Migrations apply automatically the first time this relay processes an event - nothing else to run for local development.
+
+## 4. Swap in Postgres or MySQL for production
+
+SQLite is fine for local development and small single-instance deployments, but not once you're running multiple instances. Swap in Postgres or MySQL by passing a different client - the dialect is detected automatically:
+
+```ts
+// relay.ts
+import { relayos } from 'relayos';
+import { Pool } from 'pg';
+import { registerHandlers } from './relay.handlers';
+
+export const relay = relayos({
+  database: new Pool({ connectionString: process.env.DATABASE_URL! }),
+});
+
+export type AppRelay = typeof relay;
+
+registerHandlers(relay);
+```
+
+See [Database](/docs/database) for the MySQL setup and the full list of supported clients.
+
+## 5. Apply migrations in production
+
+Migrations still apply automatically outside production, but in production run them explicitly before scaling up new instances, via `@relayos/cli`:
 
 <Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
 <Tab value="pnpm">
 ```sh
 pnpm add -D @relayos/cli
-pnpm exec relay init
+pnpm exec relay migrate
 ```
 </Tab>
 <Tab value="npm">
 ```sh
 npm install -D @relayos/cli
-npx relay init
+npx relay migrate
 ```
 </Tab>
 <Tab value="yarn">
 ```sh
 yarn add -D @relayos/cli
-yarn relay init
+yarn relay migrate
 ```
 </Tab>
 <Tab value="bun">
 ```sh
 bun add -d @relayos/cli
-bunx relay init
+bunx relay migrate
 ```
 </Tab>
 </Tabs>
 
-This creates two files in your project root: `relayos.config.ts` (wiring - storage, plugins, retry policy) and `relayos.handlers.ts` (a `registerHandlers(relay)` function where your `relay.on(...)` calls live, kept separate so the config file doesn't turn into a dumping ground for business logic). Read the [Quickstart](/docs/quickstart) to see the whole loop end to end.
+This loads your `relay.ts` and applies whatever schema your chosen dialect needs. It's idempotent - safe to run again after every deploy.
+
+## 6. Register a handler
+
+`relay.on(...)` calls don't belong in `relay.ts` - as an app grows, that file would turn into a dumping ground for every event's business logic. Put handlers in their own module instead:
+
+```ts
+// relay.handlers.ts
+import type { AppRelay } from './relay';
+
+export function registerHandlers(relay: AppRelay): void {
+  relay.on('order.placed', async (event, ctx) => {
+    const payment = await ctx.step.run('charge-payment', async () => {
+      return { orderId: event.data.orderId, amount: event.data.amount };
+    });
+
+    await ctx.step.run('send-confirmation', async () => {
+      ctx.log.info('order confirmed', payment);
+    });
+  });
+}
+```
+
+Each `ctx.step.run(...)` checkpoints its result - if the handler throws and retries, a step that already completed returns its cached output instead of re-running.
+
+## 7. Mount the handler
+
+To receive real webhook deliveries, add a catch-all route on your server. In Next.js, `relayos/next-js` does this for you - nothing extra to install:
+
+```ts
+// app/api/relay/[...all]/route.ts
+import { toNextJsHandler } from 'relayos/next-js';
+import { relay } from '@/relay';
+
+export const { POST } = toNextJsHandler(relay);
+```
+
+This one route serves every plugin at `/api/relay/<provider>` - e.g. `/api/relay/stripe`, `/api/relay/github` - determined entirely by wherever you place this file, there's no base-path setting to configure. See [Next.js](/docs/frameworks/nextjs) for the full set of management-endpoint examples (list/inspect/retry/replay).
+
+Not on Next.js? `relay.handler` is a plain `(req: Request, ctx: { params: { all: string[] } }) => Promise<Response>` function - call it from any framework that gives you a standard `Request`.
+
+## Optional: scaffold this with the CLI
+
+`relay init` walks you through an interactive setup instead of doing steps 3 and 6 by hand - it asks for your database and any provider plugins, then generates `relay.ts` + `relay.handlers.ts` and installs exactly what you chose:
+
+```sh
+pnpm add -D @relayos/cli
+pnpm exec relay init
+```
+
+## Next steps
+
+- **Basic usage**: see [Basic Usage](/docs/basic-usage) for the everyday patterns - registering handlers for real provider events, `ctx.step.run`, ingesting via webhook vs. directly, and inspecting/replaying via the CLI.
+- **Receive real webhooks**: install a provider plugin - [Stripe](/docs/plugins/stripe) (`pnpm add @relayos/stripe stripe`) or [GitHub](/docs/plugins/github) (`pnpm add @relayos/github`) - only once you're ready to verify real signed deliveries.
+- **Event types**: learn how [Typed Events](/docs/concepts/typed-events) work and what autocomplete you get once you add a provider plugin.
+- **Durable steps**: dive into [Durable Steps](/docs/concepts/durable-steps) to understand caching, retries, and audit trails.
+- **Replay & restart**: understand the [three retry operations](/docs/concepts/replay-restart-retry) and when to use each.
+- **CLI reference**: `relay trigger` and `relay replay` read the `RELAYOS_BASE_URL` you set in step 2 to know where to POST - see the [CLI reference](/docs/cli) for every command and env var it reads.

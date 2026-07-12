@@ -49,7 +49,6 @@ bun add @relayos/core
 | `Relay` | Type | The typed relay runtime with handler registration, ingestion, and execution replay. |
 | `RetryPolicy` | Type | Configuration for execution retry behavior: maxAttempts and backoff function. |
 | `RelayConfig` | Type | Configuration for createRelayEngine: database, plugins, and retry policy. |
-| `createMemoryExecutionStore` | Function | Creates an in-memory execution store (default if no database is configured). |
 | `createRelayEngine` | Function | Creates a relay runtime instance from a config. |
 
 ## Types
@@ -202,11 +201,12 @@ type Relay<TEventMap extends Record<string, unknown> = {}> = {
   listExecutions: () => Promise<Execution[]>;
   listSteps: (executionId: string) => Promise<ExecutionStep[]>;
   listLogs: (executionId: string) => Promise<ExecutionLog[]>;
+  migrate: () => Promise<void>;
   handler: (req: Request, ctx: RelayHandlerContext) => Promise<Response>;
 };
 ```
 
-The relay runtime. Typed `on()` overloads narrow event types and payloads based on registered plugins. `ingest()` is the low-level event entry point (plugins and adapters call this). Execution replay, retry, and restart methods allow recovery from failures.
+The relay runtime. Typed `on()` overloads narrow event types and payloads based on registered plugins. `ingest()` is the low-level event entry point (plugins and adapters call this). Execution replay, retry, and restart methods allow recovery from failures. `migrate()` applies pending schema migrations - it runs automatically once, lazily, outside production, and should be called explicitly in production before scaling up instances.
 
 ### RelayConfig
 
@@ -214,13 +214,13 @@ The relay runtime. Typed `on()` overloads narrow event types and payloads based 
 type RelayConfig<
   TPlugins extends readonly RelayPlugin<any>[] = readonly RelayPlugin<any>[],
 > = {
-  database?: ExecutionStore;
+  database: ExecutionStore | PostgresPool | SqliteDatabase | MysqlPool | { dialect: Dialect };
   plugins?: TPlugins;
   retry?: RetryPolicy;
 };
 ```
 
-Configuration for `createRelayEngine()`. Defaults to an in-memory store and 3 retries with exponential backoff.
+Configuration for `createRelayEngine()`. `database` is required: pass a raw Postgres/SQLite/MySQL client directly (the dialect is auto-detected), a `{ dialect }` escape hatch for any other Kysely dialect, or a custom `ExecutionStore`. Defaults to 3 retries with exponential backoff.
 
 ### RetryPolicy
 
@@ -235,19 +235,11 @@ Defines retry behavior. `backoff` receives the just-failed attempt number and re
 
 ## Functions
 
-### createMemoryExecutionStore
-
-```ts
-function createMemoryExecutionStore(): ExecutionStore;
-```
-
-Creates a transient in-memory store. Useful for testing or short-lived processes. Lost on restart.
-
 ### createRelayEngine
 
 ```ts
 function createRelayEngine<const TPlugins extends readonly RelayPlugin<any>[] = []>(
-  config: RelayConfig<TPlugins> = {},
+  config: RelayConfig<TPlugins>,
 ): Relay<EventMapOf<TPlugins>>;
 ```
 
