@@ -1,0 +1,4 @@
+{
+  "title": "Reference",
+  "pages": ["core", "relayos", "plugin", "stripe", "github", "nextjs", "postgres", "cli"]
+}

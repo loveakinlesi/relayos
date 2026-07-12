@@ -1,0 +1,56 @@
+---
+title: '@relayos/plugin'
+description: Plugin authoring kit with signature verification helpers and definePlugin.
+---
+
+## Install
+
+```sh
+pnpm add @relayos/plugin
+```
+
+Peer dependency: `@relayos/core`
+
+## Exports
+
+| Export | Kind | Description |
+|--------|------|-------------|
+| `definePlugin` | Function | Identity helper for authoring plugins with full type inference. |
+| `hmacSha256Hex` | Function | HMAC-SHA256 signature generation used by Stripe, GitHub, and other providers. |
+| `safeEqualHex` | Function | Constant-time hex signature comparison to prevent timing attacks. |
+| `NormalizedEvent` | Type | Re-exported from @relayos/core. |
+| `RelayPlugin` | Type | Re-exported from @relayos/core. |
+
+## Functions
+
+### definePlugin
+
+```ts
+function definePlugin<TEventMap extends Record<string, unknown> = {}>(
+  plugin: RelayPlugin<TEventMap>,
+): RelayPlugin<TEventMap>;
+```
+
+An identity helper for authoring plugins. Acts like `defineConfig` in other frameworks: it gives full inference and type checking of the plugin shape and pins the plugin's typed event map so it survives through `createRelay`'s plugins array without widening to `any`. Use this when building custom provider plugins.
+
+### hmacSha256Hex
+
+```ts
+function hmacSha256Hex(secret: string, payload: string): string;
+```
+
+Computes the HMAC-SHA256 signature of a payload (the standard scheme used by Stripe, GitHub, and others). Returns a hex-encoded string.
+
+### safeEqualHex
+
+```ts
+function safeEqualHex(expectedHex: string, actualHex: string): boolean;
+```
+
+Constant-time comparison of two hex-encoded signatures. Returns `false` (instead of throwing) on length mismatch or non-hex input, preventing malformed attacker-supplied signatures from crashing verification. Always use this instead of simple string equality to avoid timing attacks.
+
+## See also
+
+- [Building plugins](/docs/guides/building-plugins)
+- [@relayos/core](/docs/reference/core)
+- [@relayos/stripe](/docs/reference/stripe) (example plugin implementation)

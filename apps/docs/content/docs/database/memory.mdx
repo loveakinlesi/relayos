@@ -1,0 +1,101 @@
+---
+title: In-Memory Store
+description: Keep executions in memory for development, testing, or custom persistence.
+---
+
+RelayOS ships with an in-memory execution store by default. It's perfect for getting started without a database, but executions are lost when the process restarts.
+
+```ts
+import { createRelay } from 'relayos';
+
+export const relay = createRelay({
+  // No database option — in-memory store is the default
+  plugins: [
+    // ...
+  ],
+});
+```
+
+## When to use it
+
+- **Local development** — fast iteration without database setup
+- **Tests** — each test gets fresh state, no cleanup needed
+- **Demos** — simpler setup story
+
+When you're ready for production or multi-instance deployments, plug in [Postgres](/docs/database/postgres).
+
+## Writing a custom store
+
+Implement the `ExecutionStore` interface to build your own persistence layer:
+
+```ts
+import type { ExecutionStore } from '@relayos/core';
+
+const myStore: ExecutionStore = {
+  // Create an execution, returning true if this call won the insert race.
+  // Multiple concurrent ingest() calls for the same eventId must collapse
+  // to a single execution — this is the atomic dedup check.
+  // Return false if an execution with this eventId already exists.
+  async create(execution: Execution): Promise<boolean> {
+    // Atomic insert-or-detect-conflict: if the eventId already exists,
+    // return false without throwing. Only the first caller should return true.
+    // This is load-bearing for dedup: a concurrent duplicate webhook
+    // redelivery must not start a second execution.
+  },
+
+  async update(id: string, patch: Partial<Execution>): Promise<void> {
+    // Patch status, attempt, completedAt, or error. Called when an
+    // execution completes or is retried.
+  },
+
+  async list(): Promise<Execution[]> {
+    // Return all executions, newest first.
+  },
+
+  async get(id: string): Promise<Execution | undefined> {
+    // Return one execution by ID.
+  },
+
+  async findByEventId(eventId: string): Promise<Execution | undefined> {
+    // Return the execution for a given event ID, if any.
+    // Used by ingest() for dedup and by relay inspect/replay.
+  },
+
+  async getStep(executionId: string, name: string): Promise<ExecutionStep | undefined> {
+    // Return the most recent attempt at this step (newest createdAt).
+    // If the step doesn't exist, return undefined.
+    // Used by ctx.step.run() to check if a step already completed.
+  },
+
+  async saveStep(step: ExecutionStep): Promise<void> {
+    // Always append — never upsert. Step history is an audit trail,
+    // not a mutable record. A step that failed and later succeeded
+    // stores both attempts as separate rows.
+  },
+
+  async listSteps(executionId: string): Promise<ExecutionStep[]> {
+    // Return all steps for an execution, in createdAt order.
+  },
+
+  async saveLog(log: ExecutionLog): Promise<void> {
+    // Append a log line.
+  },
+
+  async listLogs(executionId: string): Promise<ExecutionLog[]> {
+    // Return all logs for an execution, in createdAt order.
+  },
+};
+
+export const relay = createRelay({
+  database: myStore,
+  plugins: [
+    // ...
+  ],
+});
+```
+
+Key invariants:
+
+- **create() must be atomic**: concurrent calls for the same `eventId` must result in exactly one execution. The caller who wins the race returns `true`; losers return `false`. This is the only way to guarantee dedup under concurrent redeliveries.
+- **saveStep() is append-only**: never update or overwrite an existing step. Each attempt gets a new row with a unique ID and createdAt timestamp.
+- **getStep() returns the latest attempt**: when `ctx.step.run()` checks if a step is already done, it needs the most recent one by createdAt to know its status.

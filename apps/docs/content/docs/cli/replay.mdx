@@ -1,0 +1,126 @@
+---
+title: relay replay
+description: Replay a historical execution as a brand-new one for debugging or recovery.
+---
+
+Reprocess a historical execution's event data as a completely new execution, leaving the original untouched. Useful for debugging failed handlers or recovering from bugs.
+
+## Usage
+
+```sh
+relay replay <eventId|executionId> [--forward <url>] [--print]
+```
+
+## Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `<eventId\|executionId>` | Event ID or execution ID to replay |
+
+## Options
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--forward <url>` | `RELAYOS_RUNTIME_URL` or `http://localhost:3000` | URL to POST the replay to |
+| `--print` | false | Dry-run: show what would be replayed without POSTing |
+
+## Requirements
+
+- `DATABASE_URL` must be set (to load the historical execution)
+- Your app must be running at the `--forward` URL (unless using `--print`)
+
+## Examples
+
+### Dry-run (preview)
+
+```sh
+$ relay replay evt_abc123 --print
+
+Would replay (dry run - no request sent, nothing was replayed):
+  source execution: exec_old789
+  event type:       stripe.charge.succeeded
+  event data:       {
+    "id": "ch_1234",
+    "amount": 1000,
+    "currency": "usd",
+    ...
+  }
+```
+
+### Full replay
+
+```sh
+$ relay replay evt_abc123
+
+[relay replay] POST http://localhost:3000/api/executions/exec_old789/replay
+[relay replay] 200
+{
+  "id": "exec_new123",
+  "eventId": "evt_abc123",
+  "eventType": "stripe.charge.succeeded",
+  "status": "pending",
+  "attempt": 1,
+  "createdAt": "2024-01-15T11:00:00.000Z"
+}
+```
+
+### Replay to a different URL
+
+```sh
+$ relay replay evt_abc123 --forward https://api.example.com
+
+[relay replay] POST https://api.example.com/api/executions/exec_old789/replay
+[relay replay] 200 ...
+```
+
+Or use the environment variable:
+
+```sh
+RELAYOS_RUNTIME_URL=https://staging.example.com relay replay evt_abc123
+```
+
+## When to use replay
+
+**Replay** is for reprocessing a historical event through a fixed or updated handler:
+
+- Handler had a bug that's now fixed → replay to test the fix
+- External service was down → replay now that it's back up
+- Debugging a failed execution → replay to see if it works with logging/tracing enabled
+
+**Don't use replay if** you just want to retry the same execution — use `relay.retryExecution()` (via API/dashboard) for that instead. Retry resumes in place, skipping already-completed steps.
+
+## Replayed vs. original
+
+When you replay an execution:
+
+- **Original execution** remains unchanged, with all its steps and logs intact
+- **New execution** is created with a fresh ID, but linked back via `replayedFrom`
+- Both share the same event data (the original webhook payload)
+
+You can see the link in `relay inspect`:
+
+```sh
+$ relay inspect evt_abc123
+
+Execution exec_new123
+  event:      stripe.charge.succeeded (evt_abc123)
+  replayed from: exec_old789
+  ...
+```
+
+## API endpoint
+
+Replay is powered by the `/api/executions/<id>/replay` route in your Next.js handler:
+
+```ts
+// app/api/executions/[id]/replay/route.ts
+import { relay } from '@/relayos.config';
+
+export async function POST(_req: Request, ctx: { params: Promise<{ id: string }> }) {
+  const { id } = await ctx.params;
+  const execution = await relay.replayExecution(id);
+  return Response.json(execution);
+}
+```
+
+`relay replay` POSTs to this endpoint, so your app must be running.

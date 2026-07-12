@@ -1,0 +1,59 @@
+---
+title: '@relayos/stripe'
+description: Stripe webhook plugin with signature verification and fully-typed event catalog.
+---
+
+## Install
+
+```sh
+pnpm add @relayos/stripe
+```
+
+Peer dependencies: `@relayos/core`, `stripe` (>=17)
+
+## Exports
+
+| Export | Kind | Description |
+|--------|------|-------------|
+| `stripe` | Function | Creates a Stripe plugin for webhook ingestion. |
+| `StripeEventMap` | Type | Fully-typed catalog of every Stripe event, keyed by RelayOS's namespacing. |
+| `StripePluginOptions` | Type | Configuration for the Stripe plugin. |
+
+## Types
+
+### StripeEventMap
+
+```ts
+type StripeEventMap = {
+  [K in Stripe.Event['type'] as `stripe.${K}`]: Extract<Stripe.Event, { type: K }>['data'];
+};
+```
+
+A fully-typed map of every Stripe webhook event. Event keys are prefixed with `"stripe."` (e.g., `"stripe.charge.succeeded"`), and values are the corresponding Stripe `data` payload. Derived from the official `stripe` package's event types, so the catalog tracks whichever Stripe version your application has installed.
+
+### StripePluginOptions
+
+```ts
+type StripePluginOptions = {
+  webhookSecret: string;
+  toleranceSeconds?: number;
+};
+```
+
+Configuration for the Stripe plugin. `webhookSecret` is the signing secret from your Stripe Dashboard webhook endpoint. `toleranceSeconds` (default: 300) sets the maximum age of a signed timestamp before it's rejected.
+
+## Functions
+
+### stripe
+
+```ts
+function stripe(options: StripePluginOptions): RelayPlugin<StripeEventMap>;
+```
+
+Creates a Stripe plugin. Verifies webhook signatures using Stripe's HMAC-SHA256 scheme and normalizes incoming events into RelayOS's format. Registers as the `"stripe"` provider and makes all Stripe event types available for typed handler registration via `relay.on()`.
+
+## See also
+
+- [Integrating Stripe](/docs/guides/integrating-stripe)
+- [Plugins](/docs/concepts/plugins)
+- [@relayos/plugin](/docs/reference/plugin)

@@ -1,0 +1,53 @@
+---
+title: Events
+description: Understanding the normalized event shape and how providers are namespaced
+---
+
+When a webhook arrives from a provider, RelayOS normalizes it into a standard shape before it reaches your handler.
+
+## Event shape
+
+Every event has this structure:
+
+```ts
+type NormalizedEvent = {
+  id: string;              // Unique identifier for this webhook delivery
+  type: string;            // Namespaced event type (e.g., "stripe.charge.succeeded")
+  data: Record<string, unknown>;  // Provider-specific payload
+  receivedAt: string;      // ISO 8601 timestamp
+};
+```
+
+## Provider namespacing
+
+Events are namespaced by their provider to avoid conflicts:
+
+- **Stripe events**: `stripe.charge.succeeded`, `stripe.charge.refunded`, `stripe.customer.created`, etc.
+- **GitHub events (no action)**: `github.push`, `github.ping`
+- **GitHub events (with action)**: `github.pull_request.opened`, `github.issues.closed`, `github.workflow_run.completed`, etc.
+
+The pattern for GitHub reflects reality: when GitHub sends a webhook for a pull request, it includes an `action` field in the payload that qualifies the event. RelayOS's type system respects this—you won't see `github.pull_request` by itself, only action-qualified names like `github.pull_request.opened`.
+
+## Registering handlers
+
+Use `relay.on(type, handler)` to listen for events:
+
+```ts
+relay.on('stripe.charge.succeeded', async (event, ctx) => {
+  const charge = event.data.object;
+  // handle the charge
+});
+
+relay.on('github.pull_request.opened', async (event, ctx) => {
+  const pr = event.data;
+  // handle the PR
+});
+```
+
+Multiple handlers can listen to the same event type—they run in the order they were registered.
+
+## Event deduplication
+
+Event `id` is the provider's own unique delivery ID (Stripe's event ID, GitHub's delivery ID). If the same webhook is redelivered (e.g., because of a timeout and retry), RelayOS detects the duplicate by ID and returns the original execution instead of running the handler twice.
+
+See [Idempotency](/docs/concepts/idempotency) for the full dedup story.

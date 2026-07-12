@@ -1,0 +1,114 @@
+---
+title: Typed Events
+description: How event data is fully typed based on the plugins you register
+---
+
+When you register a plugin with `createRelay`, the event catalog is automatically inferred and merged. Your handlers get full TypeScript autocomplete—no casting, no `unknown` types.
+
+## How it works
+
+Each plugin carries an event map—a TypeScript type that describes what events it can emit and what their payloads look like. When you pass the plugins array to `createRelay`, the function infers the union of all those maps:
+
+```ts
+import { createRelay } from 'relayos';
+import { stripe } from '@relayos/stripe';
+import { github } from '@relayos/github';
+
+export const relay = createRelay({
+  plugins: [
+    stripe({ webhookSecret: process.env.STRIPE_WEBHOOK_SECRET! }),
+    github({ webhookSecret: process.env.GITHUB_WEBHOOK_SECRET! }),
+  ],
+});
+
+// relay.on() now autocompletes all Stripe and GitHub event names:
+relay.on('stripe.charge.succeeded', async (event, ctx) => {
+  // event.data is typed as Stripe.Charge
+  const charge = event.data.object;
+  console.log(charge.amount); // ✓ TypeScript knows this field exists
+});
+
+relay.on('github.pull_request.opened', async (event, ctx) => {
+  // event.data is typed as the GitHub pull_request.opened payload
+  console.log(event.data.pull_request.title); // ✓ autocomplete works
+});
+```
+
+## Stripe events
+
+The `stripe` plugin exports a typed catalog (`StripeEventMap`) that is derived from your installed `stripe` package's event discriminated union. This means:
+
+- The types track the Stripe API version pinned in your `package.json`
+- `event.data` for a `stripe.charge.succeeded` event is typed as `{ object: Stripe.Charge }`
+- Every Stripe webhook event (~250 types) is included
+
+## GitHub events
+
+The `github` plugin exports `GitHubEventMap` from the `@octokit/webhooks-types` package. GitHub's event naming respects its delivery model:
+
+- **Base events** (no action): `github.push`, `github.ping` — these appear as bare event types
+- **Action events**: `github.pull_request.opened`, `github.pull_request.closed`, `github.issues.labeled` — these are keyed by action, never by the base event name alone
+
+This means you'll never see a bare `github.pull_request` key in the type map—only the action-qualified variants that actually fire.
+
+## Unknown events
+
+If an event type isn't registered in any plugin's catalog, TypeScript still allows it—it just falls back to `data: Record<string, unknown>`:
+
+```ts
+// If "custom.myevent" isn't in any registered plugin's catalog:
+relay.on('custom.myevent', async (event, ctx) => {
+  // event.data is Record<string, unknown> - you lose autocomplete
+  const value = event.data.someField; // ✓ compiles, but type is unknown
+});
+```
+
+This lets you write custom handlers for test events or unsupported providers without breaking the build.
+
+## Important: Compile-time only
+
+Typed events are compile-time only. The type system gives you autocomplete and type safety, but **payloads are not validated at runtime**. After signature verification (which *is* always enforced), the webhook body is cast to match the type—but if the provider's API evolved or sent unexpected fields, TypeScript won't catch it.
+
+For example, if you pinned an older Stripe API version on your webhook endpoint and it sends fields that differ from the types, the handler still runs—the mismatch isn't detected at runtime.
+
+## Writing a custom typed plugin
+
+To create your own plugin with a typed event map, use `definePlugin`:
+
+```ts
+import { definePlugin } from '@relayos/plugin';
+
+type MyEventMap = {
+  'my.user.created': { userId: string; email: string };
+  'my.order.placed': { orderId: string; amount: number };
+};
+
+const myPlugin = definePlugin<MyEventMap>({
+  id: 'my',
+  async verify(req) {
+    // signature verification logic
+    return true;
+  },
+  normalize(rawBody) {
+    // convert raw body to NormalizedEvent
+    return { id: '...', type: '...', data: {}, receivedAt: new Date().toISOString() };
+  },
+  sign(rawBody, secret) {
+    // sign a payload for relay trigger
+    return {};
+  },
+  buildTestPayload(eventType, data) {
+    // build a test payload for relay trigger
+    return { body: data };
+  },
+});
+
+export const relay = createRelay({
+  plugins: [myPlugin],
+});
+
+relay.on('my.user.created', async (event, ctx) => {
+  console.log(event.data.userId); // ✓ typed as string
+  console.log(event.data.email);  // ✓ typed as string
+});
+```

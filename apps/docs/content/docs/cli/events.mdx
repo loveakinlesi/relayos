@@ -1,0 +1,105 @@
+---
+title: relay events list
+description: List recent executions from the database.
+---
+
+Query the database for recent executions and display them in a table. Newest first.
+
+## Usage
+
+```sh
+relay events list [--json] [--limit <n>]
+```
+
+## Options
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--json` | false | Output JSON instead of a formatted table |
+| `--limit <n>` | all | Show only the first N executions |
+
+## Requirements
+
+- `DATABASE_URL` must be set to a valid Postgres connection string
+- The database must exist and have RelayOS migrations applied
+
+## Examples
+
+### List all executions
+
+```sh
+$ relay events list
+
+✓ stripe.charge.succeeded       attempt 1  2024-01-15T10:30:45.123Z  exec_abc123xyz
+✓ test.ping                     attempt 1  2024-01-15T10:28:12.456Z  exec_def456uvw
+✗ github.push                   attempt 2  2024-01-15T10:25:00.789Z  exec_ghi789rst
+✓ stripe.refund.created         attempt 1  2024-01-15T10:22:33.012Z  exec_jkl012mno
+```
+
+Columns (left to right):
+- Status icon (✓/✗/⏱)
+- Event type
+- Attempt number
+- Creation timestamp
+- Execution ID
+
+### Limit results
+
+Show only the last 5 executions:
+
+```sh
+$ relay events list --limit 5
+
+✓ stripe.charge.succeeded  attempt 1  2024-01-15T10:30:45.123Z  exec_abc123xyz
+✓ test.ping                attempt 1  2024-01-15T10:28:12.456Z  exec_def456uvw
+✗ github.push              attempt 2  2024-01-15T10:25:00.789Z  exec_ghi789rst
+✓ stripe.refund.created    attempt 1  2024-01-15T10:22:33.012Z  exec_jkl012mno
+✓ test.fail                attempt 3  2024-01-15T10:20:15.345Z  exec_pqr345stu
+```
+
+### JSON output
+
+```sh
+$ relay events list --json --limit 2
+
+[
+  {
+    "id": "exec_abc123xyz",
+    "eventId": "evt_1234567890",
+    "eventType": "stripe.charge.succeeded",
+    "status": "completed",
+    "attempt": 1,
+    "createdAt": "2024-01-15T10:30:45.123Z",
+    "completedAt": "2024-01-15T10:30:46.357Z"
+  },
+  {
+    "id": "exec_def456uvw",
+    "eventId": "test_5678",
+    "eventType": "test.ping",
+    "status": "completed",
+    "attempt": 1,
+    "createdAt": "2024-01-15T10:28:12.456Z",
+    "completedAt": "2024-01-15T10:28:12.500Z"
+  }
+]
+```
+
+## Status indicators
+
+- **✓** (completed) — execution finished successfully
+- **✗** (failed) — execution failed with an error
+- **⏱** (pending) — execution is still running or awaiting a retry
+
+## Next steps
+
+To inspect a specific execution in detail:
+
+```sh
+relay inspect exec_abc123xyz
+```
+
+To replay a failed execution:
+
+```sh
+relay replay exec_abc123xyz
+```

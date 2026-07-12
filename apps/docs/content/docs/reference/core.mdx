@@ -1,0 +1,241 @@
+---
+title: '@relayos/core'
+description: The RelayOS engine with durable executions, steps, retries, and replay.
+---
+
+## Install
+
+```sh
+pnpm add @relayos/core
+```
+
+## Exports
+
+| Export | Kind | Description |
+|--------|------|-------------|
+| `NormalizedEvent` | Type | A webhook event after provider normalization, with id, type, data, and receivedAt. |
+| `StepStatus` | Type | Step execution status: 'completed' or 'failed'. |
+| `ExecutionStep` | Type | A recorded step attempt with name, status, output, and optional error. |
+| `LogLevel` | Type | Log severity: 'debug', 'info', 'warn', or 'error'. |
+| `LogSource` | Type | Whether a log entry originated from 'system' runtime or a 'handler'. |
+| `ExecutionLog` | Type | A runtime or handler log entry linked to an execution. |
+| `RuntimeContext` | Type | The context object passed to event handlers with step.run() and log methods. |
+| `EventHandler` | Type | A handler function for a normalized event: `(event, ctx) => void` or `Promise<void>`. |
+| `ExecutionStatus` | Type | Execution state: 'pending', 'completed', or 'failed'. |
+| `Execution` | Type | A recorded event execution with id, status, attempt count, steps, and logs. |
+| `ExecutionStore` | Type | Storage interface for persisting executions, steps, and logs. |
+| `RelayPlugin` | Type | A provider adapter that verifies, normalizes, and signs webhook events. |
+| `EventMapOf` | Type | Utility type that merges event maps from a plugins array. |
+| `RelayHandlerContext` | Type | HTTP route handler context with URL params (e.g., provider name). |
+| `Relay` | Type | The typed relay runtime with handler registration, ingestion, and execution replay. |
+| `RetryPolicy` | Type | Configuration for execution retry behavior: maxAttempts and backoff function. |
+| `RelayConfig` | Type | Configuration for createRelayEngine: database, plugins, and retry policy. |
+| `createMemoryExecutionStore` | Function | Creates an in-memory execution store (default if no database is configured). |
+| `createRelayEngine` | Function | Creates a relay runtime instance from a config. |
+
+## Types
+
+### NormalizedEvent
+
+```ts
+type NormalizedEvent<
+  TType extends string = string,
+  TData = Record<string, unknown>,
+> = {
+  id: string;
+  type: TType;
+  data: TData;
+  receivedAt: string;
+};
+```
+
+A webhook event after a plugin normalizes it. The `type` is a fully-qualified event name (e.g., `"stripe.charge.succeeded"`), and `data` is the provider-specific payload.
+
+### ExecutionStep
+
+```ts
+type ExecutionStep = {
+  id: string;
+  executionId: string;
+  name: string;
+  status: StepStatus;
+  output?: unknown;
+  error?: string;
+  createdAt: string;
+};
+```
+
+A durable step: a named task within an execution. Steps cache their output so retries skip already-completed work.
+
+### ExecutionLog
+
+```ts
+type ExecutionLog = {
+  id: string;
+  executionId: string;
+  level: LogLevel;
+  source: LogSource;
+  message: string;
+  data?: unknown;
+  createdAt: string;
+};
+```
+
+A log entry written by the runtime (e.g., retry events) or a handler's `ctx.log` calls.
+
+### RuntimeContext
+
+```ts
+type RuntimeContext = {
+  step: {
+    run: <T>(name: string, fn: () => T | Promise<T>) => Promise<T>;
+  };
+  log: {
+    debug: (message: string, data?: unknown) => void;
+    info: (message: string, data?: unknown) => void;
+    warn: (message: string, data?: unknown) => void;
+    error: (message: string, data?: unknown) => void;
+  };
+};
+```
+
+The context passed to every event handler. `step.run()` wraps logic in durability: it skips re-running completed steps on retry. `log` methods write to the execution's audit trail.
+
+### EventHandler
+
+```ts
+type EventHandler<
+  TEvent extends NormalizedEvent<string, any> = NormalizedEvent,
+> = (event: TEvent, ctx: RuntimeContext) => void | Promise<void>;
+```
+
+A handler function that processes a normalized event. Handlers run inside durable steps and can be paused/resumed by the runtime.
+
+### Execution
+
+```ts
+type Execution = {
+  id: string;
+  eventId: string;
+  eventType: string;
+  eventData: Record<string, unknown>;
+  status: ExecutionStatus;
+  attempt: number;
+  replayedFrom?: string;
+  createdAt: string;
+  completedAt?: string;
+  error?: string;
+};
+```
+
+A recorded event execution. If `status` is 'pending', the runtime will retry according to the retry policy. `replayedFrom` links new executions created by `replayExecution()` back to their source.
+
+### ExecutionStore
+
+```ts
+type ExecutionStore = {
+  create: (execution: Execution) => Promise<boolean>;
+  update: (id: string, patch: Partial<Execution>) => Promise<void>;
+  list: () => Promise<Execution[]>;
+  get: (id: string) => Promise<Execution | undefined>;
+  findByEventId: (eventId: string) => Promise<Execution | undefined>;
+  getStep: (executionId: string, name: string) => Promise<ExecutionStep | undefined>;
+  saveStep: (step: ExecutionStep) => Promise<void>;
+  listSteps: (executionId: string) => Promise<ExecutionStep[]>;
+  saveLog: (log: ExecutionLog) => Promise<void>;
+  listLogs: (executionId: string) => Promise<ExecutionLog[]>;
+};
+```
+
+The storage interface for executions, steps, and logs. `create()` is atomic: it returns false if an execution with the same `eventId` already exists, preventing duplicate ingestion under concurrent calls.
+
+### RelayPlugin
+
+```ts
+type RelayPlugin<TEventMap extends Record<string, unknown> = {}> = {
+  id: string;
+  verify: (req: Request) => Promise<boolean>;
+  normalize: (rawBody: unknown, headers: Headers) => NormalizedEvent;
+  sign: (rawBody: string, secret: string) => Record<string, string>;
+  buildTestPayload: (
+    eventType: string,
+    data: Record<string, unknown>,
+  ) => { body: unknown; headers?: Record<string, string> };
+  readonly $events?: TEventMap;
+};
+```
+
+A provider adapter. Plugins verify webhook signatures, normalize wire-format payloads into `NormalizedEvent`, and assist the CLI's test-delivery simulation. `TEventMap` is a type-level marker (never set at runtime) that carries the plugin's typed event catalog.
+
+### Relay
+
+```ts
+type Relay<TEventMap extends Record<string, unknown> = {}> = {
+  on<TType extends Extract<keyof TEventMap, string>>(
+    type: TType,
+    handler: EventHandler<NormalizedEvent<TType, TEventMap[TType]>>,
+  ): void;
+  on(type: string, handler: EventHandler): void;
+  ingest: (event: NormalizedEvent) => Promise<Execution>;
+  retryExecution: (executionId: string, reason?: 'manual' | 'scheduled') => Promise<Execution>;
+  restartExecution: (executionId: string) => Promise<Execution>;
+  replayExecution: (executionId: string) => Promise<Execution>;
+  listExecutions: () => Promise<Execution[]>;
+  listSteps: (executionId: string) => Promise<ExecutionStep[]>;
+  listLogs: (executionId: string) => Promise<ExecutionLog[]>;
+  handler: (req: Request, ctx: RelayHandlerContext) => Promise<Response>;
+};
+```
+
+The relay runtime. Typed `on()` overloads narrow event types and payloads based on registered plugins. `ingest()` is the low-level event entry point (plugins and adapters call this). Execution replay, retry, and restart methods allow recovery from failures.
+
+### RelayConfig
+
+```ts
+type RelayConfig<
+  TPlugins extends readonly RelayPlugin<any>[] = readonly RelayPlugin<any>[],
+> = {
+  database?: ExecutionStore;
+  plugins?: TPlugins;
+  retry?: RetryPolicy;
+};
+```
+
+Configuration for `createRelayEngine()`. Defaults to an in-memory store and 3 retries with exponential backoff.
+
+### RetryPolicy
+
+```ts
+type RetryPolicy = {
+  maxAttempts: number;
+  backoff: (attempt: number) => number;
+};
+```
+
+Defines retry behavior. `backoff` receives the just-failed attempt number and returns delay in ms before the next attempt.
+
+## Functions
+
+### createMemoryExecutionStore
+
+```ts
+function createMemoryExecutionStore(): ExecutionStore;
+```
+
+Creates a transient in-memory store. Useful for testing or short-lived processes. Lost on restart.
+
+### createRelayEngine
+
+```ts
+function createRelayEngine<const TPlugins extends readonly RelayPlugin<any>[] = []>(
+  config: RelayConfig<TPlugins> = {},
+): Relay<EventMapOf<TPlugins>>;
+```
+
+Creates a relay runtime instance. Merges event types from the `plugins` array and returns a fully typed `Relay` object. The returned relay will have typed `on()` overloads for every event in its plugins' catalogs.
+
+## See also
+
+- [Durable steps](/docs/concepts/durable-steps)
+- [Plugins](/docs/concepts/plugins)
+- [Event handler patterns](/docs/guides/handlers)

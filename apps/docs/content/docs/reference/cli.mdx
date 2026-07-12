@@ -1,0 +1,165 @@
+---
+title: '@relayos/cli'
+description: CLI for RelayOS migrations, development, and execution inspection.
+---
+
+## Install
+
+```sh
+pnpm add -D @relayos/cli
+```
+
+Or install globally:
+
+```sh
+npm install -g @relayos/cli
+relay --help
+```
+
+## Commands
+
+| Command | Description |
+|---------|-------------|
+| `init [--force]` | Scaffold a relayos.config.ts file in the current directory. |
+| `migrate` | Apply RelayOS's Postgres migrations (reads DATABASE_URL). |
+| `dev [--dir <path>]` | Run the app's dev server and tail new executions live. |
+| `trigger <provider> <eventType> [--data '<json>'] [--forward <url>]` | Simulate a signed provider webhook delivery for testing. |
+| `inspect <eventId\|executionId> [--json] [--history]` | Show an execution's status, steps, and logs. |
+| `replay <eventId\|executionId> [--forward <url>] [--print]` | Replay a historical execution as a new one. |
+| `events list [--json] [--limit <n>]` | List recent executions, newest first. |
+
+## init
+
+```sh
+relay init [--force]
+```
+
+Scaffolds a `relayos.config.ts` template in the current directory. If the file already exists, use `--force` to overwrite it.
+
+**Output:** Creates `relayos.config.ts` with boilerplate event handler setup.
+
+## migrate
+
+```sh
+relay migrate
+```
+
+Applies all RelayOS Postgres migrations to your database. Reads `DATABASE_URL` from the environment. Idempotent—safe to run multiple times.
+
+**Requires:** `DATABASE_URL` environment variable
+
+## dev
+
+```sh
+relay dev [--dir <path>]
+```
+
+Runs your application's dev server (`pnpm run dev` in `--dir`, defaults to cwd) and tails new executions live in the console. Displays event type, status, and execution ID as events are processed.
+
+**Requires:** `DATABASE_URL` for live tailing (optional—dev runs without it, just without live output)
+
+**Options:**
+- `--dir <path>` — Directory containing the app (defaults to cwd)
+
+## trigger
+
+```sh
+relay trigger <provider> <eventType> [--data '<json>'] [--forward <url>]
+```
+
+Simulates a signed provider webhook delivery for testing without hitting the actual provider. The command signs the payload using your webhook secret and sends it to your relay handler.
+
+**Requires:** `<PROVIDER>_WEBHOOK_SECRET` environment variable (e.g., `STRIPE_WEBHOOK_SECRET`, `GITHUB_WEBHOOK_SECRET`)
+
+**Options:**
+- `--data '<json>'` — JSON payload for the event (defaults to empty object)
+- `--forward <url>` — URL to POST to (defaults to `RELAYOS_RUNTIME_URL` or `http://localhost:3000`)
+
+**Example:**
+```bash
+STRIPE_WEBHOOK_SECRET=whsec_test relay trigger stripe charge.succeeded \
+  --data '{"amount": 5000, "currency": "usd"}'
+```
+
+## inspect
+
+```sh
+relay inspect <eventId|executionId> [--json] [--history]
+```
+
+Shows an execution's full details: status, attempt count, all steps, and logs. Looks up by execution ID or event ID.
+
+**Requires:** `DATABASE_URL` (reads the database directly, no running app needed)
+
+**Options:**
+- `--json` — Output as JSON
+- `--history` — Show full step history (all re-attempts); default shows only the latest attempt per step
+
+**Output:**
+```
+Execution <id>
+  event:      stripe.charge.succeeded (<eventId>)
+  status:     ✓ completed (attempt 1)
+  duration:   1.2s
+  error:      (none)
+
+Steps:
+  ✓ process_charge completed
+  ✓ send_receipt completed
+
+Logs:
+  [system] [info] Execution started
+  [handler] [info] Processing charge
+```
+
+## replay
+
+```sh
+relay replay <eventId|executionId> [--forward <url>] [--print]
+```
+
+Replays a historical execution as a new one, re-running all steps from scratch. Creates a brand-new execution linked back to the original via `Execution.replayedFrom`.
+
+**Requires:** `DATABASE_URL` (reads the database directly)
+
+**Options:**
+- `--forward <url>` — URL to replay to (defaults to `RELAYOS_RUNTIME_URL` or `http://localhost:3000`)
+- `--print` — Dry run: show what would be replayed without sending the HTTP request
+
+**Example:**
+```bash
+relay replay <executionId> --forward http://localhost:3000
+```
+
+## events list
+
+```sh
+relay events list [--json] [--limit <n>]
+```
+
+Lists recent executions in reverse chronological order (newest first). Useful for checking what's been processed and their statuses.
+
+**Requires:** `DATABASE_URL`
+
+**Options:**
+- `--json` — Output as JSON
+- `--limit <n>` — Maximum number of executions to list (defaults to all)
+
+**Output:**
+```
+✓ stripe.charge.succeeded       attempt 1  2024-01-15 10:23:45.123  exec_abc123
+✗ github.pull_request.opened    attempt 2  2024-01-15 10:23:12.456  exec_def456
+⋯ stripe.subscription.created   attempt 1  2024-01-15 10:22:59.789  exec_ghi789
+```
+
+## Environment variables
+
+- `DATABASE_URL` — Postgres connection string (required for `migrate`, `inspect`, `replay`, `events list`, and optional for `dev`)
+- `RELAYOS_RUNTIME_URL` — URL to send webhook deliveries to (defaults to `http://localhost:3000`; used by `trigger` and `replay` if `--forward` is not provided)
+- `<PROVIDER>_WEBHOOK_SECRET` — Webhook secret for a provider (required by `trigger`; e.g., `STRIPE_WEBHOOK_SECRET`, `GITHUB_WEBHOOK_SECRET`)
+
+## See also
+
+- [Local development](/docs/guides/local-development)
+- [Database setup](/docs/guides/database-setup)
+- [Integrations](/docs/concepts/plugins)

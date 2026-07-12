@@ -1,0 +1,81 @@
+---
+title: relay init
+description: Scaffold a relayos.config.ts file in your project.
+---
+
+Scaffold a basic `relayos.config.ts` file with commented-out examples and next steps.
+
+## Usage
+
+```sh
+relay init [--force]
+```
+
+## Options
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--force` | false | Overwrite an existing `relayos.config.ts` |
+
+## Output
+
+Creates `./relayos.config.ts` in the current directory:
+
+```ts
+import { createRelay } from 'relayos';
+// import { stripe } from '@relayos/stripe';
+// import { github } from '@relayos/github';
+// import { createDb, createPostgresExecutionStore } from '@relayos/postgres';
+
+export const relay = createRelay({
+  // Executions are kept in memory by default - fine for getting started, but
+  // they won't survive a restart. Swap in Postgres once you're ready:
+  //
+  //   const db = createDb(process.env.DATABASE_URL!);
+  //   database: createPostgresExecutionStore(db),
+
+  plugins: [
+    // stripe({ webhookSecret: process.env.STRIPE_WEBHOOK_SECRET! }),
+    // github({ webhookSecret: process.env.GITHUB_WEBHOOK_SECRET! }),
+  ],
+});
+
+// Register a handler for each event you care about. Events from @relayos
+// provider plugins are fully typed - relay.on() autocompletes their event
+// names and types event.data per event:
+//
+// relay.on('stripe.charge.succeeded', async (event, ctx) => {
+//   const charge = event.data.object; // a typed Stripe.Charge
+//
+//   const payment = await ctx.step.run('record-payment', async () => {
+//     return { chargeId: charge.id, amount: charge.amount };
+//   });
+//
+//   ctx.log.info('payment recorded', payment);
+// });
+```
+
+## Next steps
+
+1. Install the plugins you want:
+   ```sh
+   pnpm add relayos @relayos/postgres @relayos/stripe stripe @relayos/nextjs
+   ```
+
+2. Wire the config into your framework (Next.js example):
+   ```ts
+   // app/api/relay/[...all]/route.ts
+   import { toNextJsHandler } from '@relayos/nextjs';
+   import { relay } from '@/relayos.config';
+
+   export const { POST } = toNextJsHandler(relay);
+   ```
+
+3. Uncomment a plugin and register a handler with `relay.on(...)`.
+
+4. When ready for persistence, uncomment the Postgres lines, create a database, and run:
+   ```sh
+   DATABASE_URL=postgres://localhost:5432/myapp relay migrate
+   ```
+
+See the [full Quickstart](/docs/quickstart) for more.

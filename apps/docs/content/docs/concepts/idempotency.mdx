@@ -1,0 +1,115 @@
+---
+title: Idempotency
+description: How event deduplication and step caching prevent duplicate processing
+---
+
+RelayOS prevents duplicate processing at two levels: the event level (deduplication) and the step level (caching).
+
+## Event deduplication
+
+When a webhook arrives, RelayOS checks if an execution for that event already exists by looking up the event's unique ID. If one exists, it returns that execution instead of creating a new one—no duplicate handlers run.
+
+The lookup is a fast-path check:
+
+```ts
+const existing = await store.findByEventId(event.id);
+if (existing) {
+  return existing;
+}
+```
+
+If the check passes but two requests raced to insert, the actual insert is atomic (a database-level `INSERT ... ON CONFLICT DO NOTHING` at the Postgres level), so only one execution actually gets created:
+
+```ts
+const created = await store.create(execution);
+if (!created) {
+  // Lost the race - another instance won
+  const winner = await store.findByEventId(event.id);
+  return winner;
+}
+```
+
+This pattern ensures that concurrent redeliveries of the same webhook (seconds apart, when a provider retries on timeout) always result in exactly one execution.
+
+### Event ID semantics
+
+The event ID comes from the provider:
+- **Stripe**: `evt_xxxxx` (Stripe's event ID)
+- **GitHub**: `x-github-delivery` header (UUID per delivery)
+- **Custom plugins**: Whatever you define in `normalize()`
+
+Providers guarantee that the same webhook event always has the same ID, so RelayOS's deduplication is reliable.
+
+## Step-level idempotency
+
+Steps are cached at the execution level. When `ctx.step.run('name', fn)` is called:
+
+1. Check if a step with this name has been run before in any previous attempt
+2. If the most recent attempt's status was `completed`, return its cached output
+3. If it failed or doesn't exist, run it again
+
+This works across retries:
+
+```ts
+// Attempt 1
+await ctx.step.run('charge-card', async () => {
+  return await stripe.charges.create(...); // Side effect: real charge
+});
+// Fails, execution is retried
+
+// Attempt 2
+await ctx.step.run('charge-card', async () => {
+  return await stripe.charges.create(...); // This never runs!
+  // Cached output from attempt 1 is returned
+});
+```
+
+The `charge-card` step's output from attempt 1 is returned immediately, without calling `stripe.charges.create()` again. Zero duplicate charges.
+
+## Caching behavior
+
+- **Completed step**: Output is cached, `fn` never runs again (even on restart)
+- **Failed step**: On retry, `fn` runs again (the assumption is that transient failures may have been resolved)
+- **Unknown step** (first time): `fn` runs
+- **Restart** (`forceRerun: true`): Every step is re-run, even completed ones
+
+The final case is important: if you call `restartExecution()` after fixing a bug, every step—including ones with side effects—will run again. Make sure your handler can tolerate this (idempotent operations) or clean up duplicates manually.
+
+## Log sources
+
+RelayOS distinguishes system logs from handler logs so you can tell when the runtime made a decision vs. when your code did:
+
+```ts
+type LogSource = 'system' | 'handler';
+
+// 'system' logs:
+// - "event ingested"
+// - "retrying (attempt 2, scheduled)"
+// - "restarting (attempt 2) - all steps will re-run"
+
+// 'handler' logs:
+// - Everything from ctx.log.info(), ctx.log.error(), etc.
+```
+
+When you call `relay listLogs(executionId)` or `relay inspect <executionId>`, the source is tagged so you can filter or understand causality.
+
+## In-process execution locking
+
+Within a single process, RelayOS uses an in-memory map (`inFlight`) to ensure only one attempt runs at a time for a given execution. If a manual retry call arrives while an automatic retry is in progress, the manual call waits for (and piggybracks on) the in-flight attempt:
+
+```ts
+function runExclusive(executionId: string, fn: () => Promise<Execution>): Promise<Execution> {
+  const existing = inFlight.get(executionId);
+  if (existing) return existing; // Piggyback on the in-flight run
+
+  const promise = fn().finally(() => {
+    inFlight.delete(executionId);
+  });
+  inFlight.set(executionId, promise);
+  return promise;
+}
+```
+
+This prevents concurrent side effects (e.g., two email sends) even if retries are called very quickly.
+
+**Important**: This is in-process only. In a multi-instance deployment, you need database-level coordination (not yet shipped) to prevent two instances from running the same execution simultaneously.
