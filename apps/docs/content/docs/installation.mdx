@@ -1,35 +1,37 @@
 ---
 title: Installation
-description: Set up RelayOS in your project with the core package and optional providers
+description: Set up RelayOS in your project - one package to start, everything else is optional
 ---
 
-You'll need Node >=20 and TypeScript >=5. Postgres is optional to start—you can develop locally with the in-memory store—but recommended for production.
+You'll need Node >=20 and TypeScript >=5.
 
-## Install packages
+## Install
 
 ```sh
-pnpm add relayos @relayos/postgres @relayos/stripe stripe @relayos/nextjs
+pnpm add relayos
 ```
 
-Note: `stripe` is a peer dependency of `@relayos/stripe`, so your application's pinned Stripe SDK version determines the event catalog's types. If you're using GitHub webhooks instead (or in addition), add `@relayos/github`.
+That's it. `relayos` includes the engine, an in-memory execution store, and Next.js support (`relayos/next-js`) - nothing else is required to register a handler and run an event through it. Everything below is an optional add-on you install only when you need it.
 
-## Core packages
+## Packages
 
-| Package | Purpose |
-|---|---|
-| `relayos` | The SDK: `createRelay` and the user-facing types. Ships an in-memory store by default. |
-| `@relayos/core` | The engine: durable executions, steps, retries, replay, and the contracts everything else builds on. |
-| `@relayos/plugin` | Plugin authoring kit: `definePlugin` + webhook signature helpers. |
-| `@relayos/stripe` | Stripe plugin with signature verification and a fully-typed event catalog. Peer-depends on `stripe`. |
-| `@relayos/github` | GitHub plugin with signature verification and a fully-typed event catalog. |
-| `@relayos/nextjs` | Next.js App Router adapter: `toNextJsHandler(relay)`. |
-| `@relayos/postgres` | Postgres storage adapter: schema, migrations, and the `ExecutionStore` implementation. |
-| `@relayos/cli` | Command-line tools: `relay init`, `relay migrate`, `relay dev`, `relay trigger`, etc. |
+| Package | Purpose | When you need it |
+|---|---|---|
+| `relayos` | The SDK: `createRelay`, the user-facing types, and `relayos/next-js`. Ships an in-memory store by default. | Always - this is the only required install. |
+| `@relayos/core` | The engine: durable executions, steps, retries, replay, and the contracts everything else builds on. | Pulled in automatically by `relayos`; install directly only if you're building a custom storage adapter or plugin. |
+| `@relayos/postgres` | Postgres storage adapter: schema, migrations, and the `ExecutionStore` implementation. | Once you need executions to survive a restart. See [Database](/docs/database/postgres). |
+| `@relayos/stripe` | Stripe plugin with signature verification and a fully-typed event catalog. Peer-depends on `stripe`. | Once you're receiving real Stripe webhooks. See [Plugins](/docs/plugins/stripe). |
+| `@relayos/github` | GitHub plugin with signature verification and a fully-typed event catalog. | Once you're receiving real GitHub webhooks. See [Plugins](/docs/plugins/github). |
+| `@relayos/plugin` | Plugin authoring kit: `definePlugin` + webhook signature helpers. | Only if you're writing your own provider plugin. See [Writing plugins](/docs/plugins/writing-plugins). |
+| `@relayos/cli` | Command-line tools: `relay init`, `relay migrate`, `relay dev`, `relay trigger`, etc. | Recommended for local development, not required at runtime. |
+
+If you add Stripe, note that `stripe` is a peer dependency of `@relayos/stripe`: `pnpm add @relayos/stripe stripe` - your application's pinned Stripe SDK version determines the event catalog's types.
 
 ## Scaffold your config
 
 ```sh
+pnpm add -D @relayos/cli
 pnpm exec relay init
 ```
 
-This creates a `relayos.config.ts` file in your project root with boilerplate for `createRelay`, plugins, and a database store. Read the [Quickstart](/docs/quickstart) to wire it up end-to-end.
+This creates two files in your project root: `relayos.config.ts` (wiring - storage, plugins, retry policy) and `relayos.handlers.ts` (a `registerHandlers(relay)` function where your `relay.on(...)` calls live, kept separate so the config file doesn't turn into a dumping ground for business logic). Read the [Quickstart](/docs/quickstart) to see the whole loop end to end.

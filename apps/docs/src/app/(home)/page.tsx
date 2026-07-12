@@ -25,7 +25,7 @@ export default function HomePage() {
         </Link>
       </div>
       <pre className="max-w-full overflow-x-auto rounded-lg border bg-fd-secondary px-5 py-3 text-left text-sm">
-        <code>pnpm add relayos @relayos/postgres @relayos/stripe stripe @relayos/nextjs</code>
+        <code>pnpm add relayos</code>
       </pre>
     </main>
   );

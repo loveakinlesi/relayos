@@ -3,16 +3,14 @@ title: Next.js
 description: Wire RelayOS into a Next.js App Router catch-all route.
 ---
 
-Use `@relayos/nextjs` to integrate RelayOS into your Next.js application. It provides a handler adapter that converts your Relay instance into a standard Next.js route handler.
+Next.js support ships in `relayos` itself, as the `relayos/next-js` subpath - there's no separate package to install. `toNextJsHandler` converts your Relay instance into a standard Next.js route handler.
 
 ## Installation
 
-```sh
-pnpm add @relayos/nextjs
-```
+Nothing extra - if you've already run `pnpm add relayos`, you have it:
 
 ```ts
-import { toNextJsHandler } from '@relayos/nextjs';
+import { toNextJsHandler } from 'relayos/next-js';
 ```
 
 ## Setup
@@ -21,7 +19,7 @@ Create a catch-all route to receive webhooks from all your plugins:
 
 ```ts
 // app/api/relay/[...all]/route.ts
-import { toNextJsHandler } from '@relayos/nextjs';
+import { toNextJsHandler } from 'relayos/next-js';
 import { relay } from '@/relayos.config';
 
 export const { POST } = toNextJsHandler(relay);

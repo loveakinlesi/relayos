@@ -29,70 +29,69 @@ RelayOS gives you:
 ## Quickstart
 
 ```sh
-pnpm add relayos @relayos/postgres @relayos/stripe stripe @relayos/nextjs
+pnpm add relayos
 ```
 
-(`stripe` is a peer dependency of `@relayos/stripe` — the typed event catalog derives from whichever Stripe SDK version your app has installed.)
+That's the entire install — no database, no provider plugin, no framework adapter required. `relayos` ships an in-memory store and Next.js support (`relayos/next-js`) out of the box.
 
 ```ts
-// relayos.config.ts
+// relayos.config.ts — wiring only
 import { createRelay } from 'relayos';
-import { stripe } from '@relayos/stripe';
-import { createDb, createPostgresExecutionStore } from '@relayos/postgres';
+import { registerHandlers } from './relayos.handlers';
 
-const db = createDb(process.env.DATABASE_URL!);
-
-export const relay = createRelay({
-  database: createPostgresExecutionStore(db),
-  plugins: [stripe({ webhookSecret: process.env.STRIPE_WEBHOOK_SECRET! })],
-});
-
-relay.on('stripe.charge.succeeded', async (event, ctx) => {
-  const charge = event.data.object; // a fully-typed Stripe.Charge - no cast needed
-
-  const payment = await ctx.step.run('record-payment', async () => {
-    return { chargeId: charge.id, amount: charge.amount };
-  });
-
-  await ctx.step.run('send-receipt', async () => {
-    await sendReceiptEmail(payment);
-  });
-
-  ctx.log.info('payment processed', payment);
-});
+export const relay = createRelay();
+export type AppRelay = typeof relay; // carries the typed event catalog forward
+registerHandlers(relay);
 ```
 
 ```ts
-// app/api/relay/[...all]/route.ts (Next.js)
-import { toNextJsHandler } from '@relayos/nextjs';
-import { relay } from '@/relayos.config';
+// relayos.handlers.ts — handler logic lives here, not in relayos.config.ts
+import type { AppRelay } from './relayos.config';
 
-export const { POST } = toNextJsHandler(relay);
+export function registerHandlers(relay: AppRelay): void {
+  relay.on('order.placed', async (event, ctx) => {
+    const payment = await ctx.step.run('charge-payment', async () => {
+      return { orderId: event.data.orderId, amount: event.data.amount };
+    });
+
+    await ctx.step.run('send-confirmation', async () => {
+      ctx.log.info('order confirmed', payment);
+    });
+  });
+}
 ```
 
-```sh
-DATABASE_URL=postgres://localhost:5432/myapp pnpm exec relay migrate
-DATABASE_URL=postgres://localhost:5432/myapp pnpm exec relay dev --dir apps/web
+```ts
+// try it — no HTTP, no plugin, no database
+import { relay } from './relayos.config';
+
+const execution = await relay.ingest({
+  id: crypto.randomUUID(),
+  type: 'order.placed',
+  data: { orderId: 'ord_1', amount: 4200 },
+  receivedAt: new Date().toISOString(),
+});
+
+console.log(execution.status); // "completed" — charge-payment never re-runs on retry
 ```
 
-Point Stripe at `/api/relay/stripe`, GitHub at `/api/relay/github`. If `send-receipt` fails, the execution automatically retries — `record-payment` never runs twice.
+From here: `pnpm add @relayos/stripe stripe` (or `@relayos/github`) once you're ready to receive real, signature-verified webhooks; `pnpm add @relayos/postgres` once you need executions to survive a restart; `import { toNextJsHandler } from 'relayos/next-js'` to mount as a Next.js route — nothing extra to install for that last one. See `apps/docs` (`pnpm --filter docs dev`, served on `:3001`) for the full quickstart and API reference.
 
 ## Packages
 
 This is a Turborepo monorepo:
 
-| Package                                    | Purpose                                                                                                                                |
-| ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
-| [`relayos`](./packages/relayos)            | The SDK: `createRelay` and the user-facing types. Storage-agnostic — ships an in-memory store by default.                              |
-| [`@relayos/core`](./packages/core)         | The engine: durable executions, steps, retries, replay, and the contracts (`ExecutionStore`, `RelayPlugin`) everything else builds on. |
-| [`@relayos/plugin`](./packages/plugin)     | Plugin authoring kit: `definePlugin` + webhook signature helpers for building your own providers.                                      |
-| [`@relayos/stripe`](./packages/stripe)     | Stripe plugin: signature verification + a fully-typed catalog of every Stripe event (peer-depends on `stripe`).                        |
-| [`@relayos/github`](./packages/github)     | GitHub plugin: signature verification + a fully-typed catalog of every GitHub webhook event.                                           |
-| [`@relayos/nextjs`](./packages/nextjs)     | Next.js App Router adapter: `toNextJsHandler(relay)`.                                                                                  |
-| [`@relayos/postgres`](./packages/postgres) | The Postgres storage adapter: schema, migrations, and the `ExecutionStore` implementation.                                             |
-| [`@relayos/cli`](./packages/cli)           | `relay init`, `relay migrate`, `relay dev`, `relay trigger`, `relay inspect`, `relay replay`, `relay events list`.                     |
-| [`apps/web`](./apps/web)                   | A Next.js app used as the local dev/test harness for the runtime, wired up in `apps/web/relayos.config.ts`.                            |
-| [`apps/docs`](./apps/docs)                 | The documentation site (Fumadocs). `pnpm --filter docs dev` serves it on port 3001.                                                    |
+| Package                                    | Purpose                                                                                                                                                                      |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`relayos`](./packages/relayos)            | The SDK: `createRelay`, the user-facing types, and Next.js support (`relayos/next-js`). The only required install — ships an in-memory store by default.                     |
+| [`@relayos/core`](./packages/core)         | The engine: durable executions, steps, retries, replay, and the contracts (`ExecutionStore`, `RelayPlugin`) everything else builds on. Pulled in automatically by `relayos`. |
+| [`@relayos/plugin`](./packages/plugin)     | Plugin authoring kit: `definePlugin` + webhook signature helpers for building your own providers. Optional.                                                                  |
+| [`@relayos/stripe`](./packages/stripe)     | Stripe plugin: signature verification + a fully-typed catalog of every Stripe event (peer-depends on `stripe`). Optional.                                                    |
+| [`@relayos/github`](./packages/github)     | GitHub plugin: signature verification + a fully-typed catalog of every GitHub webhook event. Optional.                                                                       |
+| [`@relayos/postgres`](./packages/postgres) | The Postgres storage adapter: schema, migrations, and the `ExecutionStore` implementation. Optional — add once you need durability.                                          |
+| [`@relayos/cli`](./packages/cli)           | `relay init`, `relay migrate`, `relay dev`, `relay trigger`, `relay inspect`, `relay replay`, `relay events list`.                                                           |
+| [`apps/web`](./apps/web)                   | A Next.js app used as the local dev/test harness for the runtime, wired up in `apps/web/relayos.config.ts`.                                                                  |
+| [`apps/docs`](./apps/docs)                 | The documentation site (Fumadocs). `pnpm --filter docs dev` serves it on port 3001.                                                                                          |
 
 ## Local Development
 
@@ -103,11 +102,10 @@ Setting up this monorepo (not just consuming the published packages) to hack on 
 - Node >=20, pnpm >=9
 - A local Postgres (for running `apps/web`). Separately, running `@relayos/postgres`'s tests wants a container runtime (Docker, Colima, or Podman) — see [Testing](#testing) below if you don't have one.
 
-**2. Clone and check out the active branch** — development happens on `refresh`, not `main`:
+**2. Clone the repo:**
 
 ```sh
 git clone <repo-url> && cd relayos
-git checkout refresh
 pnpm install
 ```
 
@@ -170,5 +168,3 @@ TEST_DATABASE_URL=postgres://localhost:5432/relayos_test pnpm test
 ## Status
 
 RelayOS is pre-1.0 and under active development. The core runtime (events, executions, steps, logs, retries, restart, replay, dedup, concurrency-safe execution locking) is built and verified end-to-end against real signed webhook payloads and a real Postgres database — but it hasn't shipped a dashboard/observability UI yet (everything is currently inspectable via the API or `psql`), and retry/lock coordination is in-process only, so it doesn't yet coordinate across multiple server instances.
-
-Development happens on the `refresh` branch.

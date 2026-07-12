@@ -1,101 +1,102 @@
 ---
 title: Quickstart
-description: Build your first webhook handler with durable steps in 5 minutes
+description: Get a durable event handler running in under a minute, with zero external dependencies
 ---
 
-This quickstart walks you through setting up RelayOS in a Next.js app to process Stripe webhooks with durable steps and automatic retries.
+RelayOS needs nothing but itself to get started: no database, no provider plugin, no framework. This walks through the whole loop - creating a relay, registering a handler, and running an event through it - using only `relayos`.
 
-## 1. Install packages
+## 1. Install
 
 ```sh
-pnpm add relayos @relayos/postgres @relayos/stripe stripe @relayos/nextjs
+pnpm add relayos
 ```
 
-## 2. Create your relay config
+That's the entire install. Postgres, Stripe, GitHub, and framework adapters are all optional add-ons you install later, only when you actually need them - see [Next steps](#next-steps).
 
-Create `relayos.config.ts` at your project root:
+## 2. Create your relay
+
+Create `relayos.config.ts` at your project root. This file stays wiring-only - it creates the relay and nothing else:
 
 ```ts
 // relayos.config.ts
 import { createRelay } from 'relayos';
-import { stripe } from '@relayos/stripe';
-import { createDb, createPostgresExecutionStore } from '@relayos/postgres';
+import { registerHandlers } from './relayos.handlers';
 
-const db = createDb(process.env.DATABASE_URL!);
+export const relay = createRelay();
 
-export const relay = createRelay({
-  database: createPostgresExecutionStore(db),
-  plugins: [stripe({ webhookSecret: process.env.STRIPE_WEBHOOK_SECRET! })],
-});
+// The concrete relay type, including any typed event catalogs inferred from
+// plugins you add later - exported so relayos.handlers.ts can register
+// handlers with full event.data typing.
+export type AppRelay = typeof relay;
 
-relay.on('stripe.charge.succeeded', async (event, ctx) => {
-  const charge = event.data.object; // fully typed Stripe.Charge
-
-  const payment = await ctx.step.run('record-payment', async () => {
-    // Record the payment to your database
-    console.log('Recording payment for charge', charge.id);
-    return { chargeId: charge.id, amount: charge.amount };
-  });
-
-  await ctx.step.run('send-receipt', async () => {
-    // Send a receipt email to the customer
-    console.log('Sending receipt to', charge.customer);
-  });
-
-  ctx.log.info('payment processed', payment);
-});
+registerHandlers(relay);
 ```
 
-## 3. Create the webhook route
+## 3. Register a handler
 
-Create `app/api/relay/[...all]/route.ts` (Next.js App Router):
+`relay.on(...)` calls don't belong in `relayos.config.ts` - as an app grows, that file would turn into a dumping ground for every event's business logic. Put handlers in their own module instead:
+
+```ts
+// relayos.handlers.ts
+import type { AppRelay } from './relayos.config';
+
+export function registerHandlers(relay: AppRelay): void {
+  relay.on('order.placed', async (event, ctx) => {
+    const payment = await ctx.step.run('charge-payment', async () => {
+      return { orderId: event.data.orderId, amount: event.data.amount };
+    });
+
+    await ctx.step.run('send-confirmation', async () => {
+      ctx.log.info('order confirmed', payment);
+    });
+  });
+}
+```
+
+Each `ctx.step.run(...)` checkpoints its result - if the handler throws and retries, a step that already completed returns its cached output instead of re-running.
+
+## 4. Try it
+
+No HTTP server, no provider, no database - just call `relay.ingest()` directly:
+
+```ts
+// try.ts
+import { relay } from './relayos.config';
+
+const execution = await relay.ingest({
+  id: crypto.randomUUID(),
+  type: 'order.placed',
+  data: { orderId: 'ord_1', amount: 4200 },
+  receivedAt: new Date().toISOString(),
+});
+
+console.log(execution.status); // "completed"
+console.log(await relay.listSteps(execution.id)); // charge-payment, send-confirmation
+```
+
+```sh
+npx tsx try.ts
+```
+
+## Optional: mount it in Next.js
+
+Next.js support ships in `relayos` itself - there's nothing extra to install. Add a catch-all route:
 
 ```ts
 // app/api/relay/[...all]/route.ts
-import { toNextJsHandler } from '@relayos/nextjs';
+import { toNextJsHandler } from 'relayos/next-js';
 import { relay } from '@/relayos.config';
 
 export const { POST } = toNextJsHandler(relay);
 ```
 
-## 4. Set up your database
-
-Initialize Postgres and apply migrations:
-
-```sh
-createdb relayos_dev   # or: psql -c "CREATE DATABASE relayos_dev"
-DATABASE_URL=postgres://localhost:5432/relayos_dev pnpm exec relay migrate
-```
-
-## 5. Run your app
-
-```sh
-DATABASE_URL=postgres://localhost:5432/relayos_dev \
-STRIPE_WEBHOOK_SECRET=whsec_dev \
-pnpm exec relay dev
-```
-
-This starts your app's dev server (in the current directory - pass `--dir <path>` if it lives elsewhere) and tails new executions to your terminal.
-
-## 6. Test it
-
-From another terminal, trigger a test Stripe event. `relay trigger` signs the payload exactly like Stripe would, so the same `STRIPE_WEBHOOK_SECRET` must be set here as on the server:
-
-```sh
-STRIPE_WEBHOOK_SECRET=whsec_dev pnpm exec relay trigger stripe charge.succeeded \
-  --data '{"id":"ch_test_1","amount":10000,"currency":"usd","customer":"cus_test"}'
-```
-
-You'll see the event ingested and your handler run. If you watch the database, you'll see one `Execution` and two `ExecutionSteps` (one per `ctx.step.run`).
-
-Inspect what happened:
-
-```sh
-DATABASE_URL=postgres://localhost:5432/relayos_dev pnpm exec relay inspect <eventId>
-```
+See [Next.js](/docs/frameworks/nextjs) for management-endpoint examples (list/inspect/retry/replay).
 
 ## Next steps
 
-- **Event types**: Learn how [Typed Events](/docs/concepts/typed-events) work and what autocomplete you get.
-- **Durable steps**: Dive into [Durable Steps](/docs/concepts/durable-steps) to understand caching, retries, and audit trails.
-- **Replay & restart**: Understand the [three retry operations](/docs/concepts/replay-restart-retry) and when to use each.
+- **Receive real webhooks**: install a provider plugin - [Stripe](/docs/plugins/stripe) (`pnpm add @relayos/stripe stripe`) or [GitHub](/docs/plugins/github) (`pnpm add @relayos/github`) - only once you're ready to verify real signed deliveries.
+- **Survive restarts**: install [`@relayos/postgres`](/docs/database/postgres) (`pnpm add @relayos/postgres`) and swap it in as `database` - executions are in-memory (and lost on restart) until you do.
+- **Event types**: learn how [Typed Events](/docs/concepts/typed-events) work and what autocomplete you get once you add a provider plugin.
+- **Durable steps**: dive into [Durable Steps](/docs/concepts/durable-steps) to understand caching, retries, and audit trails.
+- **Replay & restart**: understand the [three retry operations](/docs/concepts/replay-restart-retry) and when to use each.
+- **CLI**: `relay init` scaffolds the `relayos.config.ts` + `relayos.handlers.ts` split shown above for you - see the [CLI reference](/docs/cli).
