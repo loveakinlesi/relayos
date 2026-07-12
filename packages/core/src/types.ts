@@ -1,3 +1,5 @@
+import type { RelayDatabaseConfig } from './db/resolve';
+
 export type NormalizedEvent<TType extends string = string, TData = Record<string, unknown>> = {
   id: string;
   type: TType;
@@ -187,7 +189,7 @@ export type RetryPolicy = {
 export type RelayConfig<
   TPlugins extends readonly RelayPlugin<any>[] = readonly RelayPlugin<any>[],
 > = {
-  database?: ExecutionStore;
+  database: RelayDatabaseConfig;
   plugins?: TPlugins;
   retry?: RetryPolicy;
   /** Reject webhook requests with a larger Content-Length before verification/body parsing. */
