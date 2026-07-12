@@ -13,12 +13,13 @@
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "relayos": "workspace:*",
-    "@relayos/postgres": "workspace:*",
+    "pg": "^8.13.0",
     "@relayos/stripe": "workspace:*",
     "@relayos/github": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20",
+    "@types/pg": "^8.11.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
