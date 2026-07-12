@@ -7,9 +7,28 @@ You'll need Node >=20 and TypeScript >=5.
 
 ## Install
 
+<Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
+<Tab value="pnpm">
 ```sh
 pnpm add relayos
 ```
+</Tab>
+<Tab value="npm">
+```sh
+npm install relayos
+```
+</Tab>
+<Tab value="yarn">
+```sh
+yarn add relayos
+```
+</Tab>
+<Tab value="bun">
+```sh
+bun add relayos
+```
+</Tab>
+</Tabs>
 
 That's it. `relayos` includes the engine, an in-memory execution store, and Next.js support (`relayos/next-js`) - nothing else is required to register a handler and run an event through it. Everything below is an optional add-on you install only when you need it.
 
@@ -29,9 +48,31 @@ If you add Stripe, note that `stripe` is a peer dependency of `@relayos/stripe`:
 
 ## Scaffold your config
 
+<Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
+<Tab value="pnpm">
 ```sh
 pnpm add -D @relayos/cli
 pnpm exec relay init
 ```
+</Tab>
+<Tab value="npm">
+```sh
+npm install -D @relayos/cli
+npx relay init
+```
+</Tab>
+<Tab value="yarn">
+```sh
+yarn add -D @relayos/cli
+yarn relay init
+```
+</Tab>
+<Tab value="bun">
+```sh
+bun add -d @relayos/cli
+bunx relay init
+```
+</Tab>
+</Tabs>
 
 This creates two files in your project root: `relayos.config.ts` (wiring - storage, plugins, retry policy) and `relayos.handlers.ts` (a `registerHandlers(relay)` function where your `relay.on(...)` calls live, kept separate so the config file doesn't turn into a dumping ground for business logic). Read the [Quickstart](/docs/quickstart) to see the whole loop end to end.
