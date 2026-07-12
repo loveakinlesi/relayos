@@ -1,43 +1,40 @@
 import { spawn } from 'node:child_process';
-import { resolve, join } from 'node:path';
+import { join } from 'node:path';
 import { writeFile, access } from 'node:fs/promises';
-import { gt } from 'drizzle-orm';
-import {
-  createDb,
-  createPostgresExecutionStore,
-  executions,
-  runMigrations,
-} from '@relayos/postgres';
-import type { Execution, ExecutionStore, RelayPlugin } from '@relayos/core';
+import type { Execution, Relay, RelayPlugin } from '@relayos/core';
 import { stripe } from '@relayos/stripe';
 import { github } from '@relayos/github';
+import { loadRelay } from './load-relay';
 import {
   getFlag,
   hasFlag,
-  resolveRuntimeUrl,
+  resolveBaseUrl,
+  resolveDir,
   statusIcon,
   formatDuration,
   latestStepsByName,
 } from './utils';
-import { RELAYOS_CONFIG_TEMPLATE, RELAYOS_HANDLERS_TEMPLATE, INIT_NEXT_STEPS } from './templates';
+import { RELAY_CONFIG_TEMPLATE, RELAY_HANDLERS_TEMPLATE, INIT_NEXT_STEPS } from './templates';
 
 const USAGE = `Usage: relay <command>
 
 Commands:
-  init [--force]                          Scaffold relayos.config.ts and relayos.handlers.ts
-  migrate                                Apply RelayOS's Postgres migrations (reads DATABASE_URL)
+  init [--force]                          Interactive wizard: scaffolds relay.ts and
+                                          relay.handlers.ts, installs the packages you choose
+  migrate [--dir <path>]                  Apply pending schema migrations (loads relay.ts;
+                                          --dir defaults to cwd)
   dev [--dir <path>]                      Run the app's dev server and tail new executions live
-                                          (tailing requires DATABASE_URL; --dir defaults to cwd)
+                                          (loads relay.ts from --dir, defaults to cwd)
   trigger <provider> <eventType>          Simulate a signed provider webhook delivery
     [--data '<json>'] [--forward <url>]   (reads <PROVIDER>_WEBHOOK_SECRET; --forward defaults to
-                                          RELAYOS_RUNTIME_URL or http://localhost:3000)
+                                          RELAYOS_BASE_URL or http://localhost:3000)
   inspect <eventId|executionId>           Show an execution's status, steps, and logs
-    [--json] [--history]                  (reads DATABASE_URL directly, no running app needed)
+    [--json] [--history] [--dir <path>]   (loads relay.ts directly, no running app needed)
   replay <eventId|executionId>            Replay a historical execution as a new one
-    [--forward <url>] [--print]           (resolves via DATABASE_URL; --print dry-runs with no
-                                          HTTP call; otherwise replays via --forward)
+    [--forward <url>] [--print]           (resolves via relay.ts; --print dry-runs with no
+    [--dir <path>]                        HTTP call; otherwise replays via --forward)
   events list [--json] [--limit <n>]      List recent executions, newest first
-                                          (reads DATABASE_URL directly, no running app needed)
+    [--dir <path>]                        (loads relay.ts directly, no running app needed)
 
 Planned, not yet available: relay resume <id>, relay stop <id>, relay progress <id> -
 see the TODO comment near main() in packages/cli/src/index.ts.
@@ -52,23 +49,14 @@ see the TODO comment near main() in packages/cli/src/index.ts.
 // per-execution "progress" concept beyond what inspect already shows via
 // steps/logs.
 
-function requireDatabaseUrl(): string | undefined {
-  const connectionString = process.env['DATABASE_URL'];
-  if (!connectionString) {
-    console.error('DATABASE_URL must be set.');
-    process.exitCode = 1;
-    return undefined;
-  }
-  return connectionString;
-}
-
-async function resolveExecution(store: ExecutionStore, id: string): Promise<Execution | undefined> {
-  return (await store.findByEventId(id)) ?? (await store.get(id));
+async function resolveExecution(relay: Relay, id: string): Promise<Execution | undefined> {
+  const all = await relay.listExecutions();
+  return all.find((execution) => execution.eventId === id) ?? all.find((execution) => execution.id === id);
 }
 
 async function init(args: string[]) {
-  const configPath = join(process.cwd(), 'relayos.config.ts');
-  const handlersPath = join(process.cwd(), 'relayos.handlers.ts');
+  const configPath = join(process.cwd(), 'relay.ts');
+  const handlersPath = join(process.cwd(), 'relay.handlers.ts');
   const force = hasFlag(args, '--force');
 
   if (!force) {
@@ -84,27 +72,22 @@ async function init(args: string[]) {
     }
   }
 
-  await writeFile(handlersPath, RELAYOS_HANDLERS_TEMPLATE, 'utf8');
+  await writeFile(handlersPath, RELAY_HANDLERS_TEMPLATE, 'utf8');
   console.log(`Created ${handlersPath}`);
-  await writeFile(configPath, RELAYOS_CONFIG_TEMPLATE, 'utf8');
+  await writeFile(configPath, RELAY_CONFIG_TEMPLATE, 'utf8');
   console.log(`Created ${configPath}`);
   console.log(INIT_NEXT_STEPS);
 }
 
-async function migrate() {
-  const connectionString = requireDatabaseUrl();
-  if (!connectionString) return;
-
-  const db = createDb(connectionString);
+async function migrate(args: string[]) {
+  const relay = await loadRelay(resolveDir(args));
   console.log('Applying RelayOS migrations...');
-  await runMigrations(db);
+  await relay.migrate();
   console.log('Migrations applied.');
 }
 
 async function dev(args: string[]) {
-  const dirFlagIndex = args.indexOf('--dir');
-  const dirArg = dirFlagIndex !== -1 ? args[dirFlagIndex + 1] : undefined;
-  const dir = dirArg ? resolve(dirArg) : process.cwd();
+  const dir = resolveDir(args);
 
   console.log(`[relay dev] starting dev server in ${dir}`);
   // detached + killing the negative pid signals the whole process group, not
@@ -119,22 +102,24 @@ async function dev(args: string[]) {
   });
 
   let watcher: ReturnType<typeof setInterval> | undefined;
-  const connectionString = process.env['DATABASE_URL'];
+  let lastSeen = new Date(0);
 
-  if (connectionString) {
-    const db = createDb(connectionString);
-    let lastSeen = new Date();
+  try {
+    const relay = await loadRelay(dir);
     console.log('[relay dev] watching for executions...');
 
     watcher = setInterval(() => {
-      db.select()
-        .from(executions)
-        .where(gt(executions.createdAt, lastSeen))
-        .then((rows) => {
-          for (const row of rows.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())) {
-            if (row.createdAt > lastSeen) lastSeen = row.createdAt;
+      relay
+        .listExecutions()
+        .then((all) => {
+          const fresh = all
+            .filter((execution) => new Date(execution.createdAt) > lastSeen)
+            .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+          for (const execution of fresh) {
+            const createdAt = new Date(execution.createdAt);
+            if (createdAt > lastSeen) lastSeen = createdAt;
             console.log(
-              `[relay dev] ${statusIcon(row.status)} ${row.eventType} (attempt ${row.attempt}) ${row.id}`,
+              `[relay dev] ${statusIcon(execution.status)} ${execution.eventType} (attempt ${execution.attempt}) ${execution.id}`,
             );
           }
         })
@@ -142,8 +127,8 @@ async function dev(args: string[]) {
           console.error('[relay dev] failed to poll executions', err);
         });
     }, 1000);
-  } else {
-    console.log('[relay dev] DATABASE_URL not set - skipping live execution feed');
+  } catch (err) {
+    console.log(`[relay dev] ${err instanceof Error ? err.message : String(err)} - skipping live execution feed`);
   }
 
   const shutdown = () => {
@@ -215,7 +200,7 @@ async function trigger(args: string[]) {
   const rawBody = JSON.stringify(body);
   const signatureHeaders = plugin.sign(rawBody, secret);
 
-  const url = resolveRuntimeUrl(args);
+  const url = resolveBaseUrl(args);
   const target = `${url}/api/relay/${provider}`;
 
   console.log(`[relay trigger] POST ${target}`);
@@ -246,20 +231,16 @@ async function inspect(args: string[]) {
     return;
   }
 
-  const connectionString = requireDatabaseUrl();
-  if (!connectionString) return;
-
-  const db = createDb(connectionString);
-  const store = createPostgresExecutionStore(db);
-  const execution = await resolveExecution(store, id);
+  const relay = await loadRelay(resolveDir(args));
+  const execution = await resolveExecution(relay, id);
   if (!execution) {
     console.error(`No execution found matching "${id}" (checked eventId and execution id).`);
     process.exitCode = 1;
     return;
   }
 
-  const steps = await store.listSteps(execution.id);
-  const logs = await store.listLogs(execution.id);
+  const steps = await relay.listSteps(execution.id);
+  const logs = await relay.listLogs(execution.id);
 
   if (hasFlag(args, '--json')) {
     console.log(JSON.stringify({ execution, steps, logs }, null, 2));
@@ -309,12 +290,8 @@ async function replay(args: string[]) {
     return;
   }
 
-  const connectionString = requireDatabaseUrl();
-  if (!connectionString) return;
-
-  const db = createDb(connectionString);
-  const store = createPostgresExecutionStore(db);
-  const execution = await resolveExecution(store, id);
+  const relay = await loadRelay(resolveDir(args));
+  const execution = await resolveExecution(relay, id);
   if (!execution) {
     console.error(`No execution found matching "${id}" (checked eventId and execution id).`);
     process.exitCode = 1;
@@ -329,7 +306,7 @@ async function replay(args: string[]) {
     return;
   }
 
-  const url = resolveRuntimeUrl(args);
+  const url = resolveBaseUrl(args);
   const target = `${url}/api/executions/${execution.id}/replay`;
 
   console.log(`[relay replay] POST ${target}`);
@@ -345,12 +322,8 @@ async function replay(args: string[]) {
 }
 
 async function eventsList(args: string[]) {
-  const connectionString = requireDatabaseUrl();
-  if (!connectionString) return;
-
-  const db = createDb(connectionString);
-  const store = createPostgresExecutionStore(db);
-  const all = await store.list();
+  const relay = await loadRelay(resolveDir(args));
+  const all = await relay.listExecutions();
 
   const limitFlag = getFlag(args, '--limit');
   const limit = limitFlag ? Number(limitFlag) : undefined;
@@ -391,7 +364,7 @@ async function main() {
       await init(rest);
       return;
     case 'migrate':
-      await migrate();
+      await migrate(rest);
       return;
     case 'dev':
       await dev(rest);
