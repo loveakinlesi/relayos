@@ -269,6 +269,54 @@ describe('relay.handler (HTTP dispatch)', () => {
     expect(res.status).toBe(401);
   });
 
+  it('returns 413 before verification when Content-Length exceeds the configured limit', async () => {
+    let verifyCalls = 0;
+    const relay = createRelayEngine({
+      maxRequestBodyBytes: 4,
+      plugins: [
+        makeFakePlugin({
+          async verify() {
+            verifyCalls++;
+            return true;
+          },
+        }),
+      ],
+    });
+    const req = new Request('http://x/api/relay/fake', {
+      method: 'POST',
+      headers: { 'content-length': '5' },
+      body: '{}',
+    });
+    const res = await relay.handler(req, { params: { all: ['fake'] } });
+    expect(res.status).toBe(413);
+    expect(await res.json()).toEqual({ error: 'request body too large' });
+    expect(verifyCalls).toBe(0);
+  });
+
+  it('returns 400 for verified requests with invalid JSON', async () => {
+    const relay = createRelayEngine({ plugins: [makeFakePlugin()] });
+    const req = new Request('http://x/api/relay/fake', { method: 'POST', body: '{' });
+    const res = await relay.handler(req, { params: { all: ['fake'] } });
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ error: 'invalid JSON payload' });
+  });
+
+  it('returns 400 without leaking provider normalization errors', async () => {
+    const relay = createRelayEngine({
+      plugins: [
+        makeFakePlugin({
+          normalize() {
+            throw new Error('secret parser detail');
+          },
+        }),
+      ],
+    });
+    const req = new Request('http://x/api/relay/fake', { method: 'POST', body: '{}' });
+    const res = await relay.handler(req, { params: { all: ['fake'] } });
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ error: 'invalid provider payload' });
+  });
+
   it('ingests and returns 200 on a verified request', async () => {
     const relay = createRelayEngine({ plugins: [makeFakePlugin()] });
     relay.on('fake.event', async () => {});

@@ -190,4 +190,6 @@ export type RelayConfig<
   database?: ExecutionStore;
   plugins?: TPlugins;
   retry?: RetryPolicy;
+  /** Reject webhook requests with a larger Content-Length before verification/body parsing. */
+  maxRequestBodyBytes?: number;
 };

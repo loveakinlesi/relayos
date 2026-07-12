@@ -33,4 +33,13 @@ describe('safeEqualHex', () => {
   it('does not throw and returns false for non-hex garbage input', () => {
     expect(safeEqualHex('zzzz', 'abcd')).toBe(false);
   });
+
+  it('returns false when the attacker-supplied signature is non-hex but the same length', () => {
+    expect(safeEqualHex('abcd', 'zzzz')).toBe(false);
+  });
+
+  it('returns false for odd-length and empty signatures', () => {
+    expect(safeEqualHex('abc', 'abc')).toBe(false);
+    expect(safeEqualHex('', '')).toBe(false);
+  });
 });

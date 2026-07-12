@@ -17,6 +17,8 @@ const defaultRetryPolicy: RetryPolicy = {
   backoff: (attempt) => Math.min(1000 * 2 ** (attempt - 1), 30_000),
 };
 
+const defaultMaxRequestBodyBytes = 10 * 1024 * 1024;
+
 /**
  * The engine registers handlers untyped internally - the typed `on` overloads
  * exist only on the public Relay surface, and the runtime dispatches purely by
@@ -35,6 +37,7 @@ export function createRelayEngine<const TPlugins extends readonly RelayPlugin<an
     (config.plugins ?? []).map((plugin) => [plugin.id, plugin]),
   );
   const retryPolicy = config.retry ?? defaultRetryPolicy;
+  const maxRequestBodyBytes = config.maxRequestBodyBytes ?? defaultMaxRequestBodyBytes;
 
   function logSystemEvent(executionId: string, message: string, data?: unknown): Promise<void> {
     return store.saveLog({
@@ -340,14 +343,39 @@ export function createRelayEngine<const TPlugins extends readonly RelayPlugin<an
         return Response.json({ error: `unknown provider "${pluginId}"` }, { status: 404 });
       }
 
+      const contentLength = req.headers.get('content-length');
+      if (contentLength) {
+        const bodyBytes = Number(contentLength);
+        if (Number.isFinite(bodyBytes) && bodyBytes > maxRequestBodyBytes) {
+          return Response.json({ error: 'request body too large' }, { status: 413 });
+        }
+      }
+
       const verified = await plugin.verify(req.clone());
       if (!verified) {
         return Response.json({ error: 'invalid signature' }, { status: 401 });
       }
 
-      const rawBody = await req.json();
-      const event = plugin.normalize(rawBody, req.headers);
-      const execution = await ingest(event);
+      let rawBody: unknown;
+      try {
+        rawBody = await req.json();
+      } catch {
+        return Response.json({ error: 'invalid JSON payload' }, { status: 400 });
+      }
+
+      let event: NormalizedEvent;
+      try {
+        event = plugin.normalize(rawBody, req.headers);
+      } catch {
+        return Response.json({ error: 'invalid provider payload' }, { status: 400 });
+      }
+
+      let execution: Execution;
+      try {
+        execution = await ingest(event);
+      } catch {
+        return Response.json({ error: 'failed to ingest event' }, { status: 500 });
+      }
 
       return Response.json({ execution });
     },
