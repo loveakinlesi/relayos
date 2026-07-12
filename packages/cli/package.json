@@ -44,10 +44,10 @@
   },
   "dependencies": {
     "@relayos/core": "workspace:^",
-    "@relayos/postgres": "workspace:^",
     "@relayos/stripe": "workspace:^",
     "@relayos/github": "workspace:^",
-    "drizzle-orm": "^0.45.2"
+    "@clack/prompts": "^1.7.0",
+    "jiti": "^2.7.0"
   },
   "devDependencies": {
     "rimraf": "^6.0.0",
