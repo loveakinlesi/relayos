@@ -8,7 +8,7 @@ pnpm add -D @relayos/cli
 
 | Command                                                     | What it does                                               |
 | ----------------------------------------------------------- | ---------------------------------------------------------- |
-| `relay init [--force]`                                      | Scaffold `relayos.config.ts` in the current directory      |
+| `relay init [--force]`                                      | Scaffold `relayos.config.ts` + `relayos.handlers.ts`       |
 | `relay migrate`                                             | Apply RelayOS's Postgres migrations (reads `DATABASE_URL`) |
 | `relay dev [--dir <path>]`                                  | Run your app's dev server and tail new executions live     |
 | `relay trigger <provider> <eventType> [--data '<json>']`    | Simulate a real, signed provider webhook delivery          |
