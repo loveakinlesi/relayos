@@ -1,10 +1,78 @@
-export const RELAYOS_CONFIG_TEMPLATE = `import { createRelay } from 'relayos';
+export type DatabaseChoice = 'sqlite' | 'postgres' | 'mysql';
+export type PluginChoice = 'stripe' | 'github';
+
+export const databasePackages: Record<DatabaseChoice, string> = {
+  sqlite: 'better-sqlite3',
+  postgres: 'pg',
+  mysql: 'mysql2',
+};
+
+export const pluginPackages: Record<PluginChoice, string> = {
+  stripe: '@relayos/stripe',
+  github: '@relayos/github',
+};
+
+const databaseImportLine: Record<DatabaseChoice, string> = {
+  sqlite: "import Database from 'better-sqlite3';",
+  postgres: "import { Pool } from 'pg';",
+  mysql: "import { createPool } from 'mysql2';",
+};
+
+const databaseExpression: Record<DatabaseChoice, string> = {
+  sqlite: "new Database('relay.db')",
+  postgres: 'new Pool({ connectionString: process.env.DATABASE_URL! })',
+  mysql: "createPool({ uri: process.env.DATABASE_URL!, timezone: 'Z' })",
+};
+
+const pluginImportLine: Record<PluginChoice, string> = {
+  stripe: "import { stripe } from '@relayos/stripe';",
+  github: "import { github } from '@relayos/github';",
+};
+
+const pluginExpression: Record<PluginChoice, string> = {
+  stripe: 'stripe({ webhookSecret: process.env.STRIPE_WEBHOOK_SECRET! })',
+  github: 'github({ webhookSecret: process.env.GITHUB_WEBHOOK_SECRET! })',
+};
+
+export function buildRelayConfigTemplate(options: {
+  database: DatabaseChoice;
+  plugins: PluginChoice[];
+}): string {
+  const imports = [
+    "import { relayos } from 'relayos';",
+    databaseImportLine[options.database],
+    ...options.plugins.map((plugin) => pluginImportLine[plugin]),
+    "import { registerHandlers } from './relay.handlers';",
+  ].join('\n');
+
+  const pluginLines = options.plugins.map((plugin) => `    ${pluginExpression[plugin]},`).join('\n');
+
+  return `${imports}
+
+export const relay = relayos({
+  database: ${databaseExpression[options.database]},
+  plugins: [
+${pluginLines}
+  ],
+});
+
+// The concrete relay type, including the typed event catalog inferred from
+// the plugins above - exported so relay.handlers.ts (or any other module)
+// can register handlers with full event.data typing, without needing to
+// duplicate the plugins list.
+export type AppRelay = typeof relay;
+
+registerHandlers(relay);
+`;
+}
+
+export const RELAY_CONFIG_TEMPLATE = `import { relayos } from 'relayos';
 // import { stripe } from '@relayos/stripe';
 // import { github } from '@relayos/github';
 // import { createDb, createPostgresExecutionStore } from '@relayos/postgres';
-import { registerHandlers } from './relayos.handlers';
+import { registerHandlers } from './relay.handlers';
 
-export const relay = createRelay({
+export const relay = relayos({
   // Executions are kept in memory by default - fine for getting started, but
   // they won't survive a restart. Swap in Postgres once you're ready:
   //
@@ -18,7 +86,7 @@ export const relay = createRelay({
 });
 
 // The concrete relay type, including the typed event catalog inferred from
-// the plugins above - exported so relayos.handlers.ts (or any other module)
+// the plugins above - exported so relay.handlers.ts (or any other module)
 // can register handlers with full event.data typing, without needing to
 // duplicate the plugins list.
 export type AppRelay = typeof relay;
@@ -26,13 +94,13 @@ export type AppRelay = typeof relay;
 registerHandlers(relay);
 `;
 
-export const RELAYOS_HANDLERS_TEMPLATE = `import type { AppRelay } from './relayos.config';
+export const RELAY_HANDLERS_TEMPLATE = `import type { AppRelay } from './relay';
 
-// Handlers live here, not in relayos.config.ts - that file stays
-// wiring-only (storage, plugins, retry policy), while the business logic
-// that runs when an event arrives lives in its own module. For a larger
-// app, split this across multiple files (e.g. one per feature) and call
-// each from registerHandlers.
+// Handlers live here, not in relay.ts - that file stays wiring-only
+// (storage, plugins, retry policy), while the business logic that runs
+// when an event arrives lives in its own module. For a larger app, split
+// this across multiple files (e.g. one per feature) and call each from
+// registerHandlers.
 export function registerHandlers(relay: AppRelay): void {
   // Events from @relayos provider plugins are fully typed - relay.on()
   // autocompletes their event names and types event.data per event:
@@ -51,21 +119,20 @@ export function registerHandlers(relay: AppRelay): void {
 
 export const INIT_NEXT_STEPS = `
 Next steps:
-  1. relayos.config.ts and relayos.handlers.ts work as-is right now -
-     in-memory, no plugins, no framework wiring required. Add a
-     relay.on(...) call inside registerHandlers() and call relay.ingest(...)
-     to try it.
+  1. relay.ts and relay.handlers.ts work as-is right now - in-memory, no
+     plugins, no framework wiring required. Add a relay.on(...) call inside
+     registerHandlers() and call relay.ingest(...) to try it.
   2. Mounting behind a webhook endpoint is optional and framework-specific.
      Next.js support ships in relayos itself - nothing extra to install.
      In app/api/relay/[...all]/route.ts:
 
        import { toNextJsHandler } from 'relayos/next-js';
-       import { relay } from '@/relayos.config';
+       import { relay } from '@/relay';
        export const { POST } = toNextJsHandler(relay);
 
   3. Only install a provider plugin once you're ready to receive its real
      webhooks (pnpm add @relayos/stripe stripe, or @relayos/github) -
-     uncomment it in relayos.config.ts.
+     uncomment it in relay.ts.
   4. When you're ready for durability across restarts, install
      @relayos/postgres, uncomment the Postgres lines, create a database,
      and run:
