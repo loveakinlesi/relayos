@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { ExecutionStep } from 'relayos';
+import type { ExecutionStep } from '@relayos/core';
 import {
   getFlag,
   hasFlag,

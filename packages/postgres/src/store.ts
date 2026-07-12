@@ -8,7 +8,7 @@ import type {
   LogLevel,
   LogSource,
   StepStatus,
-} from 'relayos';
+} from '@relayos/core';
 import type { Db } from './client';
 import { executions, executionSteps, executionLogs } from './schema';
 

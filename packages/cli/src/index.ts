@@ -2,11 +2,23 @@ import { spawn } from 'node:child_process';
 import { resolve, join } from 'node:path';
 import { writeFile, access } from 'node:fs/promises';
 import { gt } from 'drizzle-orm';
-import { createDb, createPostgresExecutionStore, executions, runMigrations } from '@relayos/postgres';
-import type { Execution, ExecutionStore, RelayPlugin } from 'relayos';
-import { stripe } from 'relayos/plugins/stripe';
-import { github } from 'relayos/plugins/github';
-import { getFlag, hasFlag, resolveRuntimeUrl, statusIcon, formatDuration, latestStepsByName } from './utils';
+import {
+  createDb,
+  createPostgresExecutionStore,
+  executions,
+  runMigrations,
+} from '@relayos/postgres';
+import type { Execution, ExecutionStore, RelayPlugin } from '@relayos/core';
+import { stripe } from '@relayos/stripe';
+import { github } from '@relayos/github';
+import {
+  getFlag,
+  hasFlag,
+  resolveRuntimeUrl,
+  statusIcon,
+  formatDuration,
+  latestStepsByName,
+} from './utils';
 import { RELAYOS_CONFIG_TEMPLATE, INIT_NEXT_STEPS } from './templates';
 
 const USAGE = `Usage: relay <command>
@@ -157,7 +169,9 @@ const providerFactories: Record<string, (secret: string) => RelayPlugin> = {
 async function trigger(args: string[]) {
   const [provider, eventType] = args;
   if (!provider || !eventType) {
-    console.error("Usage: relay trigger <provider> <eventType> [--data '<json>'] [--forward <url>]");
+    console.error(
+      "Usage: relay trigger <provider> <eventType> [--data '<json>'] [--forward <url>]",
+    );
     process.exitCode = 1;
     return;
   }

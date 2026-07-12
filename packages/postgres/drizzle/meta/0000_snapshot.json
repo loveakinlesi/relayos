@@ -58,12 +58,8 @@
           "tableFrom": "execution_logs",
           "tableTo": "executions",
           "schemaTo": "relayos",
-          "columnsFrom": [
-            "execution_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["execution_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -128,12 +124,8 @@
           "tableFrom": "execution_steps",
           "tableTo": "executions",
           "schemaTo": "relayos",
-          "columnsFrom": [
-            "execution_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["execution_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -217,9 +209,7 @@
         "executions_event_id_unique": {
           "name": "executions_event_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "event_id"
-          ]
+          "columns": ["event_id"]
         }
       },
       "policies": {},

@@ -2,8 +2,32 @@
   "name": "@relayos/cli",
   "version": "0.0.1",
   "description": "CLI for RelayOS - migrations and local dev tooling.",
-  "private": true,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/loveakinlesi/relayos.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://github.com/loveakinlesi/relayos#readme",
+  "bugs": "https://github.com/loveakinlesi/relayos/issues",
+  "keywords": [
+    "relayos",
+    "webhooks",
+    "events",
+    "durable-execution",
+    "typescript",
+    "cli",
+    "migrations",
+    "dev-tools"
+  ],
   "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "bin": {
     "relay": "./dist/index.js"
   },
@@ -19,8 +43,10 @@
     "clean": "rimraf dist tsconfig.tsbuildinfo"
   },
   "dependencies": {
-    "@relayos/postgres": "workspace:*",
-    "relayos": "workspace:*",
+    "@relayos/core": "workspace:^",
+    "@relayos/postgres": "workspace:^",
+    "@relayos/stripe": "workspace:^",
+    "@relayos/github": "workspace:^",
     "drizzle-orm": "^0.45.2"
   },
   "devDependencies": {

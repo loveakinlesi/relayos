@@ -1,4 +1,4 @@
-import type { ExecutionStep } from 'relayos';
+import type { ExecutionStep } from '@relayos/core';
 
 export function getFlag(args: string[], name: string): string | undefined {
   const index = args.indexOf(name);

@@ -13,7 +13,10 @@
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "relayos": "workspace:*",
-    "@relayos/postgres": "workspace:*"
+    "@relayos/postgres": "workspace:*",
+    "@relayos/stripe": "workspace:*",
+    "@relayos/github": "workspace:*",
+    "@relayos/nextjs": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20",
@@ -21,6 +24,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
+    "stripe": "^22.3.1",
     "typescript": "^5"
   }
 }

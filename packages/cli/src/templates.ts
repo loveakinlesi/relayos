@@ -1,6 +1,6 @@
 export const RELAYOS_CONFIG_TEMPLATE = `import { createRelay } from 'relayos';
-// import { stripe } from 'relayos/plugins/stripe';
-// import { github } from 'relayos/plugins/github';
+// import { stripe } from '@relayos/stripe';
+// import { github } from '@relayos/github';
 // import { createDb, createPostgresExecutionStore } from '@relayos/postgres';
 
 export const relay = createRelay({
@@ -16,10 +16,12 @@ export const relay = createRelay({
   ],
 });
 
-// Register a handler for each event you care about:
+// Register a handler for each event you care about. Events from @relayos
+// provider plugins are fully typed - relay.on() autocompletes their event
+// names and types event.data per event:
 //
 // relay.on('stripe.charge.succeeded', async (event, ctx) => {
-//   const charge = event.data['object'] as { id: string; amount: number };
+//   const charge = event.data.object; // a typed Stripe.Charge
 //
 //   const payment = await ctx.step.run('record-payment', async () => {
 //     return { chargeId: charge.id, amount: charge.amount };
@@ -31,14 +33,20 @@ export const relay = createRelay({
 
 export const INIT_NEXT_STEPS = `
 Next steps:
-  1. Wire relayos.config.ts into your framework. For Next.js:
+  1. Install what you use (@relayos/stripe needs the stripe package for its
+     typed event catalog):
 
-       import { toNextJsHandler } from 'relayos/next-js';
-       import { relay } from './relayos.config';
+       pnpm add relayos @relayos/postgres @relayos/stripe stripe @relayos/nextjs
+
+  2. Wire relayos.config.ts into your framework. For Next.js, in
+     app/api/relay/[...all]/route.ts:
+
+       import { toNextJsHandler } from '@relayos/nextjs';
+       import { relay } from '@/relayos.config';
        export const { POST } = toNextJsHandler(relay);
 
-  2. Uncomment a plugin and register a handler with relay.on(...).
-  3. When you're ready for persistence, uncomment the Postgres lines,
+  3. Uncomment a plugin and register a handler with relay.on(...).
+  4. When you're ready for persistence, uncomment the Postgres lines,
      create a database, and run:
        DATABASE_URL=<your-db> relay migrate
 `;

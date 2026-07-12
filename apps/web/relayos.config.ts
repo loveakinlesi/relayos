@@ -1,6 +1,6 @@
 import { createRelay, type RelayPlugin } from 'relayos';
-import { stripe } from 'relayos/plugins/stripe';
-import { github } from 'relayos/plugins/github';
+import { stripe } from '@relayos/stripe';
+import { github } from '@relayos/github';
 import { createDb, createPostgresExecutionStore } from '@relayos/postgres';
 
 const isProduction = process.env.NODE_ENV === 'production';
@@ -44,17 +44,16 @@ const testPlugin: RelayPlugin = {
   },
 };
 
-const plugins: RelayPlugin[] = [
-  stripe({ webhookSecret: requireWebhookSecret('STRIPE_WEBHOOK_SECRET', 'whsec_test_secret') }),
-  github({ webhookSecret: requireWebhookSecret('GITHUB_WEBHOOK_SECRET', 'ghsec_test_secret') }),
-];
-if (!isProduction) {
-  plugins.unshift(testPlugin);
-}
-
+// The plugins array is inlined (not pre-annotated as RelayPlugin[]) so
+// createRelay can infer the typed event maps from the stripe/github plugins:
+// relay.on() autocompletes their event names and types event.data per event.
 export const relay = createRelay({
   database: createPostgresExecutionStore(db),
-  plugins,
+  plugins: [
+    ...(isProduction ? [] : [testPlugin]),
+    stripe({ webhookSecret: requireWebhookSecret('STRIPE_WEBHOOK_SECRET', 'whsec_test_secret') }),
+    github({ webhookSecret: requireWebhookSecret('GITHUB_WEBHOOK_SECRET', 'ghsec_test_secret') }),
+  ],
 });
 
 relay.on('test.ping', async (event, ctx) => {
@@ -65,13 +64,6 @@ relay.on('test.fail', async (_event, ctx) => {
   ctx.log.warn('about to fail on purpose');
   throw new Error('simulated handler failure');
 });
-
-type StripeCharge = {
-  id: string;
-  amount: number;
-  currency: string;
-  customer?: string | null;
-};
 
 // Demo-only: makes "send-receipt" fail exactly once per charge so a retry
 // has something real to resume past. A production app wouldn't need this -
@@ -88,7 +80,9 @@ const receiptAttemptsByCharge = new Map<string, number>();
  * without any of this handler needing to know it's being retried.
  */
 relay.on('stripe.charge.succeeded', async (event, ctx) => {
-  const charge = (event.data['object'] ?? {}) as StripeCharge;
+  // event.data is typed from @relayos/stripe's event catalog - charge is a
+  // full Stripe.Charge, no hand-written type or cast needed.
+  const charge = event.data.object;
 
   const payment = await ctx.step.run('record-payment', async () => {
     // In a real app: INSERT into a payments/ledger table here.

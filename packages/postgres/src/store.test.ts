@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { sql } from 'drizzle-orm';
 import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testcontainers/postgresql';
-import type { Execution } from 'relayos';
+import type { Execution } from '@relayos/core';
 import { createDb, type Db } from './client';
 import { createPostgresExecutionStore } from './store';
 import { runMigrations } from './migrate';
