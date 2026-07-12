@@ -1,6 +1,6 @@
 {
   "name": "relayos",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "The RelayOS runtime: durable, replayable webhook and event execution for TypeScript backends.",
   "license": "MIT",
   "repository": {

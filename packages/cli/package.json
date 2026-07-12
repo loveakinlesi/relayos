@@ -1,6 +1,6 @@
 {
   "name": "@relayos/cli",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "CLI for RelayOS - migrations and local dev tooling.",
   "license": "MIT",
   "repository": {

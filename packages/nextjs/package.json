@@ -1,6 +1,6 @@
 {
   "name": "@relayos/nextjs",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "The RelayOS Next.js adapter: mount a relay's webhook handler as an App Router route.",
   "license": "MIT",
   "repository": {
