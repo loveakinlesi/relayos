@@ -19,12 +19,12 @@ import {
   formatDuration,
   latestStepsByName,
 } from './utils';
-import { RELAYOS_CONFIG_TEMPLATE, INIT_NEXT_STEPS } from './templates';
+import { RELAYOS_CONFIG_TEMPLATE, RELAYOS_HANDLERS_TEMPLATE, INIT_NEXT_STEPS } from './templates';
 
 const USAGE = `Usage: relay <command>
 
 Commands:
-  init [--force]                          Scaffold relayos.config.ts in the current directory
+  init [--force]                          Scaffold relayos.config.ts and relayos.handlers.ts
   migrate                                Apply RelayOS's Postgres migrations (reads DATABASE_URL)
   dev [--dir <path>]                      Run the app's dev server and tail new executions live
                                           (tailing requires DATABASE_URL; --dir defaults to cwd)
@@ -67,22 +67,27 @@ async function resolveExecution(store: ExecutionStore, id: string): Promise<Exec
 }
 
 async function init(args: string[]) {
-  const path = join(process.cwd(), 'relayos.config.ts');
+  const configPath = join(process.cwd(), 'relayos.config.ts');
+  const handlersPath = join(process.cwd(), 'relayos.handlers.ts');
   const force = hasFlag(args, '--force');
 
   if (!force) {
-    try {
-      await access(path);
-      console.error(`${path} already exists. Use --force to overwrite.`);
-      process.exitCode = 1;
-      return;
-    } catch {
-      // Doesn't exist - clear to write.
+    for (const path of [configPath, handlersPath]) {
+      try {
+        await access(path);
+        console.error(`${path} already exists. Use --force to overwrite.`);
+        process.exitCode = 1;
+        return;
+      } catch {
+        // Doesn't exist - clear to write.
+      }
     }
   }
 
-  await writeFile(path, RELAYOS_CONFIG_TEMPLATE, 'utf8');
-  console.log(`Created ${path}`);
+  await writeFile(handlersPath, RELAYOS_HANDLERS_TEMPLATE, 'utf8');
+  console.log(`Created ${handlersPath}`);
+  await writeFile(configPath, RELAYOS_CONFIG_TEMPLATE, 'utf8');
+  console.log(`Created ${configPath}`);
   console.log(INIT_NEXT_STEPS);
 }
 
