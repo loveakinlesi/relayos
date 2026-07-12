@@ -177,6 +177,9 @@ export type Relay<TEventMap extends Record<string, unknown> = {}> = {
   listExecutions: () => Promise<Execution[]>;
   listSteps: (executionId: string) => Promise<ExecutionStep[]>;
   listLogs: (executionId: string) => Promise<ExecutionLog[]>;
+  /** Applies any pending schema migrations. Auto-runs once, lazily, outside
+   *  production; call explicitly in production before scaling up instances. */
+  migrate: () => Promise<void>;
   handler: (req: Request, ctx: RelayHandlerContext) => Promise<Response>;
 };
 

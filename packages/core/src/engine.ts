@@ -10,7 +10,7 @@ import type {
   RetryPolicy,
   RuntimeContext,
 } from './types';
-import { createMemoryExecutionStore } from './memory-store';
+import { resolveDatabase } from './db/resolve';
 
 const defaultRetryPolicy: RetryPolicy = {
   maxAttempts: 3,
@@ -29,10 +29,18 @@ type RelayInternal = Omit<Relay, 'on'> & {
 };
 
 export function createRelayEngine<const TPlugins extends readonly RelayPlugin<any>[] = []>(
-  config: RelayConfig<TPlugins> = {},
+  config: RelayConfig<TPlugins>,
 ): Relay<EventMapOf<TPlugins>> {
   const handlers = new Map<string, EventHandler[]>();
-  const store = config.database ?? createMemoryExecutionStore();
+  const { store, migrate } = resolveDatabase(config.database);
+
+  let migrated: Promise<void> | undefined;
+  function ensureMigrated(): Promise<void> {
+    if (process.env['NODE_ENV'] === 'production') return Promise.resolve();
+    if (!migrated) migrated = migrate();
+    return migrated;
+  }
+
   const plugins = new Map<string, RelayPlugin<any>>(
     (config.plugins ?? []).map((plugin) => [plugin.id, plugin]),
   );
@@ -193,6 +201,8 @@ export function createRelayEngine<const TPlugins extends readonly RelayPlugin<an
   }
 
   async function ingest(event: NormalizedEvent): Promise<Execution> {
+    await ensureMigrated();
+
     // Fast path: providers redeliver seconds apart on timeout, so this
     // avoids a wasted insert attempt for the common sequential-retry case.
     const existing = await store.findByEventId(event.id);
@@ -234,6 +244,7 @@ export function createRelayEngine<const TPlugins extends readonly RelayPlugin<an
     executionId: string,
     reason: 'manual' | 'scheduled' = 'manual',
   ): Promise<Execution> {
+    await ensureMigrated();
     return runExclusive(executionId, async () => {
       const execution = await store.get(executionId);
       if (!execution) {
@@ -255,6 +266,7 @@ export function createRelayEngine<const TPlugins extends readonly RelayPlugin<an
   }
 
   async function restartExecution(executionId: string): Promise<Execution> {
+    await ensureMigrated();
     return runExclusive(executionId, async () => {
       const execution = await store.get(executionId);
       if (!execution) {
@@ -279,6 +291,7 @@ export function createRelayEngine<const TPlugins extends readonly RelayPlugin<an
   }
 
   async function replayExecution(executionId: string): Promise<Execution> {
+    await ensureMigrated();
     const source = await store.get(executionId);
     if (!source) {
       throw new Error(`no execution found with id "${executionId}"`);
@@ -327,15 +340,19 @@ export function createRelayEngine<const TPlugins extends readonly RelayPlugin<an
     retryExecution,
     restartExecution,
     replayExecution,
-    listExecutions() {
+    async listExecutions() {
+      await ensureMigrated();
       return store.list();
     },
-    listSteps(executionId) {
+    async listSteps(executionId) {
+      await ensureMigrated();
       return store.listSteps(executionId);
     },
-    listLogs(executionId) {
+    async listLogs(executionId) {
+      await ensureMigrated();
       return store.listLogs(executionId);
     },
+    migrate,
     async handler(req, ctx) {
       const pluginId = ctx.params.all[0];
       const plugin = pluginId ? plugins.get(pluginId) : undefined;

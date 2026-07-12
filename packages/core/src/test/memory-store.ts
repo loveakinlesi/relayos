@@ -1,4 +1,4 @@
-import type { Execution, ExecutionLog, ExecutionStep, ExecutionStore } from './types';
+import type { Execution, ExecutionLog, ExecutionStep, ExecutionStore } from '../types';
 
 export function createMemoryExecutionStore(): ExecutionStore {
   const executions = new Map<string, Execution>();
