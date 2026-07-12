@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import type { Relay } from '@relayos/core';
-import { toNextJsHandler } from './index';
+import type { Relay } from './index';
+import { toNextJsHandler } from './next-js';
 
 describe('toNextJsHandler', () => {
   it('awaits Next.js route params and forwards them to relay.handler', async () => {

@@ -1,4 +1,4 @@
-import type { Relay } from '@relayos/core';
+import type { Relay } from './index';
 
 type NextRouteContext = {
   params: Promise<{ all: string[] }>;

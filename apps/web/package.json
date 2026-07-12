@@ -15,8 +15,7 @@
     "relayos": "workspace:*",
     "@relayos/postgres": "workspace:*",
     "@relayos/stripe": "workspace:*",
-    "@relayos/github": "workspace:*",
-    "@relayos/nextjs": "workspace:*"
+    "@relayos/github": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20",

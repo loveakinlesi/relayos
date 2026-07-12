@@ -39,6 +39,16 @@
         "types": "./dist/index.d.cts",
         "default": "./dist/index.cjs"
       }
+    },
+    "./next-js": {
+      "import": {
+        "types": "./dist/next-js.d.ts",
+        "default": "./dist/next-js.js"
+      },
+      "require": {
+        "types": "./dist/next-js.d.cts",
+        "default": "./dist/next-js.cjs"
+      }
     }
   },
   "main": "./dist/index.cjs",
