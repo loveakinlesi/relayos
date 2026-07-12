@@ -140,10 +140,10 @@ in development.
 In production, run them explicitly before scaling up new instances:
 
 ```sh
-DATABASE_URL=<your-db> relay migrate
+relay migrate
 ```
 
-This is idempotent - safe to run multiple times, and safe to run from CI
+This loads your `relay.ts` and applies whatever schema your configured dialect needs - no separate connection string to pass. It's idempotent - safe to run multiple times, and safe to run from CI
 before a deploy. It creates three tables: `relayos_executions`,
 `relayos_execution_steps` (an append-only audit trail - a step that failed
 and later succeeded stores both attempts), and `relayos_execution_logs`

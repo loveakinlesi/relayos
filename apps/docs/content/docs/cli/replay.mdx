@@ -8,7 +8,7 @@ Reprocess a historical execution's event data as a completely new execution, lea
 ## Usage
 
 ```sh
-relay replay <eventId|executionId> [--forward <url>] [--print]
+relay replay <eventId|executionId> [--forward <url>] [--print] [--dir <path>]
 ```
 
 ## Arguments
@@ -21,12 +21,13 @@ relay replay <eventId|executionId> [--forward <url>] [--print]
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `--forward <url>` | `RELAYOS_RUNTIME_URL` or `http://localhost:3000` | URL to POST the replay to |
+| `--forward <url>` | `RELAYOS_BASE_URL` or `http://localhost:3000` | URL to POST the replay to |
 | `--print` | false | Dry-run: show what would be replayed without POSTing |
+| `--dir` | current directory | Directory containing `relay.ts`, used to load the historical execution |
 
 ## Requirements
 
-- `DATABASE_URL` must be set (to load the historical execution)
+- A `relay.ts` in the target directory, exporting `relay` (to load the historical execution)
 - Your app must be running at the `--forward` URL (unless using `--print`)
 
 ## Examples
@@ -76,7 +77,7 @@ $ relay replay evt_abc123 --forward https://api.example.com
 Or use the environment variable:
 
 ```sh
-RELAYOS_RUNTIME_URL=https://staging.example.com relay replay evt_abc123
+RELAYOS_BASE_URL=https://staging.example.com relay replay evt_abc123
 ```
 
 ## When to use replay
@@ -114,7 +115,7 @@ Replay is powered by the `/api/executions/<id>/replay` route in your Next.js han
 
 ```ts
 // app/api/executions/[id]/replay/route.ts
-import { relay } from '@/relayos.config';
+import { relay } from '@/relay';
 
 export async function POST(_req: Request, ctx: { params: Promise<{ id: string }> }) {
   const { id } = await ctx.params;

@@ -1,14 +1,14 @@
 ---
 title: relay events list
-description: List recent executions from the database.
+description: List recent executions from your relay.
 ---
 
-Query the database for recent executions and display them in a table. Newest first.
+Loads your `relay.ts` and lists recent executions in a table. Newest first.
 
 ## Usage
 
 ```sh
-relay events list [--json] [--limit <n>]
+relay events list [--json] [--limit <n>] [--dir <path>]
 ```
 
 ## Options
@@ -17,11 +17,11 @@ relay events list [--json] [--limit <n>]
 |------|---------|-------------|
 | `--json` | false | Output JSON instead of a formatted table |
 | `--limit <n>` | all | Show only the first N executions |
+| `--dir` | current directory | Directory containing `relay.ts` |
 
 ## Requirements
 
-- `DATABASE_URL` must be set to a valid Postgres connection string
-- The database must exist and have RelayOS migrations applied
+- A `relay.ts` in the target directory, exporting `relay` (see [relay init](/docs/cli/init))
 
 ## Examples
 
