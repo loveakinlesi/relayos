@@ -1,10 +1,9 @@
 import { spawn } from 'node:child_process';
-import { join } from 'node:path';
-import { writeFile, access } from 'node:fs/promises';
 import type { Execution, Relay, RelayPlugin } from '@relayos/core';
 import { stripe } from '@relayos/stripe';
 import { github } from '@relayos/github';
 import { loadRelay } from './load-relay';
+import { runInitWizard } from './wizard';
 import {
   getFlag,
   hasFlag,
@@ -14,7 +13,6 @@ import {
   formatDuration,
   latestStepsByName,
 } from './utils';
-import { RELAY_CONFIG_TEMPLATE, RELAY_HANDLERS_TEMPLATE, INIT_NEXT_STEPS } from './templates';
 
 const USAGE = `Usage: relay <command>
 
@@ -55,28 +53,9 @@ async function resolveExecution(relay: Relay, id: string): Promise<Execution | u
 }
 
 async function init(args: string[]) {
-  const configPath = join(process.cwd(), 'relay.ts');
-  const handlersPath = join(process.cwd(), 'relay.handlers.ts');
+  const dir = resolveDir(args);
   const force = hasFlag(args, '--force');
-
-  if (!force) {
-    for (const path of [configPath, handlersPath]) {
-      try {
-        await access(path);
-        console.error(`${path} already exists. Use --force to overwrite.`);
-        process.exitCode = 1;
-        return;
-      } catch {
-        // Doesn't exist - clear to write.
-      }
-    }
-  }
-
-  await writeFile(handlersPath, RELAY_HANDLERS_TEMPLATE, 'utf8');
-  console.log(`Created ${handlersPath}`);
-  await writeFile(configPath, RELAY_CONFIG_TEMPLATE, 'utf8');
-  console.log(`Created ${configPath}`);
-  console.log(INIT_NEXT_STEPS);
+  await runInitWizard(dir, force);
 }
 
 async function migrate(args: string[]) {

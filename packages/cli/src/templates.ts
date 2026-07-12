@@ -66,34 +66,6 @@ registerHandlers(relay);
 `;
 }
 
-export const RELAY_CONFIG_TEMPLATE = `import { relayos } from 'relayos';
-// import { stripe } from '@relayos/stripe';
-// import { github } from '@relayos/github';
-// import { createDb, createPostgresExecutionStore } from '@relayos/postgres';
-import { registerHandlers } from './relay.handlers';
-
-export const relay = relayos({
-  // Executions are kept in memory by default - fine for getting started, but
-  // they won't survive a restart. Swap in Postgres once you're ready:
-  //
-  //   const db = createDb(process.env.DATABASE_URL!);
-  //   database: createPostgresExecutionStore(db),
-
-  plugins: [
-    // stripe({ webhookSecret: process.env.STRIPE_WEBHOOK_SECRET! }),
-    // github({ webhookSecret: process.env.GITHUB_WEBHOOK_SECRET! }),
-  ],
-});
-
-// The concrete relay type, including the typed event catalog inferred from
-// the plugins above - exported so relay.handlers.ts (or any other module)
-// can register handlers with full event.data typing, without needing to
-// duplicate the plugins list.
-export type AppRelay = typeof relay;
-
-registerHandlers(relay);
-`;
-
 export const RELAY_HANDLERS_TEMPLATE = `import type { AppRelay } from './relay';
 
 // Handlers live here, not in relay.ts - that file stays wiring-only
@@ -117,24 +89,3 @@ export function registerHandlers(relay: AppRelay): void {
 }
 `;
 
-export const INIT_NEXT_STEPS = `
-Next steps:
-  1. relay.ts and relay.handlers.ts work as-is right now - in-memory, no
-     plugins, no framework wiring required. Add a relay.on(...) call inside
-     registerHandlers() and call relay.ingest(...) to try it.
-  2. Mounting behind a webhook endpoint is optional and framework-specific.
-     Next.js support ships in relayos itself - nothing extra to install.
-     In app/api/relay/[...all]/route.ts:
-
-       import { toNextJsHandler } from 'relayos/next-js';
-       import { relay } from '@/relay';
-       export const { POST } = toNextJsHandler(relay);
-
-  3. Only install a provider plugin once you're ready to receive its real
-     webhooks (pnpm add @relayos/stripe stripe, or @relayos/github) -
-     uncomment it in relay.ts.
-  4. When you're ready for durability across restarts, install
-     @relayos/postgres, uncomment the Postgres lines, create a database,
-     and run:
-       DATABASE_URL=<your-db> relay migrate
-`;
