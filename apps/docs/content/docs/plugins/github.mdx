@@ -54,16 +54,23 @@ GitHub events are namespaced as `github.<event-name>` or `github.<event-name>.<a
 - **Simple events** (no action): `github.push`, `github.release`, etc.
 - **Action-qualified events**: `github.pull_request.opened`, `github.issues.closed`, etc.
 
-```ts
-relay.on('github.push', async (event, ctx) => {
-  const { ref, commits } = event.data;
-  ctx.log.info('pushed to', { ref, count: commits.length });
-});
+Register handlers in `relayos.handlers.ts`, not `relayos.config.ts` — see [Organizing handlers](/docs/concepts/events#organizing-handlers):
 
-relay.on('github.pull_request.opened', async (event, ctx) => {
-  const { action, pull_request } = event.data;
-  ctx.log.info('pr opened', { title: pull_request.title, action });
-});
+```ts
+// relayos.handlers.ts
+import type { AppRelay } from './relayos.config';
+
+export function registerHandlers(relay: AppRelay): void {
+  relay.on('github.push', async (event, ctx) => {
+    const { ref, commits } = event.data;
+    ctx.log.info('pushed to', { ref, count: commits.length });
+  });
+
+  relay.on('github.pull_request.opened', async (event, ctx) => {
+    const { action, pull_request } = event.data;
+    ctx.log.info('pr opened', { title: pull_request.title, action });
+  });
+}
 ```
 
 The plugin automatically determines whether an event has an action by reading the `x-github-event` header and checking the payload's `action` field.

@@ -52,14 +52,19 @@ The plugin verifies the `stripe-signature` header using HMAC-SHA256:
 
 ## Event types
 
-Events are namespaced as `stripe.<stripe-event-type>` (e.g., `stripe.charge.succeeded`). The plugin ships a fully-typed event catalog of ~250 Stripe events:
+Events are namespaced as `stripe.<stripe-event-type>` (e.g., `stripe.charge.succeeded`). The plugin ships a fully-typed event catalog of ~250 Stripe events. Register handlers in `relayos.handlers.ts`, not `relayos.config.ts` — see [Organizing handlers](/docs/concepts/events#organizing-handlers):
 
 ```ts
-relay.on('stripe.charge.succeeded', async (event, ctx) => {
-  // event.data.object is a typed Stripe.Charge
-  const charge = event.data.object;
-  ctx.log.info('charge succeeded', { amount: charge.amount });
-});
+// relayos.handlers.ts
+import type { AppRelay } from './relayos.config';
+
+export function registerHandlers(relay: AppRelay): void {
+  relay.on('stripe.charge.succeeded', async (event, ctx) => {
+    // event.data.object is a typed Stripe.Charge
+    const charge = event.data.object;
+    ctx.log.info('charge succeeded', { amount: charge.amount });
+  });
+}
 ```
 
 See the Stripe API docs for the [full list of event types](https://docs.stripe.com/api/events/types).
