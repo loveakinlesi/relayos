@@ -1,11 +1,12 @@
-import { definePlugin, hmacSha256Hex, safeEqualHex } from '@relayos/plugin';
+import { definePlugin, hmacSha256Hex, resolveWebhookSecret, safeEqualHex } from '@relayos/plugin';
 import type { RelayPlugin } from '@relayos/core';
 import type { StripeEventMap } from './events';
 
 export type { StripeEventMap } from './events';
 
 export type StripePluginOptions = {
-  webhookSecret: string;
+  /** Defaults to process.env.STRIPE_WEBHOOK_SECRET if not provided. */
+  webhookSecret?: string;
   /** How old a signed timestamp can be before it's rejected, in seconds. */
   toleranceSeconds?: number;
 };
@@ -20,7 +21,7 @@ function parseSignatureHeader(header: string): { timestamp?: string; signature?:
   return { timestamp: parts.t, signature: parts.v1 };
 }
 
-export function stripe(options: StripePluginOptions): RelayPlugin<StripeEventMap> {
+export function stripe(options: StripePluginOptions = {}): RelayPlugin<StripeEventMap> {
   const toleranceSeconds = options.toleranceSeconds ?? 300;
 
   return definePlugin<StripeEventMap>({
@@ -35,8 +36,13 @@ export function stripe(options: StripePluginOptions): RelayPlugin<StripeEventMap
       const age = Math.abs(Date.now() / 1000 - Number(timestamp));
       if (!Number.isFinite(age) || age > toleranceSeconds) return false;
 
+      // Resolved lazily (not at stripe() construction time) so commands
+      // that merely load relay.ts to reach unrelated functionality (CLI's
+      // migrate/inspect/events list) don't require the secret to be set -
+      // only an actual signature check does.
+      const webhookSecret = resolveWebhookSecret(options.webhookSecret, 'STRIPE_WEBHOOK_SECRET');
       const rawBody = await req.text();
-      const expected = hmacSha256Hex(options.webhookSecret, `${timestamp}.${rawBody}`);
+      const expected = hmacSha256Hex(webhookSecret, `${timestamp}.${rawBody}`);
       return safeEqualHex(expected, signature);
     },
     normalize(rawBody) {

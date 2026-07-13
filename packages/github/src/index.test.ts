@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
 import { github } from './index';
 
 function makeRequest(body: string, headers: Record<string, string>): Request {
@@ -6,6 +6,36 @@ function makeRequest(body: string, headers: Record<string, string>): Request {
 }
 
 describe('github plugin', () => {
+  afterEach(() => {
+    delete process.env['GITHUB_WEBHOOK_SECRET'];
+  });
+
+  it('infers webhookSecret from GITHUB_WEBHOOK_SECRET when not provided', async () => {
+    process.env['GITHUB_WEBHOOK_SECRET'] = 'ghsec_env';
+    const plugin = github();
+    const rawBody = JSON.stringify({ ref: 'refs/heads/main' });
+    const req = makeRequest(rawBody, plugin.sign(rawBody, 'ghsec_env'));
+    expect(await plugin.verify(req)).toBe(true);
+  });
+
+  it('an explicit webhookSecret overrides GITHUB_WEBHOOK_SECRET', async () => {
+    process.env['GITHUB_WEBHOOK_SECRET'] = 'ghsec_env';
+    const plugin = github({ webhookSecret: 'ghsec_explicit' });
+    const rawBody = JSON.stringify({ ref: 'refs/heads/main' });
+    const req = makeRequest(rawBody, plugin.sign(rawBody, 'ghsec_explicit'));
+    expect(await plugin.verify(req)).toBe(true);
+
+    const signedWithEnvSecret = makeRequest(rawBody, plugin.sign(rawBody, 'ghsec_env'));
+    expect(await plugin.verify(signedWithEnvSecret)).toBe(false);
+  });
+
+  it('rejects when neither webhookSecret nor GITHUB_WEBHOOK_SECRET is set, only on an actual verify', async () => {
+    const plugin = github();
+    const rawBody = JSON.stringify({ ref: 'refs/heads/main' });
+    const req = makeRequest(rawBody, { 'X-Hub-Signature-256': `sha256=${'0'.repeat(64)}` });
+    await expect(plugin.verify(req)).rejects.toThrow('GITHUB_WEBHOOK_SECRET');
+  });
+
   it('sign() produces a signature verify() accepts', async () => {
     const plugin = github({ webhookSecret: 'ghsec_test' });
     const rawBody = JSON.stringify({ ref: 'refs/heads/main' });
