@@ -1,0 +1,40 @@
+---
+title: NestJS
+description: Wire RelayOS into a NestJS controller.
+---
+
+NestJS support ships in `relayos` itself, as the `relayos/nestjs` subpath. `toNestJsHandler` adapts your Relay instance to a controller method that receives `@Req()` and `@Res()`.
+
+## Setup
+
+```ts
+import { Controller, Post, Req, Res } from '@nestjs/common';
+import { toNestJsHandler, type NestJsRelayRequest, type NestJsRelayResponse } from 'relayos/nestjs';
+import { relay } from './relay';
+
+@Controller('api/relay')
+export class RelayController {
+  private readonly handler = toNestJsHandler(relay);
+
+  @Post(':provider')
+  post(@Req() req: NestJsRelayRequest, @Res() res: NestJsRelayResponse) {
+    return this.handler(req, res);
+  }
+}
+```
+
+`NestJsRelayRequest`/`NestJsRelayResponse` are the Node request/response shapes `toNestJsHandler` actually expects - the global Fetch API `Request`/`Response` types are not compatible with them.
+
+This single controller route handles plugin endpoints such as `/api/relay/stripe`, `/api/relay/github`, `/api/relay/clerk`, `/api/relay/shopify`, and `/api/relay/resend`.
+
+## Raw body requirement
+
+Provider signatures must be verified against the exact raw request body. In Express-backed NestJS apps, configure raw body access for the webhook route or mount it before JSON body parsing.
+
+## Custom param name
+
+If your route uses a different parameter name, pass it explicitly:
+
+```ts
+private readonly handler = toNestJsHandler(relay, { paramName: 'source' });
+```

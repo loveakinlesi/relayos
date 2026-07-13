@@ -8,29 +8,13 @@ You'll need Node >=20 and TypeScript >=5.
 ## 1. Install the package
 
 <Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
-<Tab value="pnpm">
-```sh
-pnpm add relayos
-```
-</Tab>
-<Tab value="npm">
-```sh
-npm install relayos
-```
-</Tab>
-<Tab value="yarn">
-```sh
-yarn add relayos
-```
-</Tab>
-<Tab value="bun">
-```sh
-bun add relayos
-```
-</Tab>
+  <Tab value="pnpm">```sh pnpm add relayos ```</Tab>
+  <Tab value="npm">```sh npm install relayos ```</Tab>
+  <Tab value="yarn">```sh yarn add relayos ```</Tab>
+  <Tab value="bun">```sh bun add relayos ```</Tab>
 </Tabs>
 
-`relayos` includes the engine and Next.js support (`relayos/next-js`) - this guide adds a database and the CLI as you go.
+`relayos` includes the engine and framework adapters (`relayos/next-js`, `relayos/express`, `relayos/hono`, `relayos/nestjs`) - this guide adds a database and the CLI as you go.
 
 ## 2. Set environment variables
 
@@ -47,26 +31,10 @@ RELAYOS_BASE_URL=http://localhost:3000 # Base URL of your app
 Create `relay.ts` at your project root. This file stays wiring-only - it creates the relay and nothing else. Every relay needs a `database`; the fastest way to get started is SQLite, which needs no separate server:
 
 <Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
-<Tab value="pnpm">
-```sh
-pnpm add better-sqlite3
-```
-</Tab>
-<Tab value="npm">
-```sh
-npm install better-sqlite3
-```
-</Tab>
-<Tab value="yarn">
-```sh
-yarn add better-sqlite3
-```
-</Tab>
-<Tab value="bun">
-```sh
-bun add better-sqlite3
-```
-</Tab>
+  <Tab value="pnpm">```sh pnpm add better-sqlite3 ```</Tab>
+  <Tab value="npm">```sh npm install better-sqlite3 ```</Tab>
+  <Tab value="yarn">```sh yarn add better-sqlite3 ```</Tab>
+  <Tab value="bun">```sh bun add better-sqlite3 ```</Tab>
 </Tabs>
 
 ```ts
@@ -115,30 +83,10 @@ See [Database](/docs/database) for the MySQL setup and the full list of supporte
 Migrations still apply automatically outside production, but in production run them explicitly before scaling up new instances, via `@relayos/cli`:
 
 <Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
-<Tab value="pnpm">
-```sh
-pnpm add -D @relayos/cli
-pnpm exec relay migrate
-```
-</Tab>
-<Tab value="npm">
-```sh
-npm install -D @relayos/cli
-npx relay migrate
-```
-</Tab>
-<Tab value="yarn">
-```sh
-yarn add -D @relayos/cli
-yarn relay migrate
-```
-</Tab>
-<Tab value="bun">
-```sh
-bun add -d @relayos/cli
-bunx relay migrate
-```
-</Tab>
+  <Tab value="pnpm">```sh pnpm add -D @relayos/cli pnpm exec relay migrate ```</Tab>
+  <Tab value="npm">```sh npm install -D @relayos/cli npx relay migrate ```</Tab>
+  <Tab value="yarn">```sh yarn add -D @relayos/cli yarn relay migrate ```</Tab>
+  <Tab value="bun">```sh bun add -d @relayos/cli bunx relay migrate ```</Tab>
 </Tabs>
 
 This loads your `relay.ts` and applies whatever schema your chosen dialect needs. It's idempotent - safe to run again after every deploy.
@@ -168,8 +116,10 @@ Each `ctx.step.run(...)` checkpoints its result - if the handler throws and retr
 
 ## 7. Mount the handler
 
-To receive real webhook deliveries, add a catch-all route on your server. In Next.js, `relayos/next-js` does this for you - nothing extra to install:
+To receive real webhook deliveries, add a catch-all route on your server. `relayos` ships an adapter for each framework below - nothing extra to install:
 
+<Tabs items={['Next.js', 'Express', 'Hono', 'NestJS']}>
+<Tab value="Next.js">
 ```ts
 // app/api/relay/[...all]/route.ts
 import { toNextJsHandler } from 'relayos/next-js';
@@ -177,10 +127,55 @@ import { relay } from '@/relay';
 
 export const { POST } = toNextJsHandler(relay);
 ```
+</Tab>
+<Tab value="Express">
+```ts
+import express from 'express';
+import { toExpressHandler } from 'relayos/express';
+import { relay } from './relay';
 
-This one route serves every plugin at `/api/relay/<provider>` - e.g. `/api/relay/stripe`, `/api/relay/github` - determined entirely by wherever you place this file, there's no base-path setting to configure. See [Next.js](/docs/frameworks/nextjs) for the full set of management-endpoint examples (list/inspect/retry/replay).
+const app = express();
 
-Not on Next.js? `relay.handler` is a plain `(req: Request, ctx: { params: { all: string[] } }) => Promise<Response>` function - call it from any framework that gives you a standard `Request`.
+app.post('/api/relay/:provider', toExpressHandler(relay));
+
+app.listen(3000);
+```
+</Tab>
+<Tab value="Hono">
+```ts
+import { Hono } from 'hono';
+import { toHonoHandler } from 'relayos/hono';
+import { relay } from './relay';
+
+const app = new Hono();
+
+app.post('/api/relay/:provider', toHonoHandler(relay));
+
+export default app;
+```
+</Tab>
+<Tab value="NestJS">
+```ts
+import { Controller, Post, Req, Res } from '@nestjs/common';
+import { toNestJsHandler, type NestJsRelayRequest, type NestJsRelayResponse } from 'relayos/nestjs';
+import { relay } from './relay';
+
+@Controller('api/relay')
+export class RelayController {
+  private readonly handler = toNestJsHandler(relay);
+
+  @Post(':provider')
+  post(@Req() req: NestJsRelayRequest, @Res() res: NestJsRelayResponse) {
+    return this.handler(req, res);
+  }
+}
+```
+</Tab>
+</Tabs>
+
+Each of these serves every plugin at `/api/relay/<provider>` - e.g. `/api/relay/stripe`, `/api/relay/github` - determined entirely by wherever you mount the route, there's no base-path setting to configure. See [Next.js](/docs/frameworks/nextjs), [Express](/docs/frameworks/express), [Hono](/docs/frameworks/hono), or [NestJS](/docs/frameworks/nestjs) for framework-specific details (raw body handling, custom param names, management endpoints).
+
+On something else? `relay.handler` is still a plain `(req: Request, ctx: { params: { all: string[] } }) => Promise<Response>` function you can wire in yourself.
 
 ## Optional: scaffold this with the CLI
 
@@ -194,7 +189,7 @@ pnpm exec relay init
 ## Next steps
 
 - **Basic usage**: see [Basic Usage](/docs/basic-usage) for the everyday patterns - registering handlers for real provider events, `ctx.step.run`, ingesting via webhook vs. directly, and inspecting/replaying via the CLI.
-- **Receive real webhooks**: install a provider plugin - [Stripe](/docs/plugins/stripe) (`pnpm add @relayos/stripe stripe`) or [GitHub](/docs/plugins/github) (`pnpm add @relayos/github`) - only once you're ready to verify real signed deliveries.
+- **Receive real webhooks**: install a provider plugin - [Stripe](/docs/plugins/stripe), [GitHub](/docs/plugins/github), [Clerk](/docs/plugins/clerk), [Shopify](/docs/plugins/shopify), or [Resend](/docs/plugins/resend) - only once you're ready to verify real signed deliveries.
 - **Event types**: learn how [Typed Events](/docs/concepts/typed-events) work and what autocomplete you get once you add a provider plugin.
 - **Durable steps**: dive into [Durable Steps](/docs/concepts/durable-steps) to understand caching, retries, and audit trails.
 - **Replay & restart**: understand the [three retry operations](/docs/concepts/replay-restart-retry) and when to use each.
