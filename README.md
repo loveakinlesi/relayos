@@ -165,6 +165,8 @@ If your environment can't run containers (e.g. a CI runner without Docker-in-Doc
 TEST_DATABASE_URL=postgres://localhost:5432/relayos_test TEST_MYSQL_URL=mysql://localhost:3306/relayos_test pnpm test
 ```
 
+`e2e/` runs a small number of integration tests against a real spawned app process: the CLI wizard's actual generated `relay.ts`, loaded by a minimal HTTP server, driven both by the built `relay` CLI binary and by direct `fetch` calls. No install step and no published packages required - the fixture is created inside `e2e/` itself so it resolves the real workspace-linked builds.
+
 ## Status
 
 RelayOS is pre-1.0 and under active development. The core runtime (events, executions, steps, logs, retries, restart, replay, dedup, concurrency-safe execution locking) is built and verified end-to-end against real signed webhook payloads and a real Postgres database — but it hasn't shipped a dashboard/observability UI yet (everything is currently inspectable via the API or `psql`), and retry/lock coordination is in-process only, so it doesn't yet coordinate across multiple server instances.
