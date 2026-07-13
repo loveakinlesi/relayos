@@ -9,21 +9,21 @@ pnpm add @relayos/stripe stripe
 `stripe` is a peer dependency — the typed event catalog tracks whichever Stripe SDK version your application has installed.
 
 ```ts
-// relayos.config.ts — wiring only
-import { createRelay } from 'relayos';
+// relay.ts — wiring only
+import { relayos } from 'relayos';
 import { stripe } from '@relayos/stripe';
-import { registerHandlers } from './relayos.handlers';
+import { registerHandlers } from './relay.handlers';
 
-export const relay = createRelay({
-  plugins: [stripe({ webhookSecret: process.env.STRIPE_WEBHOOK_SECRET! })],
+export const relay = relayos({
+  plugins: [stripe()], // reads STRIPE_WEBHOOK_SECRET automatically
 });
 export type AppRelay = typeof relay;
 registerHandlers(relay);
 ```
 
 ```ts
-// relayos.handlers.ts — handler logic lives here, not in relayos.config.ts
-import type { AppRelay } from './relayos.config';
+// relay.handlers.ts — handler logic lives here, not in relay.ts
+import type { AppRelay } from './relay';
 
 export function registerHandlers(relay: AppRelay): void {
   relay.on('stripe.charge.succeeded', async (event, ctx) => {

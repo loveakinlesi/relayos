@@ -3,21 +3,21 @@ title: Typed Events
 description: How event data is fully typed based on the plugins you register
 ---
 
-When you register a plugin with `createRelay`, the event catalog is automatically inferred and merged. Your handlers get full TypeScript autocomplete—no casting, no `unknown` types.
+When you register a plugin with `relayos`, the event catalog is automatically inferred and merged. Your handlers get full TypeScript autocomplete—no casting, no `unknown` types.
 
 ## How it works
 
-Each plugin carries an event map—a TypeScript type that describes what events it can emit and what their payloads look like. When you pass the plugins array to `createRelay`, the function infers the union of all those maps:
+Each plugin carries an event map—a TypeScript type that describes what events it can emit and what their payloads look like. When you pass the plugins array to `relayos`, the function infers the union of all those maps:
 
 ```ts
-import { createRelay } from 'relayos';
+import { relayos } from 'relayos';
 import { stripe } from '@relayos/stripe';
 import { github } from '@relayos/github';
 
-export const relay = createRelay({
+export const relay = relayos({
   plugins: [
-    stripe({ webhookSecret: process.env.STRIPE_WEBHOOK_SECRET! }),
-    github({ webhookSecret: process.env.GITHUB_WEBHOOK_SECRET! }),
+    stripe(),
+    github(),
   ],
 });
 
@@ -103,7 +103,7 @@ const myPlugin = definePlugin<MyEventMap>({
   },
 });
 
-export const relay = createRelay({
+export const relay = relayos({
   plugins: [myPlugin],
 });
 

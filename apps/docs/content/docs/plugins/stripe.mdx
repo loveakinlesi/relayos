@@ -37,18 +37,21 @@ import { stripe } from '@relayos/stripe';
 ## Setup
 
 ```ts
-// relayos.config.ts
-import { createRelay } from 'relayos';
+// relay.ts
+import { relayos } from 'relayos';
 import { stripe } from '@relayos/stripe';
 
-export const relay = createRelay({
+export const relay = relayos({
   plugins: [
-    stripe({
-      webhookSecret: process.env.STRIPE_WEBHOOK_SECRET!,
-      toleranceSeconds: 300, // optional, default 300
-    }),
+    stripe(), // reads STRIPE_WEBHOOK_SECRET automatically
   ],
 });
+```
+
+Set `STRIPE_WEBHOOK_SECRET` to the endpoint's signing secret from the Stripe dashboard. Pass `webhookSecret` explicitly instead if you'd rather not rely on the env var:
+
+```ts
+stripe({ webhookSecret: 'whsec_...', toleranceSeconds: 300 }),
 ```
 
 Point your Stripe webhook endpoint to `/api/relay/stripe` in your Next.js app.
@@ -57,7 +60,7 @@ Point your Stripe webhook endpoint to `/api/relay/stripe` in your Next.js app.
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| webhookSecret | `string` | required | The endpoint's signing secret from the Stripe dashboard |
+| webhookSecret | `string` | `process.env.STRIPE_WEBHOOK_SECRET` | The endpoint's signing secret from the Stripe dashboard |
 | toleranceSeconds | `number` | 300 | Max age of a signed timestamp before rejection |
 
 ## Signature verification
@@ -71,11 +74,11 @@ The plugin verifies the `stripe-signature` header using HMAC-SHA256:
 
 ## Event types
 
-Events are namespaced as `stripe.<stripe-event-type>` (e.g., `stripe.charge.succeeded`). The plugin ships a fully-typed event catalog of ~250 Stripe events. Register handlers in `relayos.handlers.ts`, not `relayos.config.ts` — see [Organizing handlers](/docs/concepts/events#organizing-handlers):
+Events are namespaced as `stripe.<stripe-event-type>` (e.g., `stripe.charge.succeeded`). The plugin ships a fully-typed event catalog of ~250 Stripe events. Register handlers in `relay.handlers.ts`, not `relay.ts` — see [Organizing handlers](/docs/concepts/events#organizing-handlers):
 
 ```ts
-// relayos.handlers.ts
-import type { AppRelay } from './relayos.config';
+// relay.handlers.ts
+import type { AppRelay } from './relay';
 
 export function registerHandlers(relay: AppRelay): void {
   relay.on('stripe.charge.succeeded', async (event, ctx) => {

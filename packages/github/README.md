@@ -7,21 +7,21 @@ pnpm add @relayos/github
 ```
 
 ```ts
-// relayos.config.ts — wiring only
-import { createRelay } from 'relayos';
+// relay.ts — wiring only
+import { relayos } from 'relayos';
 import { github } from '@relayos/github';
-import { registerHandlers } from './relayos.handlers';
+import { registerHandlers } from './relay.handlers';
 
-export const relay = createRelay({
-  plugins: [github({ webhookSecret: process.env.GITHUB_WEBHOOK_SECRET! })],
+export const relay = relayos({
+  plugins: [github()], // reads GITHUB_WEBHOOK_SECRET automatically
 });
 export type AppRelay = typeof relay;
 registerHandlers(relay);
 ```
 
 ```ts
-// relayos.handlers.ts — handler logic lives here, not in relayos.config.ts
-import type { AppRelay } from './relayos.config';
+// relay.handlers.ts — handler logic lives here, not in relay.ts
+import type { AppRelay } from './relay';
 
 export function registerHandlers(relay: AppRelay): void {
   relay.on('github.push', async (event, ctx) => {

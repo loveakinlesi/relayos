@@ -37,26 +37,30 @@ import { github } from '@relayos/github';
 ## Setup
 
 ```ts
-// relayos.config.ts
-import { createRelay } from 'relayos';
+// relay.ts
+import { relayos } from 'relayos';
 import { github } from '@relayos/github';
 
-export const relay = createRelay({
+export const relay = relayos({
   plugins: [
-    github({
-      webhookSecret: process.env.GITHUB_WEBHOOK_SECRET!,
-    }),
+    github(), // reads GITHUB_WEBHOOK_SECRET automatically
   ],
 });
+```
+
+Set `GITHUB_WEBHOOK_SECRET` to the secret you configured on your GitHub repository's webhook settings. Pass `webhookSecret` explicitly instead if you'd rather not rely on the env var:
+
+```ts
+github({ webhookSecret: 'your-secret' }),
 ```
 
 Point your GitHub webhook to `/api/relay/github` in your Next.js app and set a webhook secret.
 
 ## Configuration
 
-| Option | Type | Description |
-|--------|------|-------------|
-| webhookSecret | `string` | The secret you configured on your GitHub repository's webhook settings |
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| webhookSecret | `string` | `process.env.GITHUB_WEBHOOK_SECRET` | The secret you configured on your GitHub repository's webhook settings |
 
 ## Signature verification
 
@@ -73,11 +77,11 @@ GitHub events are namespaced as `github.<event-name>` or `github.<event-name>.<a
 - **Simple events** (no action): `github.push`, `github.release`, etc.
 - **Action-qualified events**: `github.pull_request.opened`, `github.issues.closed`, etc.
 
-Register handlers in `relayos.handlers.ts`, not `relayos.config.ts` — see [Organizing handlers](/docs/concepts/events#organizing-handlers):
+Register handlers in `relay.handlers.ts`, not `relay.ts` — see [Organizing handlers](/docs/concepts/events#organizing-handlers):
 
 ```ts
-// relayos.handlers.ts
-import type { AppRelay } from './relayos.config';
+// relay.handlers.ts
+import type { AppRelay } from './relay';
 
 export function registerHandlers(relay: AppRelay): void {
   relay.on('github.push', async (event, ctx) => {

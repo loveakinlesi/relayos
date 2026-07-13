@@ -30,7 +30,7 @@ You can override the retry policy when creating the relay:
 ```ts
 const relay = relayos({
   database: pool,
-  plugins: [stripe({ webhookSecret: process.env.STRIPE_WEBHOOK_SECRET! })],
+  plugins: [stripe()],
   retry: {
     maxAttempts: 5,  // Try up to 5 times
     backoff: (attempt) => {
