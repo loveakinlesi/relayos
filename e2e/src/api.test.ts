@@ -40,4 +40,39 @@ describe('HTTP API', () => {
     const json = (await response.json()) as { execution: { status: string } };
     expect(json.execution.status).toBe('completed');
   });
+
+  it('dedupes a redelivery of the same event id', async () => {
+    const { body } = plugin.buildTestPayload('charge.succeeded', { id: 'ch_api_2', amount: 700 });
+    const rawBody = JSON.stringify(body);
+    const headers = plugin.sign(rawBody, STRIPE_WEBHOOK_SECRET);
+
+    const first = await fetch(`${baseUrl}/api/relay/stripe`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', ...headers },
+      body: rawBody,
+    });
+    const firstJson = (await first.json()) as { execution: { id: string } };
+
+    const second = await fetch(`${baseUrl}/api/relay/stripe`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', ...headers },
+      body: rawBody,
+    });
+    const secondJson = (await second.json()) as { execution: { id: string } };
+
+    expect(secondJson.execution.id).toBe(firstJson.execution.id);
+  });
+
+  it('rejects a request with an invalid signature', async () => {
+    const { body } = plugin.buildTestPayload('charge.succeeded', { id: 'ch_api_3', amount: 900 });
+    const rawBody = JSON.stringify(body);
+
+    const response = await fetch(`${baseUrl}/api/relay/stripe`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'stripe-signature': 't=1,v1=deadbeef' },
+      body: rawBody,
+    });
+
+    expect(response.status).toBe(401);
+  });
 });
