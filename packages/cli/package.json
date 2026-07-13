@@ -31,6 +31,12 @@
   "bin": {
     "relay": "./dist/index.js"
   },
+  "exports": {
+    "./lib": {
+      "types": "./dist/lib.d.ts",
+      "default": "./dist/lib.js"
+    }
+  },
   "files": [
     "dist"
   ],
