@@ -8,26 +8,26 @@ The `@relayos/stripe` plugin handles Stripe webhook verification and provides a 
 ## Installation
 
 <Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
-<Tab value="pnpm">
-```sh
-pnpm add @relayos/stripe stripe
-```
-</Tab>
-<Tab value="npm">
-```sh
-npm install @relayos/stripe stripe
-```
-</Tab>
-<Tab value="yarn">
-```sh
-yarn add @relayos/stripe stripe
-```
-</Tab>
-<Tab value="bun">
-```sh
-bun add @relayos/stripe stripe
-```
-</Tab>
+  <Tab value="pnpm">
+  ```sh
+  pnpm add @relayos/stripe stripe
+  ```
+  </Tab>
+  <Tab value="npm">
+  ```sh
+  npm install @relayos/stripe stripe
+  ```
+  </Tab>
+  <Tab value="yarn">
+  ```sh
+  yarn add @relayos/stripe stripe
+  ```
+  </Tab>
+  <Tab value="bun">
+  ```sh
+  bun add @relayos/stripe stripe
+  ```
+  </Tab>
 </Tabs>
 
 ```ts
@@ -54,14 +54,14 @@ Set `STRIPE_WEBHOOK_SECRET` to the endpoint's signing secret from the Stripe das
 stripe({ webhookSecret: 'whsec_...', toleranceSeconds: 300 }),
 ```
 
-Point your Stripe webhook endpoint to `/api/relay/stripe` in your Next.js app.
+Point your Stripe webhook endpoint to `/api/webhook/stripe` in your Next.js app.
 
 ## Configuration
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| webhookSecret | `string` | `process.env.STRIPE_WEBHOOK_SECRET` | The endpoint's signing secret from the Stripe dashboard |
-| toleranceSeconds | `number` | 300 | Max age of a signed timestamp before rejection |
+| Option           | Type     | Default                             | Description                                             |
+| ---------------- | -------- | ----------------------------------- | ------------------------------------------------------- |
+| webhookSecret    | `string` | `process.env.STRIPE_WEBHOOK_SECRET` | The endpoint's signing secret from the Stripe dashboard |
+| toleranceSeconds | `number` | 300                                 | Max age of a signed timestamp before rejection          |
 
 ## Signature verification
 
@@ -99,7 +99,7 @@ Use `relay trigger` to simulate a signed Stripe webhook:
 relay trigger stripe charge.succeeded --data '{"id":"ch_1234","amount":1000,"currency":"usd"}'
 ```
 
-This sends a properly signed POST request to `/api/relay/stripe` with:
+This sends a properly signed POST request to `/api/webhook/stripe` with:
 
 - A valid `stripe-signature` header
 - A realistic payload shape that mimics Stripe's actual webhooks

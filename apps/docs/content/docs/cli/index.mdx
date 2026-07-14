@@ -3,67 +3,95 @@ title: CLI
 description: Manage RelayOS from the command line with migrate, dev, trigger, inspect, replay, and more.
 ---
 
-The `@relayos/cli` package provides the `relay` command for local development, testing, and production operations.
+The `relay` command comes bundled with `relayos` - nothing to install separately. Since `relayos` is already the one required dependency of any RelayOS project, the CLI is available the moment you install it.
 
-## Installation
+## Zero-install: scaffolding a brand new project
 
-<Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
-<Tab value="pnpm">
-```sh
-pnpm add -D @relayos/cli
-```
-</Tab>
-<Tab value="npm">
-```sh
-npm install -D @relayos/cli
-```
-</Tab>
-<Tab value="yarn">
-```sh
-yarn add -D @relayos/cli
-```
-</Tab>
-<Tab value="bun">
-```sh
-bun add -d @relayos/cli
-```
-</Tab>
-</Tabs>
+No project yet, nothing installed? One command:
 
-The `relay` bin is available immediately:
+```sh
+npx relayos@latest init
+```
+
+This fetches `relayos` (and its bundled CLI) ephemerally, runs the [interactive wizard](/docs/cli/init), and scaffolds `relay.ts` + `relay.handlers.ts` - installing `relayos` for real along the way, so every command after this one runs locally.
+
+## Already have `relayos` installed?
+
+The `relay` bin is available immediately, no separate `@relayos/cli` install needed:
 
 ```sh
 pnpm exec relay <command>
 ```
 
-Or if installed globally:
+<Tabs items={['npm', 'yarn', 'bun']}>
+  <Tab value="npm">
+  ```sh
+  npx relay <command>
+  ```
+  </Tab>
+  <Tab value="yarn">
+  ```sh
+  yarn relay <command>
+  ```
+  </Tab>
+  <Tab value="bun">
+  ```sh
+  bunx relay <command>
+  ```
+  </Tab>
+</Tabs>
 
-```sh
-npm install -g @relayos/cli
-relay <command>
-```
+Want the CLI as its own dependency instead (e.g. a CI image that only runs `relay migrate`, not the full app)? `@relayos/cli` is still published standalone and provides the identical `relay` bin:
+
+<Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
+  <Tab value="pnpm">
+  ```sh
+  pnpm add -D @relayos/cli
+  ```
+  </Tab>
+  <Tab value="npm">
+  ```sh
+  npm install -D @relayos/cli
+  ```
+  </Tab>
+  <Tab value="yarn">
+  ```sh
+  yarn add -D @relayos/cli
+  ```
+  </Tab>
+  <Tab value="bun">
+  ```sh
+  bun add -d @relayos/cli
+  ```
+  </Tab>
+</Tabs>
+
+Don't install both in the same project - they provide the same `relay` bin name, and only one will win the symlink.
 
 ## Global environment variables
 
-| Variable | Used by | Purpose |
-|----------|---------|---------|
-| `STRIPE_WEBHOOK_SECRET` | `relay trigger stripe ...` | Webhook secret for signing test Stripe events |
-| `GITHUB_WEBHOOK_SECRET` | `relay trigger github ...` | Webhook secret for signing test GitHub events |
-| `RELAYOS_BASE_URL` | `relay trigger`, `relay replay` | Where to POST webhook deliveries; defaults to `http://localhost:3000` |
+| Variable                 | Used by                         | Purpose                                                               |
+| ------------------------ | ------------------------------- | --------------------------------------------------------------------- |
+| `STRIPE_WEBHOOK_SECRET`  | `relay trigger stripe ...`      | Webhook secret for signing test Stripe events                         |
+| `GITHUB_WEBHOOK_SECRET`  | `relay trigger github ...`      | Webhook secret for signing test GitHub events                         |
+| `CLERK_WEBHOOK_SECRET`   | `relay trigger clerk ...`       | Webhook secret for signing test Clerk events                          |
+| `SHOPIFY_WEBHOOK_SECRET` | `relay trigger shopify ...`     | Webhook secret for signing test Shopify events                        |
+| `RESEND_WEBHOOK_SECRET`  | `relay trigger resend ...`      | Webhook secret for signing test Resend events                         |
+| `RELAYOS_BASE_URL`       | `relay trigger`, `relay replay` | Where to POST webhook deliveries; defaults to `http://localhost:3000` |
 
 Note there's no `DATABASE_URL` here - every command that touches the database (`migrate`, `dev`, `inspect`, `replay`, `events list`) loads your `relay.ts` directly and uses whatever client it configures, so the CLI itself never needs a connection string.
 
 ## Commands
 
-| Command | Purpose | Loads relay.ts | Requires app |
-|---------|---------|-----------------|--------------|
-| [`relay init`](/docs/cli/init) | Interactive wizard: scaffold `relay.ts` + install packages | No | No |
-| [`relay migrate`](/docs/cli/migrate) | Apply pending schema migrations | Yes | No |
-| [`relay dev`](/docs/cli/dev) | Run app dev server + tail executions | Yes (optional) | No |
-| [`relay trigger`](/docs/cli/trigger) | Simulate a signed webhook | No | Yes (running) |
-| [`relay inspect`](/docs/cli/inspect) | Show an execution's status, steps, logs | Yes | No |
-| [`relay replay`](/docs/cli/replay) | Replay a historical execution | Yes | Yes (running) |
-| [`relay events list`](/docs/cli/events) | List recent executions | Yes | No |
+| Command                                 | Purpose                                                    | Loads relay.ts | Requires app  |
+| --------------------------------------- | ---------------------------------------------------------- | -------------- | ------------- |
+| [`relay init`](/docs/cli/init)          | Interactive wizard: scaffold `relay.ts` + install packages | No             | No            |
+| [`relay migrate`](/docs/cli/migrate)    | Apply pending schema migrations                            | Yes            | No            |
+| [`relay dev`](/docs/cli/dev)            | Run app dev server + tail executions                       | Yes (optional) | No            |
+| [`relay trigger`](/docs/cli/trigger)    | Simulate a signed webhook                                  | No             | Yes (running) |
+| [`relay inspect`](/docs/cli/inspect)    | Show an execution's status, steps, logs                    | Yes            | No            |
+| [`relay replay`](/docs/cli/replay)      | Replay a historical execution                              | Yes            | Yes (running) |
+| [`relay events list`](/docs/cli/events) | List recent executions                                     | Yes            | No            |
 
 ## Dev-secret gotcha
 
@@ -93,9 +121,7 @@ function requireWebhookSecret(envVar: string, devFallback: string): string {
 
 export const relay = relayos({
   database: new Database('relay.db'),
-  plugins: [
-    stripe({ webhookSecret: requireWebhookSecret('STRIPE_WEBHOOK_SECRET', 'whsec_dev') }),
-  ],
+  plugins: [stripe({ webhookSecret: requireWebhookSecret('STRIPE_WEBHOOK_SECRET', 'whsec_dev') })],
 });
 ```
 

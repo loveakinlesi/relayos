@@ -8,13 +8,29 @@ You'll need Node >=20 and TypeScript >=5.
 ## 1. Install the package
 
 <Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
-  <Tab value="pnpm">```sh pnpm add relayos ```</Tab>
-  <Tab value="npm">```sh npm install relayos ```</Tab>
-  <Tab value="yarn">```sh yarn add relayos ```</Tab>
-  <Tab value="bun">```sh bun add relayos ```</Tab>
+  <Tab value="pnpm">
+  ```sh
+  pnpm add relayos
+  ```
+  </Tab>
+  <Tab value="npm">
+  ```sh
+  npm install relayos
+  ```
+  </Tab>
+  <Tab value="yarn">
+  ```sh
+  yarn add relayos
+  ```
+  </Tab>
+  <Tab value="bun">
+  ```sh
+  bun add relayos
+  ```
+  </Tab>
 </Tabs>
 
-`relayos` includes the engine and framework adapters (`relayos/next-js`, `relayos/express`, `relayos/hono`, `relayos/nestjs`) - this guide adds a database and the CLI as you go.
+`relayos` includes the engine, framework adapters (`relayos/next-js`, `relayos/express`, `relayos/hono`, `relayos/nestjs`), and the `relay` CLI - this guide adds a database as you go. No separate CLI install, ever - see [CLI](/docs/cli) for the full command reference, including a zero-install `npx relayos@latest init` path if you don't even have a project yet.
 
 ## 2. Set environment variables
 
@@ -31,10 +47,26 @@ RELAYOS_BASE_URL=http://localhost:3000 # Base URL of your app
 Create `relay.ts` at your project root. This file stays wiring-only - it creates the relay and nothing else. Every relay needs a `database`; the fastest way to get started is SQLite, which needs no separate server:
 
 <Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
-  <Tab value="pnpm">```sh pnpm add better-sqlite3 ```</Tab>
-  <Tab value="npm">```sh npm install better-sqlite3 ```</Tab>
-  <Tab value="yarn">```sh yarn add better-sqlite3 ```</Tab>
-  <Tab value="bun">```sh bun add better-sqlite3 ```</Tab>
+  <Tab value="pnpm">
+  ```sh
+  pnpm add better-sqlite3
+  ```
+  </Tab>
+  <Tab value="npm">
+  ```sh
+  npm install better-sqlite3
+  ```
+  </Tab>
+  <Tab value="yarn">
+  ```sh
+  yarn add better-sqlite3
+  ```
+  </Tab>
+  <Tab value="bun">
+  ```sh
+  bun add better-sqlite3
+  ```
+  </Tab>
 </Tabs>
 
 ```ts
@@ -80,13 +112,29 @@ See [Database](/docs/database) for the MySQL setup and the full list of supporte
 
 ## 5. Apply migrations in production
 
-Migrations still apply automatically outside production, but in production run them explicitly before scaling up new instances, via `@relayos/cli`:
+Migrations still apply automatically outside production, but in production run them explicitly before scaling up new instances. The `relay` command comes bundled with `relayos` from step 1 - nothing else to install:
 
 <Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
-  <Tab value="pnpm">```sh pnpm add -D @relayos/cli pnpm exec relay migrate ```</Tab>
-  <Tab value="npm">```sh npm install -D @relayos/cli npx relay migrate ```</Tab>
-  <Tab value="yarn">```sh yarn add -D @relayos/cli yarn relay migrate ```</Tab>
-  <Tab value="bun">```sh bun add -d @relayos/cli bunx relay migrate ```</Tab>
+  <Tab value="pnpm">
+  ```sh
+  pnpm exec relay migrate
+  ```
+  </Tab>
+  <Tab value="npm">
+  ```sh
+  npx relay migrate
+  ```
+  </Tab>
+  <Tab value="yarn">
+  ```sh
+  yarn relay migrate
+  ```
+  </Tab>
+  <Tab value="bun">
+  ```sh
+  bunx relay migrate
+  ```
+  </Tab>
 </Tabs>
 
 This loads your `relay.ts` and applies whatever schema your chosen dialect needs. It's idempotent - safe to run again after every deploy.
@@ -121,7 +169,7 @@ To receive real webhook deliveries, add a catch-all route on your server. `relay
 <Tabs items={['Next.js', 'Express', 'Hono', 'NestJS']}>
 <Tab value="Next.js">
 ```ts
-// app/api/relay/[...all]/route.ts
+// app/api/webhook/[...all]/route.ts
 import { toNextJsHandler } from 'relayos/next-js';
 import { relay } from '@/relay';
 
@@ -136,10 +184,11 @@ import { relay } from './relay';
 
 const app = express();
 
-app.post('/api/relay/:provider', toExpressHandler(relay));
+app.post('/api/webhook/:provider', toExpressHandler(relay));
 
 app.listen(3000);
-```
+
+````
 </Tab>
 <Tab value="Hono">
 ```ts
@@ -149,10 +198,11 @@ import { relay } from './relay';
 
 const app = new Hono();
 
-app.post('/api/relay/:provider', toHonoHandler(relay));
+app.post('/api/webhook/:provider', toHonoHandler(relay));
 
 export default app;
-```
+````
+
 </Tab>
 <Tab value="NestJS">
 ```ts
@@ -160,29 +210,35 @@ import { Controller, Post, Req, Res } from '@nestjs/common';
 import { toNestJsHandler, type NestJsRelayRequest, type NestJsRelayResponse } from 'relayos/nestjs';
 import { relay } from './relay';
 
-@Controller('api/relay')
+@Controller('api/webhook')
 export class RelayController {
-  private readonly handler = toNestJsHandler(relay);
+private readonly handler = toNestJsHandler(relay);
 
-  @Post(':provider')
-  post(@Req() req: NestJsRelayRequest, @Res() res: NestJsRelayResponse) {
-    return this.handler(req, res);
-  }
+@Post(':provider')
+post(@Req() req: NestJsRelayRequest, @Res() res: NestJsRelayResponse) {
+return this.handler(req, res);
 }
-```
+}
+
+````
 </Tab>
 </Tabs>
 
-Each of these serves every plugin at `/api/relay/<provider>` - e.g. `/api/relay/stripe`, `/api/relay/github` - determined entirely by wherever you mount the route, there's no base-path setting to configure. See [Next.js](/docs/frameworks/nextjs), [Express](/docs/frameworks/express), [Hono](/docs/frameworks/hono), or [NestJS](/docs/frameworks/nestjs) for framework-specific details (raw body handling, custom param names, management endpoints).
+Each of these serves every plugin at `/api/webhook/<provider>` - e.g. `/api/webhook/stripe`, `/api/webhook/github` - determined entirely by wherever you mount the route, there's no base-path setting to configure. See [Next.js](/docs/frameworks/nextjs), [Express](/docs/frameworks/express), [Hono](/docs/frameworks/hono), or [NestJS](/docs/frameworks/nestjs) for framework-specific details (raw body handling, custom param names, management endpoints).
 
 On something else? `relay.handler` is still a plain `(req: Request, ctx: { params: { all: string[] } }) => Promise<Response>` function you can wire in yourself.
 
 ## Optional: scaffold this with the CLI
 
-`relay init` walks you through an interactive setup instead of doing steps 3 and 6 by hand - it asks for your database and any provider plugins, then generates `relay.ts` + `relay.handlers.ts` and installs exactly what you chose:
+`relay init` walks you through an interactive setup instead of doing steps 3 and 6 by hand - it asks for your database and any provider plugins, then generates `relay.ts` + `relay.handlers.ts` and installs exactly what you chose. Nothing pre-installed? One command:
 
 ```sh
-pnpm add -D @relayos/cli
+npx relayos@latest init
+```
+
+Already have `relayos` in your project? `relay` is already available:
+
+```sh
 pnpm exec relay init
 ```
 

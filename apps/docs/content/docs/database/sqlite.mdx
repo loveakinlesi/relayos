@@ -1,0 +1,48 @@
+---
+title: SQLite
+description: Use better-sqlite3 for local development and small deployments.
+---
+
+Pass a `better-sqlite3` database straight into `relayos({ database })` - the
+dialect is detected automatically, and RelayOS applies its schema migrations
+for you.
+
+<Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
+  <Tab value="pnpm">
+  ```sh
+  pnpm add better-sqlite3
+  ```
+  </Tab>
+  <Tab value="npm">
+  ```sh
+  npm install better-sqlite3
+  ```
+  </Tab>
+  <Tab value="yarn">
+  ```sh
+  yarn add better-sqlite3
+  ```
+  </Tab>
+  <Tab value="bun">
+  ```sh
+  bun add better-sqlite3
+  ```
+  </Tab>
+</Tabs>
+
+```ts
+// relay.ts
+import { relayos } from 'relayos';
+import Database from 'better-sqlite3';
+
+export const relay = relayos({
+  database: new Database('relay.db'),
+  plugins: [
+    // ...
+  ],
+});
+```
+
+Good for local development, testing, and small single-instance deployments.
+Not recommended once you're running multiple instances of your app - see
+[Postgres](/docs/database/postgres) or [MySQL](/docs/database/mysql) instead.

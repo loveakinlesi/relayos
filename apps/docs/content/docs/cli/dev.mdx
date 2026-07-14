@@ -13,8 +13,8 @@ relay dev [--dir <path>]
 
 ## Options
 
-| Flag | Default | Description |
-|------|---------|-------------|
+| Flag    | Default           | Description                                        |
+| ------- | ----------------- | -------------------------------------------------- |
 | `--dir` | current directory | Path to the project root (where `package.json` is) |
 
 ## What it does
@@ -24,6 +24,7 @@ relay dev [--dir <path>]
 3. Captures SIGINT (Ctrl+C) and gracefully shuts down both processes
 
 The execution output includes:
+
 - Status icon (✓ completed, ✗ failed, ⏱ pending)
 - Event type (e.g., `stripe.charge.succeeded`)
 - Attempt number
@@ -36,10 +37,11 @@ The execution output includes:
 relay dev
 
 # Run dev server in a subdirectory
-relay dev --dir apps/web
+relay dev --dir path/to/app
 ```
 
 Output:
+
 ```
 [relay dev] starting dev server in /Users/alice/myapp
 [relay dev] watching for executions...

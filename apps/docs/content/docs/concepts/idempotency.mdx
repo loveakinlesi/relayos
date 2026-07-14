@@ -34,6 +34,7 @@ This pattern ensures that concurrent redeliveries of the same webhook (seconds a
 ### Event ID semantics
 
 The event ID comes from the provider:
+
 - **Stripe**: `evt_xxxxx` (Stripe's event ID)
 - **GitHub**: `x-github-delivery` header (UUID per delivery)
 - **Custom plugins**: Whatever you define in `normalize()`

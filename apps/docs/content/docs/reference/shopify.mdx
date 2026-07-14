@@ -1,0 +1,30 @@
+---
+title: '@relayos/shopify'
+description: Shopify webhook plugin with HMAC signature verification.
+---
+
+## Install
+
+```sh
+pnpm add @relayos/shopify
+```
+
+Peer dependency: `@relayos/core`
+
+## Exports
+
+| Export                 | Kind     | Description                                     |
+| ---------------------- | -------- | ----------------------------------------------- |
+| `shopify`              | Function | Creates a Shopify plugin for webhook ingestion. |
+| `ShopifyEventMap`      | Type     | Typed event map for common Shopify topics.      |
+| `ShopifyPluginOptions` | Type     | Configuration for the Shopify plugin.           |
+
+## Functions
+
+### shopify
+
+```ts
+function shopify(options?: ShopifyPluginOptions): RelayPlugin<ShopifyEventMap>;
+```
+
+Creates a Shopify plugin. Verifies `X-Shopify-Hmac-Sha256`, reads `X-Shopify-Topic` and `X-Shopify-Webhook-Id`, and normalizes topics like `orders/create` as `shopify.orders.create`.

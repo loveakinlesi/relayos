@@ -6,37 +6,37 @@ description: Stripe webhook plugin with signature verification and fully-typed e
 ## Install
 
 <Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
-<Tab value="pnpm">
-```sh
-pnpm add @relayos/stripe
-```
-</Tab>
-<Tab value="npm">
-```sh
-npm install @relayos/stripe
-```
-</Tab>
-<Tab value="yarn">
-```sh
-yarn add @relayos/stripe
-```
-</Tab>
-<Tab value="bun">
-```sh
-bun add @relayos/stripe
-```
-</Tab>
+  <Tab value="pnpm">
+  ```sh
+  pnpm add @relayos/stripe
+  ```
+  </Tab>
+  <Tab value="npm">
+  ```sh
+  npm install @relayos/stripe
+  ```
+  </Tab>
+  <Tab value="yarn">
+  ```sh
+  yarn add @relayos/stripe
+  ```
+  </Tab>
+  <Tab value="bun">
+  ```sh
+  bun add @relayos/stripe
+  ```
+  </Tab>
 </Tabs>
 
 Peer dependencies: `@relayos/core`, `stripe` (>=17)
 
 ## Exports
 
-| Export | Kind | Description |
-|--------|------|-------------|
-| `stripe` | Function | Creates a Stripe plugin for webhook ingestion. |
-| `StripeEventMap` | Type | Fully-typed catalog of every Stripe event, keyed by RelayOS's namespacing. |
-| `StripePluginOptions` | Type | Configuration for the Stripe plugin. |
+| Export                | Kind     | Description                                                                |
+| --------------------- | -------- | -------------------------------------------------------------------------- |
+| `stripe`              | Function | Creates a Stripe plugin for webhook ingestion.                             |
+| `StripeEventMap`      | Type     | Fully-typed catalog of every Stripe event, keyed by RelayOS's namespacing. |
+| `StripePluginOptions` | Type     | Configuration for the Stripe plugin.                                       |
 
 ## Types
 

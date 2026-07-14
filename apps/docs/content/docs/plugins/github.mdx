@@ -8,26 +8,26 @@ The `@relayos/github` plugin handles GitHub webhook verification and provides a 
 ## Installation
 
 <Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
-<Tab value="pnpm">
-```sh
-pnpm add @relayos/github
-```
-</Tab>
-<Tab value="npm">
-```sh
-npm install @relayos/github
-```
-</Tab>
-<Tab value="yarn">
-```sh
-yarn add @relayos/github
-```
-</Tab>
-<Tab value="bun">
-```sh
-bun add @relayos/github
-```
-</Tab>
+  <Tab value="pnpm">
+  ```sh
+  pnpm add @relayos/github
+  ```
+  </Tab>
+  <Tab value="npm">
+  ```sh
+  npm install @relayos/github
+  ```
+  </Tab>
+  <Tab value="yarn">
+  ```sh
+  yarn add @relayos/github
+  ```
+  </Tab>
+  <Tab value="bun">
+  ```sh
+  bun add @relayos/github
+  ```
+  </Tab>
 </Tabs>
 
 ```ts
@@ -54,12 +54,12 @@ Set `GITHUB_WEBHOOK_SECRET` to the secret you configured on your GitHub reposito
 github({ webhookSecret: 'your-secret' }),
 ```
 
-Point your GitHub webhook to `/api/relay/github` in your Next.js app and set a webhook secret.
+Point your GitHub webhook to `/api/webhook/github` in your Next.js app and set a webhook secret.
 
 ## Configuration
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
+| Option        | Type     | Default                             | Description                                                            |
+| ------------- | -------- | ----------------------------------- | ---------------------------------------------------------------------- |
 | webhookSecret | `string` | `process.env.GITHUB_WEBHOOK_SECRET` | The secret you configured on your GitHub repository's webhook settings |
 
 ## Signature verification

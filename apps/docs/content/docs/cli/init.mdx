@@ -13,17 +13,17 @@ relay init [--force] [--dir <path>]
 
 ## Options
 
-| Flag | Default | Description |
-|------|---------|-------------|
-| `--force` | false | Overwrite existing `relay.ts` / `relay.handlers.ts` |
-| `--dir` | current directory | Where to scaffold into |
+| Flag      | Default           | Description                                         |
+| --------- | ----------------- | --------------------------------------------------- |
+| `--force` | false             | Overwrite existing `relay.ts` / `relay.handlers.ts` |
+| `--dir`   | current directory | Where to scaffold into                              |
 
 ## What it asks
 
 1. **App name** - cosmetic, shown in the wizard's closing message
-2. **Framework** - skipped and auto-detected if `package.json` has a `next` dependency; otherwise choose Next.js or a generic (framework-agnostic) setup
+2. **Framework** - skipped and auto-detected if `package.json` has a `next` dependency; otherwise choose Next.js, Express, Hono, NestJS, or a generic setup
 3. **Database** - SQLite (recommended to get started), Postgres, or MySQL
-4. **Plugins** - Stripe and/or GitHub, or neither
+4. **Plugins** - Stripe, GitHub, Clerk, Shopify, Resend, or none
 
 It then detects your package manager from whatever lockfile is present (`pnpm-lock.yaml`, `yarn.lock`, `bun.lockb`, or falling back to npm) and installs `relayos`, the driver package for your chosen database, and any plugin packages you selected.
 
@@ -66,7 +66,7 @@ import { registerHandlers } from './relay.handlers';
 export const relay = relayos({
   database: new Database('relay.db'),
   plugins: [
-    stripe({ webhookSecret: process.env.STRIPE_WEBHOOK_SECRET! }),
+    stripe(), // reads STRIPE_WEBHOOK_SECRET automatically
   ],
 });
 
@@ -78,7 +78,7 @@ export type AppRelay = typeof relay;
 registerHandlers(relay);
 ```
 
-If Next.js was detected (or chosen), it also creates `app/api/relay/[...all]/route.ts`:
+If Next.js was detected (or chosen), it also creates `app/api/webhook/[...all]/route.ts`:
 
 ```ts
 import { toNextJsHandler } from 'relayos/next-js';
@@ -87,10 +87,16 @@ import { relay } from '../../../../relay';
 export const { POST } = toNextJsHandler(relay);
 ```
 
+If Express, Hono, or NestJS was chosen, it creates the matching adapter file instead:
+
+- `relay.express.ts`
+- `relay.hono.ts`
+- `relay.controller.ts`
+
 ## Next steps
 
 1. Add a `relay.on(...)` call inside `registerHandlers()` and call `relay.ingest(...)` to try it.
-2. Not on Next.js and chose the generic option? Wire `relay.handler` into your framework's request handling yourself - see [Installation](/docs/installation) step 7.
+2. Not using one of the built-in framework adapters? Wire `relay.handler` into your framework's request handling yourself - see [Installation](/docs/installation) step 7.
 3. Ready to receive real webhooks? Set the matching `<PROVIDER>_WEBHOOK_SECRET` env var for any plugin you enabled.
 4. Ready for production? See [Database](/docs/database) to swap SQLite for Postgres or MySQL, and run `relay migrate` before scaling up new instances.
 

@@ -1,0 +1,63 @@
+---
+title: Clerk Plugin
+description: Receive and verify Clerk webhooks with RelayOS.
+---
+
+The `@relayos/clerk` plugin handles Clerk webhook verification and provides typed RelayOS event names for common Clerk webhook events.
+
+## Installation
+
+<Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
+  <Tab value="pnpm">
+  ```sh
+  pnpm add @relayos/clerk
+  ```
+  </Tab>
+  <Tab value="npm">
+  ```sh
+  npm install @relayos/clerk
+  ```
+  </Tab>
+  <Tab value="yarn">
+  ```sh
+  yarn add @relayos/clerk
+  ```
+  </Tab>
+  <Tab value="bun">
+  ```sh
+  bun add @relayos/clerk
+  ```
+  </Tab>
+</Tabs>
+
+## Setup
+
+```ts
+// relay.ts
+import { relayos } from 'relayos';
+import { clerk } from '@relayos/clerk';
+
+export const relay = relayos({
+  plugins: [
+    clerk(), // reads CLERK_WEBHOOK_SECRET automatically
+  ],
+});
+```
+
+Point your Clerk webhook endpoint to `/api/webhook/clerk`.
+
+## Event types
+
+Events are namespaced as `clerk.<clerk-event-type>`:
+
+```ts
+relay.on('clerk.user.created', async (event, ctx) => {
+  ctx.log.info('user created', { id: event.data.id });
+});
+```
+
+## Testing locally
+
+```sh
+relay trigger clerk user.created --data '{"id":"user_123"}'
+```

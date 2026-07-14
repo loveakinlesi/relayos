@@ -15,10 +15,7 @@ import { stripe } from '@relayos/stripe';
 import { github } from '@relayos/github';
 
 export const relay = relayos({
-  plugins: [
-    stripe(),
-    github(),
-  ],
+  plugins: [stripe(), github()],
 });
 
 // relay.on() now autocompletes all Stripe and GitHub event names:
@@ -67,7 +64,7 @@ This lets you write custom handlers for test events or unsupported providers wit
 
 ## Important: Compile-time only
 
-Typed events are compile-time only. The type system gives you autocomplete and type safety, but **payloads are not validated at runtime**. After signature verification (which *is* always enforced), the webhook body is cast to match the type—but if the provider's API evolved or sent unexpected fields, TypeScript won't catch it.
+Typed events are compile-time only. The type system gives you autocomplete and type safety, but **payloads are not validated at runtime**. After signature verification (which _is_ always enforced), the webhook body is cast to match the type—but if the provider's API evolved or sent unexpected fields, TypeScript won't catch it.
 
 For example, if you pinned an older Stripe API version on your webhook endpoint and it sends fields that differ from the types, the handler still runs—the mismatch isn't detected at runtime.
 
@@ -109,6 +106,6 @@ export const relay = relayos({
 
 relay.on('my.user.created', async (event, ctx) => {
   console.log(event.data.userId); // ✓ typed as string
-  console.log(event.data.email);  // ✓ typed as string
+  console.log(event.data.email); // ✓ typed as string
 });
 ```

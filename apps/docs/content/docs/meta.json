@@ -3,12 +3,13 @@
   "pages": [
     "index",
     "installation",
-    "quickstart",
+    "basic-usage",
     "concepts",
     "database",
     "plugins",
     "frameworks",
     "cli",
-    "reference"
+    "reference",
+    "roadmap"
   ]
 }

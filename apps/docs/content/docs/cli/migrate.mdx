@@ -35,6 +35,7 @@ relay migrate
 ```
 
 Output:
+
 ```
 Applying RelayOS migrations...
 Migrations applied.
@@ -43,7 +44,7 @@ Migrations applied.
 From another directory:
 
 ```sh
-relay migrate --dir apps/web
+relay migrate --dir path/to/app
 ```
 
 ## When you actually need this
@@ -57,9 +58,11 @@ Running `relay migrate` multiple times is safe — it won't re-create tables or 
 ## Troubleshooting
 
 **Error: "Could not find relay.ts"**
+
 - Confirm `relay.ts` exists in the directory you're running from, or pass `--dir`
 
 **A connection error from your database driver**
+
 - Check the connection details passed to your database client in `relay.ts` (e.g. `DATABASE_URL` if that's what you wired it to read)
 - Verify the database server is running and reachable
 

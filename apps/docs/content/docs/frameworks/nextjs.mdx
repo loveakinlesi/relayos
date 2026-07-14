@@ -18,17 +18,21 @@ import { toNextJsHandler } from 'relayos/next-js';
 Create a catch-all route to receive webhooks from all your plugins:
 
 ```ts
-// app/api/relay/[...all]/route.ts
+// app/api/webhook/[...all]/route.ts
 import { toNextJsHandler } from 'relayos/next-js';
-import { relay } from '@/relayos.config';
+import { relay } from '@/relay';
 
 export const { POST } = toNextJsHandler(relay);
 ```
 
 This single route handles all plugin endpoints:
-- `/api/relay/stripe` — Stripe webhooks
-- `/api/relay/github` — GitHub webhooks
-- `/api/relay/test` — Your custom plugins
+
+- `/api/webhook/stripe` — Stripe webhooks
+- `/api/webhook/github` — GitHub webhooks
+- `/api/webhook/clerk` — Clerk webhooks
+- `/api/webhook/shopify` — Shopify webhooks
+- `/api/webhook/resend` — Resend webhooks
+- `/api/webhook/test` — Your custom plugins
 
 ## How it works
 
@@ -41,8 +45,9 @@ const handler = toNextJsHandler(relay);
 ```
 
 The handler:
+
 1. Awaits `ctx.params` (Next.js 16+ requirement for dynamic routes)
-2. Extracts the route segment (e.g., `"stripe"` from `/api/relay/stripe`)
+2. Extracts the route segment (e.g., `"stripe"` from `/api/webhook/stripe`)
 3. Delegates to `relay.handler(req, { params: { all } })`
 4. Returns the response
 
@@ -52,11 +57,11 @@ The handler:
 
 ## Management endpoints
 
-Beyond the webhook ingestion route, you'll likely want to add management endpoints to list, inspect, retry, and replay executions. Here are some examples from `apps/web`:
+Beyond the webhook ingestion route, you'll likely want to add management endpoints to list, inspect, retry, and replay executions. Here are some examples:
 
 ```ts
 // app/api/executions/route.ts — List executions
-import { relay } from '@/relayos.config';
+import { relay } from '@/relay';
 
 export async function GET() {
   const executions = await relay.listExecutions();
@@ -66,11 +71,11 @@ export async function GET() {
 
 ```ts
 // app/api/executions/[id]/route.ts — Inspect one execution
-import { relay } from '@/relayos.config';
+import { relay } from '@/relay';
 
 export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> }) {
   const { id } = await ctx.params;
-  const execution = await relay.listExecutions().then(e => e.find(x => x.id === id));
+  const execution = await relay.listExecutions().then((e) => e.find((x) => x.id === id));
   const steps = await relay.listSteps(id);
   const logs = await relay.listLogs(id);
   return Response.json({ execution, steps, logs });
@@ -79,7 +84,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
 
 ```ts
 // app/api/executions/[id]/retry/route.ts — Retry an execution
-import { relay } from '@/relayos.config';
+import { relay } from '@/relay';
 
 export async function POST(_req: Request, ctx: { params: Promise<{ id: string }> }) {
   const { id } = await ctx.params;
@@ -90,7 +95,7 @@ export async function POST(_req: Request, ctx: { params: Promise<{ id: string }>
 
 ```ts
 // app/api/executions/[id]/replay/route.ts — Replay an execution
-import { relay } from '@/relayos.config';
+import { relay } from '@/relay';
 
 export async function POST(_req: Request, ctx: { params: Promise<{ id: string }> }) {
   const { id } = await ctx.params;

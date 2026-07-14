@@ -1,0 +1,89 @@
+---
+title: Basic Usage
+description: The everyday patterns for working with a relay once it's installed
+---
+
+This page assumes you've already scaffolded `relay.ts` and `relay.handlers.ts` - see [Installation](/docs/installation) if you haven't. It walks through the patterns you'll reach for day to day. Each links out to a [Concepts](/docs/concepts/events) page for the full explanation.
+
+## Registering a handler for a real event
+
+Once you've added a provider plugin (see [Plugins](/docs/plugins/stripe)), `relay.on()` autocompletes every event that plugin exposes, and `event.data` is typed per event - no casting:
+
+```ts
+// relay.handlers.ts
+import type { AppRelay } from './relay';
+
+export function registerHandlers(relay: AppRelay): void {
+  relay.on('stripe.charge.succeeded', async (event, ctx) => {
+    const charge = event.data.object; // a typed Stripe.Charge
+
+    const payment = await ctx.step.run('record-payment', async () => {
+      return { chargeId: charge.id, amount: charge.amount };
+    });
+
+    ctx.log.info('payment recorded', payment);
+  });
+}
+```
+
+See [Typed Events](/docs/concepts/typed-events) for how the catalog is inferred from the plugins array.
+
+## Using `ctx.step.run`
+
+Wrap each unit of side-effecting work in its own named step. If the handler throws partway through and retries, steps that already completed return their cached output instead of re-running:
+
+```ts
+relay.on('order.placed', async (event, ctx) => {
+  const payment = await ctx.step.run('charge-payment', async () => {
+    return chargeCard(event.data.orderId, event.data.amount);
+  });
+
+  const shipment = await ctx.step.run('create-shipment', async () => {
+    return createShipment(event.data.orderId);
+  });
+
+  await ctx.step.run('send-confirmation', async () => {
+    await sendEmail(event.data.customerEmail, { payment, shipment });
+  });
+});
+```
+
+Give steps names that describe the side effect, not the event - you'll read them again in `relay inspect` output. See [Durable Steps](/docs/concepts/durable-steps) for how caching and retries interact.
+
+## Logging with `ctx.log`
+
+`ctx.log.info/warn/error` writes to the same execution log the runtime uses for its own lifecycle events (like `retrying (attempt 2, scheduled)`), tagged by source so you can tell them apart in `relay inspect`:
+
+```ts
+relay.on('stripe.charge.succeeded', async (event, ctx) => {
+  ctx.log.info('processing charge', { chargeId: event.data.object.id });
+  // ...
+});
+```
+
+## Ingesting events: webhook vs. direct
+
+In production, events usually arrive via the mounted webhook route (see [Next.js](/docs/frameworks/nextjs)) - the provider plugin verifies the signature and calls `relay.ingest()` for you. In tests or scripts, call `relay.ingest()` directly with the same shape:
+
+```ts
+const execution = await relay.ingest({
+  id: crypto.randomUUID(),
+  type: 'order.placed',
+  data: { orderId: 'ord_1', amount: 4200 },
+  receivedAt: new Date().toISOString(),
+});
+```
+
+Both paths run the same handler and produce the same execution record - there's no special-casing for "test" events.
+
+## Inspecting and replaying via the CLI
+
+Once an execution exists, `@relayos/cli` gives you three ways to look at or re-run it without touching the database by hand:
+
+```sh
+relay events list                 # list recent executions
+relay inspect <eventId>           # status, steps, logs for one execution
+relay replay <eventId>            # reprocess a historical event as a new execution
+```
+
+See the [three retry operations](/docs/concepts/replay-restart-retry) for when to use `retryExecution`, `restartExecution`, or `replayExecution`, and the [CLI reference](/docs/cli) for every command.

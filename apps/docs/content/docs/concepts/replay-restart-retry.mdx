@@ -7,11 +7,11 @@ RelayOS gives you three operations to recover from or debug failed executions. T
 
 ## Three operations, one table
 
-| | Resume in place | Fresh execution | Re-run completed steps |
-|---|---|---|---|
-| **Retry** | ✓ | ✗ | ✗ |
-| **Restart** | ✓ | ✗ | ✓ |
-| **Replay** | ✗ | ✓ | ✓ |
+|             | Resume in place | Fresh execution | Re-run completed steps |
+| ----------- | --------------- | --------------- | ---------------------- |
+| **Retry**   | ✓               | ✗               | ✗                      |
+| **Restart** | ✓               | ✗               | ✓                      |
+| **Replay**  | ✗               | ✓               | ✓                      |
 
 ### Retry
 
@@ -50,6 +50,7 @@ await relay.replayExecution(executionId);
 **When to use**: You want to test a handler change against real historical data without modifying the original execution's audit trail. Or you want to reprocess a high-priority order through a new fulfillment system.
 
 **What happens**:
+
 - A fresh `eventId` is generated (not the original's)
 - A new `Execution` is created with `attempt: 1`
 - The new execution's `replayedFrom` field points to the source execution
@@ -66,6 +67,7 @@ await relay.replayExecution(executionId);
 ## Implementation details
 
 All three operations:
+
 - Are available via the Relay API
 - Are inspectable via `relay inspect <executionId>` or the CLI
 - Are logged and appear in the execution's log stream as system events
@@ -77,4 +79,4 @@ Replay also supports a dry-run mode via the CLI:
 relay replay <executionId> --print
 ```
 
-This shows you what *would* happen without actually posting to your webhook handler.
+This shows you what _would_ happen without actually posting to your webhook handler.

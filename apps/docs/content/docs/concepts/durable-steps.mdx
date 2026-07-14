@@ -18,7 +18,7 @@ On retry, the execution resumes at the point where it failed. Any completed step
 
 ## Example: the full stripe.charge.succeeded workflow
 
-Here's a real example that demonstrates why durable steps matter (registered in `relayos.handlers.ts` — see [Organizing handlers](/docs/concepts/events#organizing-handlers)):
+Here's a real example that demonstrates why durable steps matter (registered in `relay.handlers.ts` — see [Organizing handlers](/docs/concepts/events#organizing-handlers)):
 
 ```ts
 relay.on('stripe.charge.succeeded', async (event, ctx) => {

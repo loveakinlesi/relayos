@@ -1,0 +1,30 @@
+---
+title: '@relayos/clerk'
+description: Clerk webhook plugin with Svix signature verification.
+---
+
+## Install
+
+```sh
+pnpm add @relayos/clerk
+```
+
+Peer dependency: `@relayos/core`
+
+## Exports
+
+| Export               | Kind     | Description                                      |
+| -------------------- | -------- | ------------------------------------------------ |
+| `clerk`              | Function | Creates a Clerk plugin for webhook ingestion.    |
+| `ClerkEventMap`      | Type     | Typed event map for common Clerk webhook events. |
+| `ClerkPluginOptions` | Type     | Configuration for the Clerk plugin.              |
+
+## Functions
+
+### clerk
+
+```ts
+function clerk(options?: ClerkPluginOptions): RelayPlugin<ClerkEventMap>;
+```
+
+Creates a Clerk plugin. Verifies Svix webhook signatures from `Svix-Id`, `Svix-Timestamp`, and `Svix-Signature`, normalizes incoming events as `clerk.<event type>`, and uses `CLERK_WEBHOOK_SECRET` by default.

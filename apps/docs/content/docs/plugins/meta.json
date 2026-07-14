@@ -1,4 +1,4 @@
 {
   "title": "Plugins",
-  "pages": ["stripe", "github", "writing-plugins"]
+  "pages": ["stripe", "github", "clerk", "shopify", "resend", "writing-plugins"]
 }

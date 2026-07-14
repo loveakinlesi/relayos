@@ -1,0 +1,47 @@
+---
+title: Postgres
+description: Use a pg.Pool as your RelayOS execution store.
+---
+
+Pass a `pg.Pool` straight into `relayos({ database })` - the dialect is
+detected automatically, and RelayOS applies its schema migrations for you.
+
+<Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
+  <Tab value="pnpm">
+  ```sh
+  pnpm add pg
+  ```
+  </Tab>
+  <Tab value="npm">
+  ```sh
+  npm install pg
+  ```
+  </Tab>
+  <Tab value="yarn">
+  ```sh
+  yarn add pg
+  ```
+  </Tab>
+  <Tab value="bun">
+  ```sh
+  bun add pg
+  ```
+  </Tab>
+</Tabs>
+
+```ts
+// relay.ts
+import { relayos } from 'relayos';
+import { Pool } from 'pg';
+
+export const relay = relayos({
+  database: new Pool({ connectionString: process.env.DATABASE_URL! }),
+  plugins: [
+    // ...
+  ],
+});
+```
+
+Recommended for production and any deployment running more than one instance
+of your app. See [Migrations](/docs/database#migrations) for how to apply
+schema changes before scaling up.

@@ -12,7 +12,7 @@ import { Controller, Post, Req, Res } from '@nestjs/common';
 import { toNestJsHandler, type NestJsRelayRequest, type NestJsRelayResponse } from 'relayos/nestjs';
 import { relay } from './relay';
 
-@Controller('api/relay')
+@Controller('api/webhook')
 export class RelayController {
   private readonly handler = toNestJsHandler(relay);
 
@@ -25,7 +25,7 @@ export class RelayController {
 
 `NestJsRelayRequest`/`NestJsRelayResponse` are the Node request/response shapes `toNestJsHandler` actually expects - the global Fetch API `Request`/`Response` types are not compatible with them.
 
-This single controller route handles plugin endpoints such as `/api/relay/stripe`, `/api/relay/github`, `/api/relay/clerk`, `/api/relay/shopify`, and `/api/relay/resend`.
+This single controller route handles plugin endpoints such as `/api/webhook/stripe`, `/api/webhook/github`, `/api/webhook/clerk`, `/api/webhook/shopify`, and `/api/webhook/resend`.
 
 ## Raw body requirement
 

@@ -32,7 +32,7 @@ const relay = relayos({
   database: pool,
   plugins: [stripe()],
   retry: {
-    maxAttempts: 5,  // Try up to 5 times
+    maxAttempts: 5, // Try up to 5 times
     backoff: (attempt) => {
       // Custom backoff: linear instead of exponential
       return attempt * 1000; // 1s, 2s, 3s, 4s
@@ -73,7 +73,7 @@ relay inspect <executionId>  # Check the status
 relay events list            # Find the execution ID
 ```
 
-Then use the management API routes in your app (see the `apps/web` example) to trigger a manual retry.
+Then call `relay.retryExecution(executionId)` from a management API route in your app to trigger the retry - see [Management endpoints](/docs/frameworks/nextjs#management-endpoints) for example routes.
 
 ## Viewing retry history
 

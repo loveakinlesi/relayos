@@ -13,17 +13,17 @@ relay replay <eventId|executionId> [--forward <url>] [--print] [--dir <path>]
 
 ## Arguments
 
-| Argument | Description |
-|----------|-------------|
+| Argument                 | Description                        |
+| ------------------------ | ---------------------------------- |
 | `<eventId\|executionId>` | Event ID or execution ID to replay |
 
 ## Options
 
-| Flag | Default | Description |
-|------|---------|-------------|
-| `--forward <url>` | `RELAYOS_BASE_URL` or `http://localhost:3000` | URL to POST the replay to |
-| `--print` | false | Dry-run: show what would be replayed without POSTing |
-| `--dir` | current directory | Directory containing `relay.ts`, used to load the historical execution |
+| Flag              | Default                                       | Description                                                            |
+| ----------------- | --------------------------------------------- | ---------------------------------------------------------------------- |
+| `--forward <url>` | `RELAYOS_BASE_URL` or `http://localhost:3000` | URL to POST the replay to                                              |
+| `--print`         | false                                         | Dry-run: show what would be replayed without POSTing                   |
+| `--dir`           | current directory                             | Directory containing `relay.ts`, used to load the historical execution |
 
 ## Requirements
 
