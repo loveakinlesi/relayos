@@ -20,7 +20,8 @@
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "flexsearch": "^0.8.212",
-    "class-variance-authority": "^0.7.1"
+    "class-variance-authority": "^0.7.1",
+    "motion": "^12.42.2"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.2",
