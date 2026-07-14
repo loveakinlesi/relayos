@@ -30,7 +30,7 @@ describe('HTTP API', () => {
     const rawBody = JSON.stringify(body);
     const headers = plugin.sign(rawBody, STRIPE_WEBHOOK_SECRET);
 
-    const response = await fetch(`${baseUrl}/api/relay/stripe`, {
+    const response = await fetch(`${baseUrl}/api/webhook/stripe`, {
       method: 'POST',
       headers: { 'content-type': 'application/json', ...headers },
       body: rawBody,
@@ -46,14 +46,14 @@ describe('HTTP API', () => {
     const rawBody = JSON.stringify(body);
     const headers = plugin.sign(rawBody, STRIPE_WEBHOOK_SECRET);
 
-    const first = await fetch(`${baseUrl}/api/relay/stripe`, {
+    const first = await fetch(`${baseUrl}/api/webhook/stripe`, {
       method: 'POST',
       headers: { 'content-type': 'application/json', ...headers },
       body: rawBody,
     });
     const firstJson = (await first.json()) as { execution: { id: string } };
 
-    const second = await fetch(`${baseUrl}/api/relay/stripe`, {
+    const second = await fetch(`${baseUrl}/api/webhook/stripe`, {
       method: 'POST',
       headers: { 'content-type': 'application/json', ...headers },
       body: rawBody,
@@ -67,7 +67,7 @@ describe('HTTP API', () => {
     const { body } = plugin.buildTestPayload('charge.succeeded', { id: 'ch_api_3', amount: 900 });
     const rawBody = JSON.stringify(body);
 
-    const response = await fetch(`${baseUrl}/api/relay/stripe`, {
+    const response = await fetch(`${baseUrl}/api/webhook/stripe`, {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'stripe-signature': 't=1,v1=deadbeef' },
       body: rawBody,

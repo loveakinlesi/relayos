@@ -14,7 +14,7 @@ const { relay } = await jiti.import(join(fixtureDir, 'relay.ts'));
 
 const server = createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
-  const match = url.pathname.match(/^\/api\/relay\/([^/]+)$/);
+  const match = url.pathname.match(/^\/api\/webhook\/([^/]+)$/);
   if (!match || req.method !== 'POST') {
     res.writeHead(404).end();
     return;
