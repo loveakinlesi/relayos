@@ -1,5 +1,5 @@
 export type DatabaseChoice = 'sqlite' | 'postgres' | 'mysql';
-export type PluginChoice = 'stripe' | 'github';
+export type PluginChoice = 'stripe' | 'github' | 'clerk' | 'shopify' | 'resend';
 
 export const databasePackages: Record<DatabaseChoice, string> = {
   sqlite: 'better-sqlite3',
@@ -10,6 +10,9 @@ export const databasePackages: Record<DatabaseChoice, string> = {
 export const pluginPackages: Record<PluginChoice, string> = {
   stripe: '@relayos/stripe',
   github: '@relayos/github',
+  clerk: '@relayos/clerk',
+  shopify: '@relayos/shopify',
+  resend: '@relayos/resend',
 };
 
 const databaseImportLine: Record<DatabaseChoice, string> = {
@@ -27,11 +30,19 @@ const databaseExpression: Record<DatabaseChoice, string> = {
 const pluginImportLine: Record<PluginChoice, string> = {
   stripe: "import { stripe } from '@relayos/stripe';",
   github: "import { github } from '@relayos/github';",
+  clerk: "import { clerk } from '@relayos/clerk';",
+  shopify: "import { shopify } from '@relayos/shopify';",
+  resend: "import { resend } from '@relayos/resend';",
 };
 
 const pluginExpression: Record<PluginChoice, string> = {
-  stripe: 'stripe({ webhookSecret: process.env.STRIPE_WEBHOOK_SECRET! })',
-  github: 'github({ webhookSecret: process.env.GITHUB_WEBHOOK_SECRET! })',
+  // webhookSecret is optional - provider plugins infer it from
+  // <PROVIDER>_WEBHOOK_SECRET automatically if not passed explicitly.
+  stripe: 'stripe()',
+  github: 'github()',
+  clerk: 'clerk()',
+  shopify: 'shopify()',
+  resend: 'resend()',
 };
 
 export function buildRelayConfigTemplate(options: {
@@ -45,7 +56,9 @@ export function buildRelayConfigTemplate(options: {
     "import { registerHandlers } from './relay.handlers';",
   ].join('\n');
 
-  const pluginLines = options.plugins.map((plugin) => `    ${pluginExpression[plugin]},`).join('\n');
+  const pluginLines = options.plugins
+    .map((plugin) => `    ${pluginExpression[plugin]},`)
+    .join('\n');
 
   return `${imports}
 
@@ -88,4 +101,3 @@ export function registerHandlers(relay: AppRelay): void {
   // });
 }
 `;
-

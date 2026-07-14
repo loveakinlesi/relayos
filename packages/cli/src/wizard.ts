@@ -11,6 +11,8 @@ import {
 } from './templates';
 import { detectPackageManager, installPackages } from './package-manager';
 
+type FrameworkChoice = 'nextjs' | 'express' | 'hono' | 'nestjs' | 'generic';
+
 async function detectNextJs(dir: string): Promise<boolean> {
   try {
     const raw = await readFile(join(dir, 'package.json'), 'utf8');
@@ -47,7 +49,7 @@ export async function runInitWizard(dir: string, force: boolean): Promise<void> 
   }
 
   const nextDetected = await detectNextJs(dir);
-  let framework: 'nextjs' | 'generic';
+  let framework: FrameworkChoice;
   if (nextDetected) {
     p.log.info('Detected Next.js - wiring the App Router handler.');
     framework = 'nextjs';
@@ -56,6 +58,9 @@ export async function runInitWizard(dir: string, force: boolean): Promise<void> 
       message: 'Framework',
       options: [
         { value: 'nextjs' as const, label: 'Next.js' },
+        { value: 'express' as const, label: 'Express' },
+        { value: 'hono' as const, label: 'Hono' },
+        { value: 'nestjs' as const, label: 'NestJS' },
         { value: 'generic' as const, label: 'Other / generic (wire the handler manually)' },
       ],
     });
@@ -84,6 +89,9 @@ export async function runInitWizard(dir: string, force: boolean): Promise<void> 
     options: [
       { value: 'stripe' as const, label: 'Stripe' },
       { value: 'github' as const, label: 'GitHub' },
+      { value: 'clerk' as const, label: 'Clerk' },
+      { value: 'shopify' as const, label: 'Shopify' },
+      { value: 'resend' as const, label: 'Resend' },
     ],
     required: false,
   });
@@ -107,18 +115,45 @@ export async function runInitWizard(dir: string, force: boolean): Promise<void> 
   p.log.step(`Created ${handlersPath}`);
   await writeFile(
     configPath,
-    buildRelayConfigTemplate({ database: database as DatabaseChoice, plugins: plugins as PluginChoice[] }),
+    buildRelayConfigTemplate({
+      database: database as DatabaseChoice,
+      plugins: plugins as PluginChoice[],
+    }),
     'utf8',
   );
   p.log.step(`Created ${configPath}`);
 
   if (framework === 'nextjs') {
-    const routeDir = join(dir, 'app', 'api', 'relay', '[...all]');
+    const routeDir = join(dir, 'app', 'api', 'webhook', '[...all]');
     await mkdir(routeDir, { recursive: true });
     const routePath = join(routeDir, 'route.ts');
     await writeFile(
       routePath,
       `import { toNextJsHandler } from 'relayos/next-js';\nimport { relay } from '../../../../relay';\n\nexport const { POST } = toNextJsHandler(relay);\n`,
+      'utf8',
+    );
+    p.log.step(`Created ${routePath}`);
+  } else if (framework === 'express') {
+    const routePath = join(dir, 'relay.express.ts');
+    await writeFile(
+      routePath,
+      `import { toExpressHandler } from 'relayos/express';\nimport { relay } from './relay';\n\nexport const relayHandler = toExpressHandler(relay);\n\n// In your Express app:\n// app.post('/api/webhook/:provider', relayHandler);\n`,
+      'utf8',
+    );
+    p.log.step(`Created ${routePath}`);
+  } else if (framework === 'hono') {
+    const routePath = join(dir, 'relay.hono.ts');
+    await writeFile(
+      routePath,
+      `import { Hono } from 'hono';\nimport { toHonoHandler } from 'relayos/hono';\nimport { relay } from './relay';\n\nexport const relayRoutes = new Hono();\n\nrelayRoutes.post('/api/webhook/:provider', toHonoHandler(relay));\n`,
+      'utf8',
+    );
+    p.log.step(`Created ${routePath}`);
+  } else if (framework === 'nestjs') {
+    const routePath = join(dir, 'relay.controller.ts');
+    await writeFile(
+      routePath,
+      `import { Controller, Post, Req, Res } from '@nestjs/common';\nimport { toNestJsHandler, type NestJsRelayRequest, type NestJsRelayResponse } from 'relayos/nestjs';\nimport { relay } from './relay';\n\n@Controller('api/webhook')\nexport class RelayController {\n  private readonly handler = toNestJsHandler(relay);\n\n  @Post(':provider')\n  post(@Req() req: NestJsRelayRequest, @Res() res: NestJsRelayResponse) {\n    return this.handler(req, res);\n  }\n}\n`,
       'utf8',
     );
     p.log.step(`Created ${routePath}`);

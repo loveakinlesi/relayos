@@ -2,6 +2,9 @@ import { spawn } from 'node:child_process';
 import type { Execution, Relay, RelayPlugin } from '@relayos/core';
 import { stripe } from '@relayos/stripe';
 import { github } from '@relayos/github';
+import { clerk } from '@relayos/clerk';
+import { shopify } from '@relayos/shopify';
+import { resend } from '@relayos/resend';
 import { loadRelay } from './load-relay';
 import { runInitWizard } from './wizard';
 import {
@@ -49,7 +52,10 @@ see the TODO comment near main() in packages/cli/src/index.ts.
 
 async function resolveExecution(relay: Relay, id: string): Promise<Execution | undefined> {
   const all = await relay.listExecutions();
-  return all.find((execution) => execution.eventId === id) ?? all.find((execution) => execution.id === id);
+  return (
+    all.find((execution) => execution.eventId === id) ??
+    all.find((execution) => execution.id === id)
+  );
 }
 
 async function init(args: string[]) {
@@ -107,7 +113,9 @@ async function dev(args: string[]) {
         });
     }, 1000);
   } catch (err) {
-    console.log(`[relay dev] ${err instanceof Error ? err.message : String(err)} - skipping live execution feed`);
+    console.log(
+      `[relay dev] ${err instanceof Error ? err.message : String(err)} - skipping live execution feed`,
+    );
   }
 
   const shutdown = () => {
@@ -133,6 +141,9 @@ async function dev(args: string[]) {
 const providerFactories: Record<string, (secret: string) => RelayPlugin> = {
   stripe: (secret) => stripe({ webhookSecret: secret }),
   github: (secret) => github({ webhookSecret: secret }),
+  clerk: (secret) => clerk({ webhookSecret: secret }),
+  shopify: (secret) => shopify({ webhookSecret: secret }),
+  resend: (secret) => resend({ webhookSecret: secret }),
 };
 
 async function trigger(args: string[]) {
@@ -180,7 +191,7 @@ async function trigger(args: string[]) {
   const signatureHeaders = plugin.sign(rawBody, secret);
 
   const url = resolveBaseUrl(args);
-  const target = `${url}/api/relay/${provider}`;
+  const target = `${url}/api/webhook/${provider}`;
 
   console.log(`[relay trigger] POST ${target}`);
   const response = await fetch(target, {

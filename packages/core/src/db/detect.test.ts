@@ -13,7 +13,11 @@ describe('detectDialectName', () => {
   });
 
   it('falls back to postgres for a .connect()/.end() shaped client', () => {
-    const client = { connect: async () => ({}), end: async () => {}, options: {} } as unknown as RawSqlClient;
+    const client = {
+      connect: async () => ({}),
+      end: async () => {},
+      options: {},
+    } as unknown as RawSqlClient;
     expect(detectDialectName(client)).toBe('postgres');
   });
 });

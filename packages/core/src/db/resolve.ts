@@ -28,7 +28,9 @@ export function resolveDatabase(config: RelayDatabaseConfig): {
   }
 
   const escapeHatch = isDialectEscapeHatch(config);
-  const { dialect, name } = escapeHatch ? { dialect: config.dialect, name: undefined } : buildDialect(config);
+  const { dialect, name } = escapeHatch
+    ? { dialect: config.dialect, name: undefined }
+    : buildDialect(config);
 
   const db = new Kysely<Database>({ dialect, plugins: [new CamelCasePlugin()] });
   const store = createSqlExecutionStore(db, name ?? 'postgres');

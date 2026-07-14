@@ -6,7 +6,7 @@ type NextRouteContext = {
 
 /**
  * Adapts a relay to a Next.js App Router catch-all route. Usage, in
- * app/api/relay/[...all]/route.ts:
+ * app/api/webhook/[...all]/route.ts:
  *
  *   export const { POST } = toNextJsHandler(relay);
  *

@@ -2,7 +2,7 @@ import { describe, it, expect, afterEach } from 'vitest';
 import { github } from './index';
 
 function makeRequest(body: string, headers: Record<string, string>): Request {
-  return new Request('http://x/api/relay/github', { method: 'POST', headers, body });
+  return new Request('http://x/api/webhook/github', { method: 'POST', headers, body });
 }
 
 describe('github plugin', () => {

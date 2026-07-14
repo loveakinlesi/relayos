@@ -30,7 +30,11 @@ const addArgs: Record<PackageManager, string[]> = {
   npm: ['install'],
 };
 
-export function installPackages(pm: PackageManager, dir: string, packages: string[]): Promise<void> {
+export function installPackages(
+  pm: PackageManager,
+  dir: string,
+  packages: string[],
+): Promise<void> {
   return new Promise((resolvePromise, reject) => {
     const child = spawn(pm, [...addArgs[pm], ...packages], {
       cwd: dir,

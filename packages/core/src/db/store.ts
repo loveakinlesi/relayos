@@ -57,7 +57,10 @@ function toLog(row: RelayosExecutionLogsTable & { id: string }): ExecutionLog {
   };
 }
 
-export function createSqlExecutionStore(db: Kysely<Database>, dialect: SqlDialectName): ExecutionStore {
+export function createSqlExecutionStore(
+  db: Kysely<Database>,
+  dialect: SqlDialectName,
+): ExecutionStore {
   return {
     async create(execution) {
       const values = {
@@ -77,7 +80,11 @@ export function createSqlExecutionStore(db: Kysely<Database>, dialect: SqlDialec
         // MySQL has no RETURNING clause, so create()'s "did this call win
         // the insert race" contract is read off the affected-row count of
         // an `insert ignore` instead of a returned row.
-        const result = await db.insertInto('relayosExecutions').values(values).ignore().executeTakeFirst();
+        const result = await db
+          .insertInto('relayosExecutions')
+          .values(values)
+          .ignore()
+          .executeTakeFirst();
         return (result.numInsertedOrUpdatedRows ?? 0n) > 0n;
       }
 

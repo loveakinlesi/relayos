@@ -192,7 +192,10 @@ describe('automatic retry scheduling', () => {
   });
 
   it('retries with backoff up to maxAttempts, then stops', async () => {
-    const relay = createRelayEngine({ database: createMemoryExecutionStore(), retry: { maxAttempts: 3, backoff: () => 100 } });
+    const relay = createRelayEngine({
+      database: createMemoryExecutionStore(),
+      retry: { maxAttempts: 3, backoff: () => 100 },
+    });
     let calls = 0;
     relay.on('test.fail', async () => {
       calls++;
@@ -249,14 +252,18 @@ describe('logging', () => {
 
 describe('relay.handler (HTTP dispatch)', () => {
   it('returns 404 for an unregistered provider', async () => {
-    const relay = createRelayEngine({ database: createMemoryExecutionStore(), plugins: [makeFakePlugin()] });
-    const req = new Request('http://x/api/relay/unknown', { method: 'POST', body: '{}' });
+    const relay = createRelayEngine({
+      database: createMemoryExecutionStore(),
+      plugins: [makeFakePlugin()],
+    });
+    const req = new Request('http://x/api/webhook/unknown', { method: 'POST', body: '{}' });
     const res = await relay.handler(req, { params: { all: ['unknown'] } });
     expect(res.status).toBe(404);
   });
 
   it('returns 401 when the plugin rejects verification', async () => {
-    const relay = createRelayEngine({ database: createMemoryExecutionStore(),
+    const relay = createRelayEngine({
+      database: createMemoryExecutionStore(),
       plugins: [
         makeFakePlugin({
           async verify() {
@@ -265,14 +272,15 @@ describe('relay.handler (HTTP dispatch)', () => {
         }),
       ],
     });
-    const req = new Request('http://x/api/relay/fake', { method: 'POST', body: '{}' });
+    const req = new Request('http://x/api/webhook/fake', { method: 'POST', body: '{}' });
     const res = await relay.handler(req, { params: { all: ['fake'] } });
     expect(res.status).toBe(401);
   });
 
   it('returns 413 before verification when Content-Length exceeds the configured limit', async () => {
     let verifyCalls = 0;
-    const relay = createRelayEngine({ database: createMemoryExecutionStore(),
+    const relay = createRelayEngine({
+      database: createMemoryExecutionStore(),
       maxRequestBodyBytes: 4,
       plugins: [
         makeFakePlugin({
@@ -283,7 +291,7 @@ describe('relay.handler (HTTP dispatch)', () => {
         }),
       ],
     });
-    const req = new Request('http://x/api/relay/fake', {
+    const req = new Request('http://x/api/webhook/fake', {
       method: 'POST',
       headers: { 'content-length': '5' },
       body: '{}',
@@ -295,15 +303,19 @@ describe('relay.handler (HTTP dispatch)', () => {
   });
 
   it('returns 400 for verified requests with invalid JSON', async () => {
-    const relay = createRelayEngine({ database: createMemoryExecutionStore(), plugins: [makeFakePlugin()] });
-    const req = new Request('http://x/api/relay/fake', { method: 'POST', body: '{' });
+    const relay = createRelayEngine({
+      database: createMemoryExecutionStore(),
+      plugins: [makeFakePlugin()],
+    });
+    const req = new Request('http://x/api/webhook/fake', { method: 'POST', body: '{' });
     const res = await relay.handler(req, { params: { all: ['fake'] } });
     expect(res.status).toBe(400);
     expect(await res.json()).toEqual({ error: 'invalid JSON payload' });
   });
 
   it('returns 400 without leaking provider normalization errors', async () => {
-    const relay = createRelayEngine({ database: createMemoryExecutionStore(),
+    const relay = createRelayEngine({
+      database: createMemoryExecutionStore(),
       plugins: [
         makeFakePlugin({
           normalize() {
@@ -312,16 +324,19 @@ describe('relay.handler (HTTP dispatch)', () => {
         }),
       ],
     });
-    const req = new Request('http://x/api/relay/fake', { method: 'POST', body: '{}' });
+    const req = new Request('http://x/api/webhook/fake', { method: 'POST', body: '{}' });
     const res = await relay.handler(req, { params: { all: ['fake'] } });
     expect(res.status).toBe(400);
     expect(await res.json()).toEqual({ error: 'invalid provider payload' });
   });
 
   it('ingests and returns 200 on a verified request', async () => {
-    const relay = createRelayEngine({ database: createMemoryExecutionStore(), plugins: [makeFakePlugin()] });
+    const relay = createRelayEngine({
+      database: createMemoryExecutionStore(),
+      plugins: [makeFakePlugin()],
+    });
     relay.on('fake.event', async () => {});
-    const req = new Request('http://x/api/relay/fake', {
+    const req = new Request('http://x/api/webhook/fake', {
       method: 'POST',
       body: JSON.stringify({ type: 'fake.event' }),
     });

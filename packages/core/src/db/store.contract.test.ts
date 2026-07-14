@@ -138,7 +138,10 @@ describe.each(dialects)('createSqlExecutionStore ($name)', ({ setup }) => {
   it('eventData round-trips through JSON', async () => {
     const execution = makeExecution({ eventData: { nested: { n: 1 }, list: [1, 2, 3] } });
     await store.create(execution);
-    expect((await store.get(execution.id))?.eventData).toEqual({ nested: { n: 1 }, list: [1, 2, 3] });
+    expect((await store.get(execution.id))?.eventData).toEqual({
+      nested: { n: 1 },
+      list: [1, 2, 3],
+    });
   });
 
   it('update() patches fields and clears error to null on success', async () => {

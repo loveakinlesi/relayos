@@ -13,10 +13,10 @@ describe('toNextJsHandler', () => {
     } as unknown as Relay;
 
     const { POST } = toNextJsHandler(relay);
-    const req = new Request('http://x/api/relay/stripe', { method: 'POST', body: '{}' });
+    const req = new Request('http://x/api/webhook/stripe', { method: 'POST', body: '{}' });
     const res = await POST(req, { params: Promise.resolve({ all: ['stripe'] }) });
 
     expect(res.status).toBe(200);
-    expect(calls).toEqual([{ url: 'http://x/api/relay/stripe', all: ['stripe'] }]);
+    expect(calls).toEqual([{ url: 'http://x/api/webhook/stripe', all: ['stripe'] }]);
   });
 });

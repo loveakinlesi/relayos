@@ -14,7 +14,9 @@ export async function loadRelay(dir: string): Promise<Relay> {
   const jiti = createJiti(import.meta.url);
   const mod = (await jiti.import(configPath)) as { relay?: Relay };
   if (!mod.relay) {
-    throw new Error(`${configPath} does not export a "relay" - expected "export const relay = relayos({ ... })".`);
+    throw new Error(
+      `${configPath} does not export a "relay" - expected "export const relay = relayos({ ... })".`,
+    );
   }
   return mod.relay;
 }

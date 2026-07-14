@@ -59,6 +59,9 @@ importers:
       lucide-react:
         specifier: ^1.23.0
         version: 1.24.0(react@19.2.7)
+      motion:
+        specifier: ^12.42.2
+        version: 12.42.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       next:
         specifier: 16.2.10
         version: 16.2.10(@babel/core@7.29.7)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -185,17 +188,48 @@ importers:
         specifier: ^4.1.7
         version: 4.1.7(@types/node@22.19.19)(@vitest/coverage-v8@4.1.7)(vite@8.0.14(@types/node@22.19.19)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.22.3)(yaml@2.9.0))
 
+  packages/clerk:
+    dependencies:
+      '@relayos/plugin':
+        specifier: workspace:^
+        version: link:../plugin
+    devDependencies:
+      '@relayos/core':
+        specifier: workspace:^
+        version: link:../core
+      rimraf:
+        specifier: ^6.0.0
+        version: 6.1.3
+      tsup:
+        specifier: ^8.0.0
+        version: 8.5.1(jiti@2.7.0)(postcss@8.5.17)(tsx@4.22.3)(typescript@5.9.3)(yaml@2.9.0)
+      typescript:
+        specifier: ^5.0.0
+        version: 5.9.3
+      vitest:
+        specifier: ^4.1.7
+        version: 4.1.7(@types/node@26.1.1)(@vitest/coverage-v8@4.1.7)(vite@8.0.14(@types/node@26.1.1)(esbuild@0.27.7)(jiti@2.7.0)(tsx@4.22.3)(yaml@2.9.0))
+
   packages/cli:
     dependencies:
       '@clack/prompts':
         specifier: ^1.7.0
         version: 1.7.0
+      '@relayos/clerk':
+        specifier: workspace:^
+        version: link:../clerk
       '@relayos/core':
         specifier: workspace:^
         version: link:../core
       '@relayos/github':
         specifier: workspace:^
         version: link:../github
+      '@relayos/resend':
+        specifier: workspace:^
+        version: link:../resend
+      '@relayos/shopify':
+        specifier: workspace:^
+        version: link:../shopify
       '@relayos/stripe':
         specifier: workspace:^
         version: link:../stripe
@@ -301,10 +335,57 @@ importers:
 
   packages/relayos:
     dependencies:
+      '@relayos/cli':
+        specifier: workspace:^
+        version: link:../cli
       '@relayos/core':
         specifier: workspace:^
         version: link:../core
     devDependencies:
+      rimraf:
+        specifier: ^6.0.0
+        version: 6.1.3
+      tsup:
+        specifier: ^8.0.0
+        version: 8.5.1(jiti@2.7.0)(postcss@8.5.17)(tsx@4.22.3)(typescript@5.9.3)(yaml@2.9.0)
+      typescript:
+        specifier: ^5.0.0
+        version: 5.9.3
+      vitest:
+        specifier: ^4.1.7
+        version: 4.1.7(@types/node@26.1.1)(@vitest/coverage-v8@4.1.7)(vite@8.0.14(@types/node@26.1.1)(esbuild@0.27.7)(jiti@2.7.0)(tsx@4.22.3)(yaml@2.9.0))
+
+  packages/resend:
+    dependencies:
+      '@relayos/plugin':
+        specifier: workspace:^
+        version: link:../plugin
+    devDependencies:
+      '@relayos/core':
+        specifier: workspace:^
+        version: link:../core
+      rimraf:
+        specifier: ^6.0.0
+        version: 6.1.3
+      tsup:
+        specifier: ^8.0.0
+        version: 8.5.1(jiti@2.7.0)(postcss@8.5.17)(tsx@4.22.3)(typescript@5.9.3)(yaml@2.9.0)
+      typescript:
+        specifier: ^5.0.0
+        version: 5.9.3
+      vitest:
+        specifier: ^4.1.7
+        version: 4.1.7(@types/node@26.1.1)(@vitest/coverage-v8@4.1.7)(vite@8.0.14(@types/node@26.1.1)(esbuild@0.27.7)(jiti@2.7.0)(tsx@4.22.3)(yaml@2.9.0))
+
+  packages/shopify:
+    dependencies:
+      '@relayos/plugin':
+        specifier: workspace:^
+        version: link:../plugin
+    devDependencies:
+      '@relayos/core':
+        specifier: workspace:^
+        version: link:../core
       rimraf:
         specifier: ^6.0.0
         version: 6.1.3

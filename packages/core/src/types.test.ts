@@ -43,7 +43,10 @@ function fakePlugin<TEventMap extends Record<string, unknown> = {}>(
 
 describe('typed event inference', () => {
   it('narrows event.type and event.data for a registered plugin event', () => {
-    const relay = createRelayEngine({ database: createMemoryExecutionStore(), plugins: [fakePlugin<PaymentsEventMap>('pay')] });
+    const relay = createRelayEngine({
+      database: createMemoryExecutionStore(),
+      plugins: [fakePlugin<PaymentsEventMap>('pay')],
+    });
 
     relay.on('pay.charge.succeeded', (event) => {
       expectTypeOf(event.type).toEqualTypeOf<'pay.charge.succeeded'>();
@@ -54,7 +57,8 @@ describe('typed event inference', () => {
   });
 
   it('merges the event maps of multiple plugins', () => {
-    const relay = createRelayEngine({ database: createMemoryExecutionStore(),
+    const relay = createRelayEngine({
+      database: createMemoryExecutionStore(),
       plugins: [fakePlugin<PaymentsEventMap>('pay'), fakePlugin<ReposEventMap>('repo')],
     });
 
@@ -69,7 +73,8 @@ describe('typed event inference', () => {
   });
 
   it('an untyped plugin alongside a typed one does not erase the typed catalog', () => {
-    const relay = createRelayEngine({ database: createMemoryExecutionStore(),
+    const relay = createRelayEngine({
+      database: createMemoryExecutionStore(),
       plugins: [fakePlugin('untyped'), fakePlugin<ReposEventMap>('repo')],
     });
 
@@ -81,7 +86,10 @@ describe('typed event inference', () => {
   });
 
   it('unknown event names stay legal and fall back to untyped data', () => {
-    const relay = createRelayEngine({ database: createMemoryExecutionStore(), plugins: [fakePlugin<PaymentsEventMap>('pay')] });
+    const relay = createRelayEngine({
+      database: createMemoryExecutionStore(),
+      plugins: [fakePlugin<PaymentsEventMap>('pay')],
+    });
 
     relay.on('custom.thing', (event) => {
       expectTypeOf(event).toEqualTypeOf<NormalizedEvent>();
@@ -102,7 +110,10 @@ describe('typed event inference', () => {
   });
 
   it('typed registrations still dispatch at runtime', async () => {
-    const relay = createRelayEngine({ database: createMemoryExecutionStore(), plugins: [fakePlugin<PaymentsEventMap>('pay')] });
+    const relay = createRelayEngine({
+      database: createMemoryExecutionStore(),
+      plugins: [fakePlugin<PaymentsEventMap>('pay')],
+    });
     const amounts: number[] = [];
 
     relay.on('pay.charge.succeeded', async (event) => {

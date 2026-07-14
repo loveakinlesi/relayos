@@ -1,12 +1,12 @@
 {
-  "name": "@relayos/stripe",
+  "name": "@relayos/clerk",
   "version": "0.0.1",
-  "description": "The RelayOS Stripe plugin: signature-verified webhook ingestion with a fully-typed catalog of every Stripe event.",
+  "description": "The RelayOS Clerk plugin: Svix signature-verified webhook ingestion for Clerk events.",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/loveakinlesi/relayos.git",
-    "directory": "packages/stripe"
+    "directory": "packages/clerk"
   },
   "homepage": "https://github.com/loveakinlesi/relayos#readme",
   "bugs": "https://github.com/loveakinlesi/relayos/issues",
@@ -16,9 +16,8 @@
     "events",
     "durable-execution",
     "typescript",
-    "stripe",
-    "stripe-webhooks",
-    "payments"
+    "clerk",
+    "clerk-webhooks"
   ],
   "type": "module",
   "sideEffects": false,
@@ -58,12 +57,10 @@
     "@relayos/plugin": "workspace:^"
   },
   "peerDependencies": {
-    "@relayos/core": "0.x",
-    "stripe": ">=17"
+    "@relayos/core": "0.x"
   },
   "devDependencies": {
     "@relayos/core": "workspace:^",
-    "stripe": "^22.3.1",
     "rimraf": "^6.0.0",
     "tsup": "^8.0.0",
     "typescript": "^5.0.0",

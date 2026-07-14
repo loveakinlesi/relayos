@@ -25,7 +25,8 @@ function createFakeStore(): ExecutionStore {
   const logs: ExecutionLog[] = [];
   return {
     async create(execution) {
-      if (Array.from(executions.values()).some((e) => e.eventId === execution.eventId)) return false;
+      if (Array.from(executions.values()).some((e) => e.eventId === execution.eventId))
+        return false;
       executions.set(execution.id, execution);
       return true;
     },
@@ -43,7 +44,9 @@ function createFakeStore(): ExecutionStore {
       return Array.from(executions.values()).find((e) => e.eventId === eventId);
     },
     async getStep(executionId, name) {
-      const matches = steps.filter((step) => step.executionId === executionId && step.name === name);
+      const matches = steps.filter(
+        (step) => step.executionId === executionId && step.name === name,
+      );
       return matches[matches.length - 1];
     },
     async saveStep(step) {

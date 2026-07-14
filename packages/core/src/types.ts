@@ -97,7 +97,7 @@ export type ExecutionStore = {
  * Record<string, unknown>.
  */
 export type RelayPlugin<TEventMap extends Record<string, unknown> = {}> = {
-  /** Also the URL segment providers are mounted at, e.g. "stripe" -> /api/relay/stripe */
+  /** Also the URL segment providers are mounted at, e.g. "stripe" -> /api/webhook/stripe */
   id: string;
   verify: (req: Request) => Promise<boolean>;
   normalize: (rawBody: unknown, headers: Headers) => NormalizedEvent;
