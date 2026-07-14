@@ -3,7 +3,7 @@ title: Resend Plugin
 description: Receive and verify Resend webhooks with RelayOS.
 ---
 
-The `@relayos/resend` plugin handles Resend webhook verification and provides typed RelayOS event names for Resend email events.
+The `@relayos/resend` plugin handles [Resend webhook](https://resend.com/docs/dashboard/webhooks/introduction) verification and provides typed RelayOS event names for Resend email events. Like Clerk, Resend delivers webhooks via [Svix](https://www.svix.com), so verification follows the same Svix signature scheme.
 
 ## Installation
 
@@ -30,6 +30,10 @@ The `@relayos/resend` plugin handles Resend webhook verification and provides ty
   </Tab>
 </Tabs>
 
+```ts
+import { resend } from '@relayos/resend';
+```
+
 ## Setup
 
 ```ts
@@ -44,20 +48,60 @@ export const relay = relayos({
 });
 ```
 
-Point your Resend webhook endpoint to `/api/webhook/resend`.
+1. In the [Resend Dashboard → Webhooks](https://resend.com/webhooks), add an endpoint pointing at `/api/webhook/resend` on your deployed app and pick the events you want.
+2. Copy the **Signing Secret** (starts with `whsec_`) and set it as `RESEND_WEBHOOK_SECRET`.
+
+Pass `webhookSecret` explicitly instead if you'd rather not rely on the env var:
+
+```ts
+resend({ webhookSecret: 'whsec_...', toleranceSeconds: 300 }),
+```
+
+## Configuration
+
+| Option           | Type     | Default                              | Description                                          |
+| ---------------- | -------- | --------------------------------------- | -------------------------------------------------------- |
+| webhookSecret    | `string` | `process.env.RESEND_WEBHOOK_SECRET` | The endpoint's signing secret from the Resend dashboard    |
+| toleranceSeconds | `number` | 300                                     | Max age of a signed timestamp before rejection              |
+
+## Signature verification
+
+Resend signs webhooks the way [Svix does](https://docs.svix.com/receiving/verifying-payloads/how-manual): three headers (`svix-id`, `svix-timestamp`, `svix-signature`) instead of Stripe/GitHub's single-header scheme.
+
+1. Reads the `svix-id`, `svix-timestamp`, and `svix-signature` headers - rejects the request if any are missing
+2. Rejects if the timestamp is older than `toleranceSeconds`
+3. Computes HMAC-SHA256 of `${svix-id}.${svix-timestamp}.${rawBody}`, using the webhook secret's base64-decoded bytes after stripping its `whsec_` prefix
+4. `svix-signature` can contain multiple space-separated `v1,<signature>` values (for secret rotation) - the request is valid if any of them match, compared using constant-time comparison
 
 ## Event types
 
-Events are namespaced as `resend.<resend-event-type>`:
+Events are namespaced as `resend.<resend-event-type>` - see [Webhook event types](https://resend.com/docs/dashboard/webhooks/event-types) for the full list Resend can send:
 
 ```ts
-relay.on('resend.email.delivered', async (event, ctx) => {
-  ctx.log.info('email delivered', { id: event.data.email_id });
-});
+// relay.handlers.ts
+import type { AppRelay } from './relay';
+
+export function registerHandlers(relay: AppRelay): void {
+  relay.on('resend.email.delivered', async (event, ctx) => {
+    ctx.log.info('email delivered', { id: event.data.email_id });
+  });
+
+  relay.on('resend.email.bounced', async (event, ctx) => {
+    ctx.log.warn('email bounced', { id: event.data.email_id });
+  });
+}
 ```
 
+## Deduplication
+
+Every Svix-delivered webhook carries a `svix-id` header that stays the same across delivery retries. The plugin uses it as the RelayOS event ID, so a redelivered event collapses into the same execution instead of running your handler twice.
+
 ## Testing locally
+
+Use `relay trigger` to simulate a signed Resend webhook:
 
 ```sh
 relay trigger resend email.delivered --data '{"email_id":"email_123"}'
 ```
+
+Make sure `RESEND_WEBHOOK_SECRET` is set to the same value on both `relay dev` and `relay trigger`, or unset on both — see [the Local Development gotcha](/docs/cli#dev-secret-gotcha) for why.

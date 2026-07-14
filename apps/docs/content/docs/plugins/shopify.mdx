@@ -3,7 +3,7 @@ title: Shopify Plugin
 description: Receive and verify Shopify webhooks with RelayOS.
 ---
 
-The `@relayos/shopify` plugin verifies Shopify webhook HMAC signatures and normalizes Shopify topics into RelayOS event names.
+The `@relayos/shopify` plugin verifies [Shopify webhook](https://shopify.dev/docs/apps/build/webhooks) HMAC signatures and normalizes Shopify topics into RelayOS event names.
 
 ## Installation
 
@@ -30,6 +30,10 @@ The `@relayos/shopify` plugin verifies Shopify webhook HMAC signatures and norma
   </Tab>
 </Tabs>
 
+```ts
+import { shopify } from '@relayos/shopify';
+```
+
 ## Setup
 
 ```ts
@@ -44,20 +48,61 @@ export const relay = relayos({
 });
 ```
 
-Point your Shopify webhook endpoint to `/api/webhook/shopify`.
+1. In your Shopify app or admin, [subscribe to the topics you need](https://shopify.dev/docs/apps/build/webhooks/subscribe) and point the address at `/api/webhook/shopify` on your deployed app.
+2. Set your app's **Client secret** (or the webhook-specific secret, depending on how you subscribed) as `SHOPIFY_WEBHOOK_SECRET`.
+
+Pass `webhookSecret` explicitly instead if you'd rather not rely on the env var:
+
+```ts
+shopify({ webhookSecret: 'shpss_...' }),
+```
+
+## Configuration
+
+| Option        | Type     | Default                               | Description                                        |
+| ------------- | -------- | --------------------------------------- | ------------------------------------------------------ |
+| webhookSecret | `string` | `process.env.SHOPIFY_WEBHOOK_SECRET` | Your app's client secret, used to verify deliveries    |
+
+## Signature verification
+
+The plugin verifies the `X-Shopify-Hmac-Sha256` header, per [Shopify's own webhook verification guide](https://shopify.dev/docs/apps/build/webhooks/verify-deliveries):
+
+1. Computes HMAC-SHA256 of the raw request body with your webhook secret, base64-encoded
+2. Compares it against the `X-Shopify-Hmac-Sha256` header using constant-time comparison
+
+Unlike Stripe/Clerk/Resend, Shopify's scheme has no timestamp - it's a plain HMAC of the body, so there's no `toleranceSeconds` option.
 
 ## Event types
 
-Shopify topics are converted from slash-separated topics to dot-separated RelayOS event names:
+Shopify topics arrive slash-separated (e.g. `orders/create`) and are converted to dot-separated RelayOS event names, namespaced under `shopify.`:
 
 ```ts
-relay.on('shopify.orders.create', async (event, ctx) => {
-  ctx.log.info('order created', { id: event.data.id });
-});
+// relay.handlers.ts
+import type { AppRelay } from './relay';
+
+export function registerHandlers(relay: AppRelay): void {
+  relay.on('shopify.orders.create', async (event, ctx) => {
+    ctx.log.info('order created', { id: event.data.id });
+  });
+
+  relay.on('shopify.app.uninstalled', async (event, ctx) => {
+    ctx.log.info('app uninstalled', { shopId: event.data.id });
+  });
+}
 ```
 
+See the [webhooks reference](https://shopify.dev/docs/api/webhooks) for the full list of supported topics and their payloads.
+
+## Deduplication
+
+Every Shopify webhook includes an `X-Shopify-Webhook-Id` header that uniquely identifies the delivery. The plugin uses it as the RelayOS event ID, so a redelivered webhook collapses into the same execution instead of running your handler twice.
+
 ## Testing locally
+
+Use `relay trigger` to simulate a signed Shopify webhook:
 
 ```sh
 relay trigger shopify orders.create --data '{"id":123}'
 ```
+
+Make sure `SHOPIFY_WEBHOOK_SECRET` is set to the same value on both `relay dev` and `relay trigger`, or unset on both — see [the Local Development gotcha](/docs/cli#dev-secret-gotcha) for why.

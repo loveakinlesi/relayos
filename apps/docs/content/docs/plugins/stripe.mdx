@@ -3,7 +3,7 @@ title: Stripe Plugin
 description: Receive and verify Stripe webhooks with full type safety.
 ---
 
-The `@relayos/stripe` plugin handles Stripe webhook verification and provides a fully-typed event catalog. The plugin requires the `stripe` npm package as a peer dependency so event types track your installed Stripe SDK version.
+The `@relayos/stripe` plugin handles [Stripe webhook](https://docs.stripe.com/webhooks) verification and provides a fully-typed event catalog. The plugin requires the `stripe` npm package as a peer dependency so event types track your installed Stripe SDK version.
 
 ## Installation
 
@@ -48,24 +48,25 @@ export const relay = relayos({
 });
 ```
 
-Set `STRIPE_WEBHOOK_SECRET` to the endpoint's signing secret from the Stripe dashboard. Pass `webhookSecret` explicitly instead if you'd rather not rely on the env var:
+1. Open the [Stripe Dashboard → Webhooks](https://dashboard.stripe.com/webhooks) and add an endpoint pointing at `/api/webhook/stripe` on your deployed app.
+2. Copy the endpoint's **Signing secret** (starts with `whsec_`) and set it as `STRIPE_WEBHOOK_SECRET`.
+
+Pass `webhookSecret` explicitly instead if you'd rather not rely on the env var:
 
 ```ts
 stripe({ webhookSecret: 'whsec_...', toleranceSeconds: 300 }),
 ```
 
-Point your Stripe webhook endpoint to `/api/webhook/stripe` in your Next.js app.
-
 ## Configuration
 
-| Option           | Type     | Default                             | Description                                             |
-| ---------------- | -------- | ----------------------------------- | ------------------------------------------------------- |
-| webhookSecret    | `string` | `process.env.STRIPE_WEBHOOK_SECRET` | The endpoint's signing secret from the Stripe dashboard |
-| toleranceSeconds | `number` | 300                                 | Max age of a signed timestamp before rejection          |
+| Option           | Type     | Default                             | Description                                              |
+| ---------------- | -------- | ------------------------------------ | ---------------------------------------------------------- |
+| webhookSecret    | `string` | `process.env.STRIPE_WEBHOOK_SECRET` | The endpoint's signing secret from the Stripe dashboard    |
+| toleranceSeconds | `number` | 300                                  | Max age of a signed timestamp before rejection              |
 
 ## Signature verification
 
-The plugin verifies the `stripe-signature` header using HMAC-SHA256:
+The plugin verifies the `stripe-signature` header using HMAC-SHA256, per [Stripe's own verification guide](https://docs.stripe.com/webhooks#verify-official-libraries):
 
 1. Extracts timestamp `t` and signature `v1` from the header
 2. Rejects if the timestamp is older than `toleranceSeconds`
@@ -74,7 +75,7 @@ The plugin verifies the `stripe-signature` header using HMAC-SHA256:
 
 ## Event types
 
-Events are namespaced as `stripe.<stripe-event-type>` (e.g., `stripe.charge.succeeded`). The plugin ships a fully-typed event catalog of ~250 Stripe events. Register handlers in `relay.handlers.ts`, not `relay.ts` — see [Organizing handlers](/docs/concepts/events#organizing-handlers):
+Events are namespaced as `stripe.<stripe-event-type>` (e.g., `stripe.charge.succeeded`). The plugin ships a fully-typed event catalog of ~250 Stripe events, taken from the [full list of event types](https://docs.stripe.com/api/events/types) Stripe publishes. Register handlers in `relay.handlers.ts`, not `relay.ts` — see [Organizing handlers](/docs/concepts/events#organizing-handlers):
 
 ```ts
 // relay.handlers.ts
@@ -89,7 +90,9 @@ export function registerHandlers(relay: AppRelay): void {
 }
 ```
 
-See the Stripe API docs for the [full list of event types](https://docs.stripe.com/api/events/types).
+## Deduplication
+
+Every Stripe event carries its own permanent [event ID](https://docs.stripe.com/api/events/object) (`evt_...`). The plugin uses that as the RelayOS event ID, so a redelivered event (Stripe retries on non-2xx responses) collapses into the same execution instead of running your handler twice.
 
 ## Testing locally
 
@@ -105,3 +108,5 @@ This sends a properly signed POST request to `/api/webhook/stripe` with:
 - A realistic payload shape that mimics Stripe's actual webhooks
 
 Make sure `STRIPE_WEBHOOK_SECRET` is set to the same value on both `relay dev` and `relay trigger`, or unset on both — see [the Local Development gotcha](/docs/cli#dev-secret-gotcha) for why.
+
+For end-to-end testing against real Stripe events (not simulated ones), use the [Stripe CLI](https://docs.stripe.com/stripe-cli)'s `stripe listen --forward-to localhost:3000/api/webhook/stripe`.

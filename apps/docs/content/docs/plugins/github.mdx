@@ -3,7 +3,7 @@ title: GitHub Plugin
 description: Receive and verify GitHub webhooks with full type safety.
 ---
 
-The `@relayos/github` plugin handles GitHub webhook verification and provides a fully-typed event catalog for all GitHub webhook events.
+The `@relayos/github` plugin handles [GitHub webhook](https://docs.github.com/en/webhooks) verification and provides a fully-typed event catalog for all GitHub webhook events.
 
 ## Installation
 
@@ -48,23 +48,25 @@ export const relay = relayos({
 });
 ```
 
-Set `GITHUB_WEBHOOK_SECRET` to the secret you configured on your GitHub repository's webhook settings. Pass `webhookSecret` explicitly instead if you'd rather not rely on the env var:
+1. Go to your repository (or organization) → **Settings → Webhooks → Add webhook**.
+2. Set the **Payload URL** to `/api/webhook/github` on your deployed app, content type to `application/json`.
+3. Enter a **Secret** and set the same value as `GITHUB_WEBHOOK_SECRET`. See [Validating webhook deliveries](https://docs.github.com/en/webhooks/using-webhooks/validating-webhook-deliveries) for why a secret matters.
+
+Pass `webhookSecret` explicitly instead if you'd rather not rely on the env var:
 
 ```ts
 github({ webhookSecret: 'your-secret' }),
 ```
 
-Point your GitHub webhook to `/api/webhook/github` in your Next.js app and set a webhook secret.
-
 ## Configuration
 
-| Option        | Type     | Default                             | Description                                                            |
-| ------------- | -------- | ----------------------------------- | ---------------------------------------------------------------------- |
-| webhookSecret | `string` | `process.env.GITHUB_WEBHOOK_SECRET` | The secret you configured on your GitHub repository's webhook settings |
+| Option        | Type     | Default                              | Description                                                             |
+| ------------- | -------- | ------------------------------------- | -------------------------------------------------------------------------- |
+| webhookSecret | `string` | `process.env.GITHUB_WEBHOOK_SECRET` | The secret you configured on your GitHub repository's webhook settings   |
 
 ## Signature verification
 
-The plugin verifies the `x-hub-signature-256` header using HMAC-SHA256:
+The plugin verifies the `x-hub-signature-256` header using HMAC-SHA256, per [GitHub's own signature validation guide](https://docs.github.com/en/webhooks/using-webhooks/validating-webhook-deliveries):
 
 1. Extracts the `sha256=...` signature from the header
 2. Computes HMAC-SHA256 of the raw request body with your webhook secret
@@ -96,9 +98,7 @@ export function registerHandlers(relay: AppRelay): void {
 }
 ```
 
-The plugin automatically determines whether an event has an action by reading the `x-github-event` header and checking the payload's `action` field.
-
-See the GitHub API docs for the [full list of webhook events](https://docs.github.com/en/developers/webhooks-and-events/webhooks/webhook-events-and-payloads).
+The plugin automatically determines whether an event has an action by reading the `x-github-event` header and checking the payload's `action` field. See the [full list of webhook events and payloads](https://docs.github.com/en/developers/webhooks-and-events/webhooks/webhook-events-and-payloads) GitHub publishes.
 
 ## Deduplication
 
@@ -114,3 +114,5 @@ relay trigger github pull_request.opened --data '{"title":"New feature"}'
 ```
 
 Make sure `GITHUB_WEBHOOK_SECRET` is set to the same value on both `relay dev` and `relay trigger`, or unset on both — see [the Local Development gotcha](/docs/cli#dev-secret-gotcha) for why.
+
+To debug real deliveries, GitHub's webhook settings page shows a **Recent Deliveries** tab with the exact request/response for every attempt, including a **Redeliver** button — useful once you're testing against a real repository instead of `relay trigger`.
