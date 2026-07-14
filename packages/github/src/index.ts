@@ -1,14 +1,15 @@
-import { definePlugin, hmacSha256Hex, safeEqualHex } from '@relayos/plugin';
+import { definePlugin, hmacSha256Hex, resolveWebhookSecret, safeEqualHex } from '@relayos/plugin';
 import type { RelayPlugin } from '@relayos/core';
 import type { GitHubEventMap } from './events';
 
 export type { GitHubEventMap } from './events';
 
 export type GitHubPluginOptions = {
-  webhookSecret: string;
+  /** Defaults to process.env.GITHUB_WEBHOOK_SECRET if not provided. */
+  webhookSecret?: string;
 };
 
-export function github(options: GitHubPluginOptions): RelayPlugin<GitHubEventMap> {
+export function github(options: GitHubPluginOptions = {}): RelayPlugin<GitHubEventMap> {
   return definePlugin<GitHubEventMap>({
     id: 'github',
     async verify(req) {
@@ -18,8 +19,13 @@ export function github(options: GitHubPluginOptions): RelayPlugin<GitHubEventMap
       const [algo, signature] = header.split('=');
       if (algo !== 'sha256' || !signature) return false;
 
+      // Resolved lazily (not at github() construction time) so commands
+      // that merely load relay.ts to reach unrelated functionality (CLI's
+      // migrate/inspect/events list) don't require the secret to be set -
+      // only an actual signature check does.
+      const webhookSecret = resolveWebhookSecret(options.webhookSecret, 'GITHUB_WEBHOOK_SECRET');
       const rawBody = await req.text();
-      const expected = hmacSha256Hex(options.webhookSecret, rawBody);
+      const expected = hmacSha256Hex(webhookSecret, rawBody);
       return safeEqualHex(expected, signature);
     },
     normalize(rawBody, headers) {

@@ -5,7 +5,7 @@
   "fixed": [["relayos", "@relayos/*"]],
   "linked": [],
   "access": "public",
-  "baseBranch": "refresh",
+  "baseBranch": "main",
   "updateInternalDependencies": "patch",
   "ignore": ["web", "docs"],
   "___experimentalUnsafeOptions_WILL_CHANGE_IN_PATCH": {

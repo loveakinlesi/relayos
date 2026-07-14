@@ -9,16 +9,16 @@ An execution is a single attempt to process a single event. It records everythin
 
 ```ts
 type Execution = {
-  id: string;           // Unique identifier for this execution attempt
-  eventId: string;      // The event's unique webhook ID (deduped by this)
-  eventType: string;    // The event type (e.g., "stripe.charge.succeeded")
-  eventData: Record<string, unknown>;  // The event payload
+  id: string; // Unique identifier for this execution attempt
+  eventId: string; // The event's unique webhook ID (deduped by this)
+  eventType: string; // The event type (e.g., "stripe.charge.succeeded")
+  eventData: Record<string, unknown>; // The event payload
   status: 'pending' | 'completed' | 'failed';
-  attempt: number;      // Attempt number (1 on first try, 2 after first retry, etc.)
-  replayedFrom?: string;  // If this is a replay, the source execution ID
-  createdAt: string;    // ISO 8601 timestamp
+  attempt: number; // Attempt number (1 on first try, 2 after first retry, etc.)
+  replayedFrom?: string; // If this is a replay, the source execution ID
+  createdAt: string; // ISO 8601 timestamp
   completedAt?: string; // Set when status changes from pending
-  error?: string;       // If failed, the error message
+  error?: string; // If failed, the error message
 };
 ```
 

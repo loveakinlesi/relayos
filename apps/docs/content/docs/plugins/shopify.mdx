@@ -1,0 +1,63 @@
+---
+title: Shopify Plugin
+description: Receive and verify Shopify webhooks with RelayOS.
+---
+
+The `@relayos/shopify` plugin verifies Shopify webhook HMAC signatures and normalizes Shopify topics into RelayOS event names.
+
+## Installation
+
+<Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
+  <Tab value="pnpm">
+  ```sh
+  pnpm add @relayos/shopify
+  ```
+  </Tab>
+  <Tab value="npm">
+  ```sh
+  npm install @relayos/shopify
+  ```
+  </Tab>
+  <Tab value="yarn">
+  ```sh
+  yarn add @relayos/shopify
+  ```
+  </Tab>
+  <Tab value="bun">
+  ```sh
+  bun add @relayos/shopify
+  ```
+  </Tab>
+</Tabs>
+
+## Setup
+
+```ts
+// relay.ts
+import { relayos } from 'relayos';
+import { shopify } from '@relayos/shopify';
+
+export const relay = relayos({
+  plugins: [
+    shopify(), // reads SHOPIFY_WEBHOOK_SECRET automatically
+  ],
+});
+```
+
+Point your Shopify webhook endpoint to `/api/webhook/shopify`.
+
+## Event types
+
+Shopify topics are converted from slash-separated topics to dot-separated RelayOS event names:
+
+```ts
+relay.on('shopify.orders.create', async (event, ctx) => {
+  ctx.log.info('order created', { id: event.data.id });
+});
+```
+
+## Testing locally
+
+```sh
+relay trigger shopify orders.create --data '{"id":123}'
+```

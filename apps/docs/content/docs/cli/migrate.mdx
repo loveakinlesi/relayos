@@ -1,43 +1,55 @@
 ---
 title: relay migrate
-description: Apply RelayOS database migrations to your Postgres instance.
+description: Apply RelayOS's database migrations, for whichever dialect your relay.ts uses.
 ---
 
-Apply RelayOS's Postgres schema to your database. This is idempotent — safe to run multiple times.
+Apply RelayOS's schema to your database. This is idempotent — safe to run multiple times. Works with Postgres, SQLite, or MySQL, whichever client your `relay.ts` configures.
 
 ## Usage
 
 ```sh
-relay migrate
+relay migrate [--dir <path>]
 ```
+
+`--dir` points at the directory containing `relay.ts` - it defaults to the current working directory.
 
 ## Requirements
 
-- `DATABASE_URL` environment variable set to a valid Postgres connection string
-- Postgres instance must be running and accessible
+- A `relay.ts` in the target directory, exporting `relay` (see [relay init](/docs/cli/init))
+- Nothing else - `relay migrate` loads your `relay.ts` directly and calls its `migrate()` method, so whatever database client you configured there is what gets migrated. No `DATABASE_URL` or other env var is read by the CLI itself.
 
 ## What it does
 
-Creates the `relayos` schema (if it doesn't exist) and the following tables:
+Creates three tables, named to match whichever dialect you're using:
 
-- **executions** — one row per execution, tracking status, attempt, timestamps, and event data
-- **execution_steps** — append-only step history; a step that failed and later succeeded stores both attempts
-- **execution_logs** — interleaved logs from the runtime and handler
+- **relayos_executions** — one row per execution, tracking status, attempt, timestamps, and event data
+- **relayos_execution_steps** — append-only step history; a step that failed and later succeeded stores both attempts
+- **relayos_execution_logs** — interleaved logs from the runtime and handler
 
-All tables are namespaced under the `relayos` schema, so they never collide with your application's public schema.
+A `relayos_migrations` tracking table records which migrations have already applied, so re-running `relay migrate` is always safe.
 
 ## Example
 
 ```sh
-export DATABASE_URL="postgres://user:password@localhost:5432/myapp"
 relay migrate
 ```
 
 Output:
+
 ```
 Applying RelayOS migrations...
 Migrations applied.
 ```
+
+From another directory:
+
+```sh
+relay migrate --dir path/to/app
+```
+
+## When you actually need this
+
+Outside production, migrations apply automatically the first time your relay processes an event - you don't need to run this command in local development at all. In production, run it explicitly before scaling up new instances (e.g. as a step in your deploy pipeline), since concurrent instances booting at the same time could otherwise race on the same schema changes.
 
 ## Idempotency
 
@@ -45,16 +57,13 @@ Running `relay migrate` multiple times is safe — it won't re-create tables or 
 
 ## Troubleshooting
 
-**Error: "cannot connect to server"**
-- Check `DATABASE_URL` is correct
-- Verify Postgres is running
-- Check network/firewall access
+**Error: "Could not find relay.ts"**
 
-**Error: "permission denied"**
-- The database user must have permissions to create schemas and tables
-- Check the user role in Postgres
+- Confirm `relay.ts` exists in the directory you're running from, or pass `--dir`
 
-**Error: "database does not exist"**
-- Create the database first: `createdb myapp` (or in psql: `CREATE DATABASE myapp;`)
+**A connection error from your database driver**
 
-See [Postgres](/docs/database/postgres) for more setup details.
+- Check the connection details passed to your database client in `relay.ts` (e.g. `DATABASE_URL` if that's what you wired it to read)
+- Verify the database server is running and reachable
+
+See [Database](/docs/database) for setup details per dialect.

@@ -1,0 +1,30 @@
+---
+title: '@relayos/resend'
+description: Resend webhook plugin with Svix signature verification.
+---
+
+## Install
+
+```sh
+pnpm add @relayos/resend
+```
+
+Peer dependency: `@relayos/core`
+
+## Exports
+
+| Export                | Kind     | Description                                    |
+| --------------------- | -------- | ---------------------------------------------- |
+| `resend`              | Function | Creates a Resend plugin for webhook ingestion. |
+| `ResendEventMap`      | Type     | Typed event map for Resend email events.       |
+| `ResendPluginOptions` | Type     | Configuration for the Resend plugin.           |
+
+## Functions
+
+### resend
+
+```ts
+function resend(options?: ResendPluginOptions): RelayPlugin<ResendEventMap>;
+```
+
+Creates a Resend plugin. Verifies Svix webhook signatures from `Svix-Id`, `Svix-Timestamp`, and `Svix-Signature`, normalizes incoming events as `resend.<event type>`, and uses `RESEND_WEBHOOK_SECRET` by default.

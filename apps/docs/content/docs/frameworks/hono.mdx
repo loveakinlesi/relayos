@@ -1,0 +1,30 @@
+---
+title: Hono
+description: Wire RelayOS into a Hono route.
+---
+
+Hono support ships in `relayos` itself, as the `relayos/hono` subpath. `toHonoHandler` converts your Relay instance into a Hono handler.
+
+## Setup
+
+```ts
+import { Hono } from 'hono';
+import { toHonoHandler } from 'relayos/hono';
+import { relay } from './relay';
+
+const app = new Hono();
+
+app.post('/api/webhook/:provider', toHonoHandler(relay));
+
+export default app;
+```
+
+This single route handles plugin endpoints such as `/api/webhook/stripe`, `/api/webhook/github`, `/api/webhook/clerk`, `/api/webhook/shopify`, and `/api/webhook/resend`.
+
+## Custom param name
+
+If your route uses a different parameter name, pass it explicitly:
+
+```ts
+app.post('/webhooks/:source', toHonoHandler(relay, { paramName: 'source' }));
+```

@@ -1,0 +1,42 @@
+---
+title: Express
+description: Wire RelayOS into an Express route.
+---
+
+Express support ships in `relayos` itself, as the `relayos/express` subpath. `toExpressHandler` converts your Relay instance into an Express route handler.
+
+## Setup
+
+```ts
+import express from 'express';
+import { toExpressHandler } from 'relayos/express';
+import { relay } from './relay';
+
+const app = express();
+
+app.post('/api/webhook/:provider', toExpressHandler(relay));
+
+app.listen(3000);
+```
+
+This single route handles plugin endpoints such as `/api/webhook/stripe`, `/api/webhook/github`, `/api/webhook/clerk`, `/api/webhook/shopify`, and `/api/webhook/resend`.
+
+## Raw body requirement
+
+Provider signatures must be verified against the exact raw request body. Mount the RelayOS route before JSON body parsing, or configure this route with raw-body handling:
+
+```ts
+app.post(
+  '/api/webhook/:provider',
+  express.raw({ type: 'application/json' }),
+  toExpressHandler(relay),
+);
+```
+
+## Custom param name
+
+If your route uses a different parameter name, pass it explicitly:
+
+```ts
+app.post('/webhooks/:source', toExpressHandler(relay, { paramName: 'source' }));
+```

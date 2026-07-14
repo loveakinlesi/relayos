@@ -1,6 +1,28 @@
-import { describe, it, expect, expectTypeOf } from 'vitest';
+import { describe, it, expect, expectTypeOf, afterEach } from 'vitest';
 import type { RelayPlugin } from '@relayos/core';
-import { definePlugin } from './index';
+import { definePlugin, resolveWebhookSecret } from './index';
+
+describe('resolveWebhookSecret', () => {
+  const envVar = 'TEST_PLUGIN_WEBHOOK_SECRET';
+
+  afterEach(() => {
+    delete process.env[envVar];
+  });
+
+  it('returns the explicit secret when provided, ignoring the env var', () => {
+    process.env[envVar] = 'from-env';
+    expect(resolveWebhookSecret('from-options', envVar)).toBe('from-options');
+  });
+
+  it('falls back to the env var when no explicit secret is provided', () => {
+    process.env[envVar] = 'from-env';
+    expect(resolveWebhookSecret(undefined, envVar)).toBe('from-env');
+  });
+
+  it('throws when neither an explicit secret nor the env var is set', () => {
+    expect(() => resolveWebhookSecret(undefined, envVar)).toThrow(envVar);
+  });
+});
 
 describe('definePlugin', () => {
   it('returns exactly the object it was given (identity)', () => {

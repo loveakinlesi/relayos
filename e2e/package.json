@@ -1,0 +1,25 @@
+{
+  "name": "e2e",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:coverage": "vitest run",
+    "lint": "tsc --noEmit",
+    "clean": "rimraf .tmp coverage tsconfig.tsbuildinfo"
+  },
+  "devDependencies": {
+    "relayos": "workspace:*",
+    "@relayos/core": "workspace:*",
+    "@relayos/cli": "workspace:*",
+    "@relayos/stripe": "workspace:*",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^22.0.0",
+    "better-sqlite3": "^12.11.1",
+    "jiti": "^2.7.0",
+    "rimraf": "^6.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^4.1.7"
+  }
+}

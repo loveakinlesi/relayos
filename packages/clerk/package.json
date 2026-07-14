@@ -1,0 +1,69 @@
+{
+  "name": "@relayos/clerk",
+  "version": "0.0.1",
+  "description": "The RelayOS Clerk plugin: Svix signature-verified webhook ingestion for Clerk events.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/loveakinlesi/relayos.git",
+    "directory": "packages/clerk"
+  },
+  "homepage": "https://github.com/loveakinlesi/relayos#readme",
+  "bugs": "https://github.com/loveakinlesi/relayos/issues",
+  "keywords": [
+    "relayos",
+    "webhooks",
+    "events",
+    "durable-execution",
+    "typescript",
+    "clerk",
+    "clerk-webhooks"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=22"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "lint": "tsc --noEmit",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "clean": "rimraf dist coverage tsconfig.tsbuildinfo"
+  },
+  "dependencies": {
+    "@relayos/plugin": "workspace:^"
+  },
+  "peerDependencies": {
+    "@relayos/core": "0.x"
+  },
+  "devDependencies": {
+    "@relayos/core": "workspace:^",
+    "rimraf": "^6.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^4.1.7"
+  }
+}

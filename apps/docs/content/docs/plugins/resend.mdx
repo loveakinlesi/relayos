@@ -1,0 +1,63 @@
+---
+title: Resend Plugin
+description: Receive and verify Resend webhooks with RelayOS.
+---
+
+The `@relayos/resend` plugin handles Resend webhook verification and provides typed RelayOS event names for Resend email events.
+
+## Installation
+
+<Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
+  <Tab value="pnpm">
+  ```sh
+  pnpm add @relayos/resend
+  ```
+  </Tab>
+  <Tab value="npm">
+  ```sh
+  npm install @relayos/resend
+  ```
+  </Tab>
+  <Tab value="yarn">
+  ```sh
+  yarn add @relayos/resend
+  ```
+  </Tab>
+  <Tab value="bun">
+  ```sh
+  bun add @relayos/resend
+  ```
+  </Tab>
+</Tabs>
+
+## Setup
+
+```ts
+// relay.ts
+import { relayos } from 'relayos';
+import { resend } from '@relayos/resend';
+
+export const relay = relayos({
+  plugins: [
+    resend(), // reads RESEND_WEBHOOK_SECRET automatically
+  ],
+});
+```
+
+Point your Resend webhook endpoint to `/api/webhook/resend`.
+
+## Event types
+
+Events are namespaced as `resend.<resend-event-type>`:
+
+```ts
+relay.on('resend.email.delivered', async (event, ctx) => {
+  ctx.log.info('email delivered', { id: event.data.email_id });
+});
+```
+
+## Testing locally
+
+```sh
+relay trigger resend email.delivered --data '{"email_id":"email_123"}'
+```

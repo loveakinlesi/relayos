@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createRelayEngine, type NormalizedEvent, type RelayPlugin } from './index';
+import { createMemoryExecutionStore } from './test/memory-store';
 
 function makeEvent(overrides: Partial<NormalizedEvent> = {}): NormalizedEvent {
   return {
@@ -43,7 +44,7 @@ const noAutoRetry = { maxAttempts: 1, backoff: () => 0 };
 
 describe('createRelayEngine - ingest', () => {
   it('runs the handler registered for the matching event type', async () => {
-    const relay = createRelayEngine();
+    const relay = createRelayEngine({ database: createMemoryExecutionStore() });
     const handled: NormalizedEvent[] = [];
     relay.on('test.ping', async (event) => {
       handled.push(event);
@@ -54,13 +55,13 @@ describe('createRelayEngine - ingest', () => {
   });
 
   it('does not run handlers for a type with no registration', async () => {
-    const relay = createRelayEngine();
+    const relay = createRelayEngine({ database: createMemoryExecutionStore() });
     const execution = await relay.ingest(makeEvent({ type: 'no.handler' }));
     expect(execution.status).toBe('completed');
   });
 
   it('a duplicate eventId returns the same execution without re-running the handler', async () => {
-    const relay = createRelayEngine();
+    const relay = createRelayEngine({ database: createMemoryExecutionStore() });
     let calls = 0;
     relay.on('test.ping', async () => {
       calls++;
@@ -73,7 +74,7 @@ describe('createRelayEngine - ingest', () => {
   });
 
   it('concurrent ingests of the same eventId collapse to one execution and one handler run', async () => {
-    const relay = createRelayEngine();
+    const relay = createRelayEngine({ database: createMemoryExecutionStore() });
     let calls = 0;
     relay.on('test.ping', async () => {
       calls++;
@@ -85,7 +86,7 @@ describe('createRelayEngine - ingest', () => {
   });
 
   it('a failed handler marks the execution failed with the error message', async () => {
-    const relay = createRelayEngine({ retry: noAutoRetry });
+    const relay = createRelayEngine({ database: createMemoryExecutionStore(), retry: noAutoRetry });
     relay.on('test.fail', async () => {
       throw new Error('boom');
     });
@@ -97,7 +98,7 @@ describe('createRelayEngine - ingest', () => {
 
 describe('ctx.step.run', () => {
   it('caches a completed step across a retry, but re-runs a failed one', async () => {
-    const relay = createRelayEngine({ retry: noAutoRetry });
+    const relay = createRelayEngine({ database: createMemoryExecutionStore(), retry: noAutoRetry });
     let step1Runs = 0;
     let step2ShouldFail = true;
 
@@ -126,7 +127,7 @@ describe('ctx.step.run', () => {
   });
 
   it('threads a step output into a later step', async () => {
-    const relay = createRelayEngine();
+    const relay = createRelayEngine({ database: createMemoryExecutionStore() });
     let seen: number | undefined;
     relay.on('test.chain', async (_event, ctx) => {
       const amount = await ctx.step.run('produce', async () => 42);
@@ -141,7 +142,7 @@ describe('ctx.step.run', () => {
 
 describe('restartExecution', () => {
   it('forces every step to re-run, unlike retryExecution', async () => {
-    const relay = createRelayEngine();
+    const relay = createRelayEngine({ database: createMemoryExecutionStore() });
     let runs = 0;
     relay.on('test.restart', async (_event, ctx) => {
       await ctx.step.run('only-step', async () => {
@@ -162,7 +163,7 @@ describe('restartExecution', () => {
 
 describe('replayExecution', () => {
   it('creates an independent new execution, leaving the source untouched', async () => {
-    const relay = createRelayEngine();
+    const relay = createRelayEngine({ database: createMemoryExecutionStore() });
     let calls = 0;
     relay.on('test.replay', async () => {
       calls++;
@@ -191,7 +192,10 @@ describe('automatic retry scheduling', () => {
   });
 
   it('retries with backoff up to maxAttempts, then stops', async () => {
-    const relay = createRelayEngine({ retry: { maxAttempts: 3, backoff: () => 100 } });
+    const relay = createRelayEngine({
+      database: createMemoryExecutionStore(),
+      retry: { maxAttempts: 3, backoff: () => 100 },
+    });
     let calls = 0;
     relay.on('test.fail', async () => {
       calls++;
@@ -214,7 +218,7 @@ describe('automatic retry scheduling', () => {
 
 describe('concurrency safety', () => {
   it('collapses concurrent retryExecution calls for the same execution into one run', async () => {
-    const relay = createRelayEngine({ retry: noAutoRetry });
+    const relay = createRelayEngine({ database: createMemoryExecutionStore(), retry: noAutoRetry });
     let calls = 0;
     relay.on('test.fail', async () => {
       calls++;
@@ -233,7 +237,7 @@ describe('concurrency safety', () => {
 
 describe('logging', () => {
   it('tags runtime lifecycle entries as "system" and handler logs as "handler"', async () => {
-    const relay = createRelayEngine();
+    const relay = createRelayEngine({ database: createMemoryExecutionStore() });
     relay.on('test.log', async (_event, ctx) => {
       ctx.log.info('hello from handler');
     });
@@ -248,14 +252,18 @@ describe('logging', () => {
 
 describe('relay.handler (HTTP dispatch)', () => {
   it('returns 404 for an unregistered provider', async () => {
-    const relay = createRelayEngine({ plugins: [makeFakePlugin()] });
-    const req = new Request('http://x/api/relay/unknown', { method: 'POST', body: '{}' });
+    const relay = createRelayEngine({
+      database: createMemoryExecutionStore(),
+      plugins: [makeFakePlugin()],
+    });
+    const req = new Request('http://x/api/webhook/unknown', { method: 'POST', body: '{}' });
     const res = await relay.handler(req, { params: { all: ['unknown'] } });
     expect(res.status).toBe(404);
   });
 
   it('returns 401 when the plugin rejects verification', async () => {
     const relay = createRelayEngine({
+      database: createMemoryExecutionStore(),
       plugins: [
         makeFakePlugin({
           async verify() {
@@ -264,15 +272,71 @@ describe('relay.handler (HTTP dispatch)', () => {
         }),
       ],
     });
-    const req = new Request('http://x/api/relay/fake', { method: 'POST', body: '{}' });
+    const req = new Request('http://x/api/webhook/fake', { method: 'POST', body: '{}' });
     const res = await relay.handler(req, { params: { all: ['fake'] } });
     expect(res.status).toBe(401);
   });
 
+  it('returns 413 before verification when Content-Length exceeds the configured limit', async () => {
+    let verifyCalls = 0;
+    const relay = createRelayEngine({
+      database: createMemoryExecutionStore(),
+      maxRequestBodyBytes: 4,
+      plugins: [
+        makeFakePlugin({
+          async verify() {
+            verifyCalls++;
+            return true;
+          },
+        }),
+      ],
+    });
+    const req = new Request('http://x/api/webhook/fake', {
+      method: 'POST',
+      headers: { 'content-length': '5' },
+      body: '{}',
+    });
+    const res = await relay.handler(req, { params: { all: ['fake'] } });
+    expect(res.status).toBe(413);
+    expect(await res.json()).toEqual({ error: 'request body too large' });
+    expect(verifyCalls).toBe(0);
+  });
+
+  it('returns 400 for verified requests with invalid JSON', async () => {
+    const relay = createRelayEngine({
+      database: createMemoryExecutionStore(),
+      plugins: [makeFakePlugin()],
+    });
+    const req = new Request('http://x/api/webhook/fake', { method: 'POST', body: '{' });
+    const res = await relay.handler(req, { params: { all: ['fake'] } });
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ error: 'invalid JSON payload' });
+  });
+
+  it('returns 400 without leaking provider normalization errors', async () => {
+    const relay = createRelayEngine({
+      database: createMemoryExecutionStore(),
+      plugins: [
+        makeFakePlugin({
+          normalize() {
+            throw new Error('secret parser detail');
+          },
+        }),
+      ],
+    });
+    const req = new Request('http://x/api/webhook/fake', { method: 'POST', body: '{}' });
+    const res = await relay.handler(req, { params: { all: ['fake'] } });
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ error: 'invalid provider payload' });
+  });
+
   it('ingests and returns 200 on a verified request', async () => {
-    const relay = createRelayEngine({ plugins: [makeFakePlugin()] });
+    const relay = createRelayEngine({
+      database: createMemoryExecutionStore(),
+      plugins: [makeFakePlugin()],
+    });
     relay.on('fake.event', async () => {});
-    const req = new Request('http://x/api/relay/fake', {
+    const req = new Request('http://x/api/webhook/fake', {
       method: 'POST',
       body: JSON.stringify({ type: 'fake.event' }),
     });

@@ -1,3 +1,5 @@
+import type { RelayDatabaseConfig } from './db/resolve';
+
 export type NormalizedEvent<TType extends string = string, TData = Record<string, unknown>> = {
   id: string;
   type: TType;
@@ -95,7 +97,7 @@ export type ExecutionStore = {
  * Record<string, unknown>.
  */
 export type RelayPlugin<TEventMap extends Record<string, unknown> = {}> = {
-  /** Also the URL segment providers are mounted at, e.g. "stripe" -> /api/relay/stripe */
+  /** Also the URL segment providers are mounted at, e.g. "stripe" -> /api/webhook/stripe */
   id: string;
   verify: (req: Request) => Promise<boolean>;
   normalize: (rawBody: unknown, headers: Headers) => NormalizedEvent;
@@ -175,6 +177,9 @@ export type Relay<TEventMap extends Record<string, unknown> = {}> = {
   listExecutions: () => Promise<Execution[]>;
   listSteps: (executionId: string) => Promise<ExecutionStep[]>;
   listLogs: (executionId: string) => Promise<ExecutionLog[]>;
+  /** Applies any pending schema migrations. Auto-runs once, lazily, outside
+   *  production; call explicitly in production before scaling up instances. */
+  migrate: () => Promise<void>;
   handler: (req: Request, ctx: RelayHandlerContext) => Promise<Response>;
 };
 
@@ -187,7 +192,9 @@ export type RetryPolicy = {
 export type RelayConfig<
   TPlugins extends readonly RelayPlugin<any>[] = readonly RelayPlugin<any>[],
 > = {
-  database?: ExecutionStore;
+  database: RelayDatabaseConfig;
   plugins?: TPlugins;
   retry?: RetryPolicy;
+  /** Reject webhook requests with a larger Content-Length before verification/body parsing. */
+  maxRequestBodyBytes?: number;
 };

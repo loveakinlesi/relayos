@@ -7,6 +7,12 @@ RelayOS is a durable webhook execution platform that helps developers build reli
 
 Webhook handlers are usually a pile of `if` statements with no memory of what already happened. A provider retries, and you double-charge a customer. A step three-quarters through a handler fails, and you re-run everything from scratch—or worse, nothing at all, silently. Debugging means grepping logs, because there's no record of what actually executed.
 
+```sh
+npx relayos@latest init
+```
+
+Nothing to install first — scaffolds `relay.ts` + `relay.handlers.ts` and installs exactly what you choose. See [Installation](/docs/installation) for the full walkthrough.
+
 ## What You Get
 
 **Durable steps** — `ctx.step.run(name, fn)` checkpoints each unit of work. A retry resumes past whatever already succeeded; it never re-runs a completed step's side effects.
@@ -17,25 +23,26 @@ Webhook handlers are usually a pile of `if` statements with no memory of what al
 
 **A real audit trail** — every step attempt is a new row, never overwritten, so a step that failed twice before succeeding shows all three attempts. Every execution's log stream interleaves the runtime's own lifecycle events (`retrying (attempt 2, scheduled)`) with your handler's own logging, tagged so you can tell them apart.
 
-**Provider adapters with real signature verification** — Stripe and GitHub today, each doing actual HMAC verification against the raw request body, not a stub.
+**Provider adapters with real signature verification** — Stripe, GitHub, Clerk, Shopify, and Resend today, each doing actual HMAC verification against the raw request body, not a stub.
 
 **Fully-typed event catalogs** — `relay.on('stripe.charge.succeeded', ...)` autocompletes every event of the plugins you registered, and `event.data` is typed per event (`event.data.object` is a real `Stripe.Charge`).
 
-**A dedicated Postgres schema** — RelayOS's tables live under their own `relayos` schema, not `public`, so they never collide with your application's own tables.
+**Postgres, SQLite, or MySQL, auto-detected** — pass a raw client straight into `relayos({ database })` and RelayOS detects the dialect and applies its own prefixed tables (`relayos_executions`, etc.), so they never collide with your application's own.
 
-**First-class local dev tooling** — `relay migrate` applies the schema with one command; `relay dev` runs your app and tails live execution activity to the terminal.
+**First-class local dev tooling, bundled** — the `relay` CLI ships inside `relayos` itself, no separate install. `relay migrate` applies the schema with one command; `relay dev` runs your app and tails live execution activity to the terminal.
 
 ## Where RelayOS Fits
 
-| | Category |
-|---|---|
-| Better Auth | Authentication framework |
-| Drizzle | ORM |
-| Hono | Web framework |
+|             | Category                       |
+| ----------- | ------------------------------ |
+| Better Auth | Authentication framework       |
+| Drizzle     | ORM                            |
+| Hono        | Web framework                  |
 | **RelayOS** | **Webhook execution platform** |
 
 <Cards>
   <Card title="Installation" href="/docs/installation" />
-  <Card title="Quickstart" href="/docs/quickstart" />
+  <Card title="Basic Usage" href="/docs/basic-usage" />
   <Card title="Concepts" href="/docs/concepts/events" />
+  <Card title="Roadmap" href="/docs/roadmap" />
 </Cards>

@@ -2,12 +2,40 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { stripe } from './index';
 
 function makeRequest(body: string, headers: Record<string, string>): Request {
-  return new Request('http://x/api/relay/stripe', { method: 'POST', headers, body });
+  return new Request('http://x/api/webhook/stripe', { method: 'POST', headers, body });
 }
 
 describe('stripe plugin', () => {
   afterEach(() => {
     vi.useRealTimers();
+    delete process.env['STRIPE_WEBHOOK_SECRET'];
+  });
+
+  it('infers webhookSecret from STRIPE_WEBHOOK_SECRET when not provided', async () => {
+    process.env['STRIPE_WEBHOOK_SECRET'] = 'whsec_env';
+    const plugin = stripe();
+    const rawBody = JSON.stringify({ id: 'evt_1' });
+    const req = makeRequest(rawBody, plugin.sign(rawBody, 'whsec_env'));
+    expect(await plugin.verify(req)).toBe(true);
+  });
+
+  it('an explicit webhookSecret overrides STRIPE_WEBHOOK_SECRET', async () => {
+    process.env['STRIPE_WEBHOOK_SECRET'] = 'whsec_env';
+    const plugin = stripe({ webhookSecret: 'whsec_explicit' });
+    const rawBody = JSON.stringify({ id: 'evt_1' });
+    const req = makeRequest(rawBody, plugin.sign(rawBody, 'whsec_explicit'));
+    expect(await plugin.verify(req)).toBe(true);
+
+    const signedWithEnvSecret = makeRequest(rawBody, plugin.sign(rawBody, 'whsec_env'));
+    expect(await plugin.verify(signedWithEnvSecret)).toBe(false);
+  });
+
+  it('rejects when neither webhookSecret nor STRIPE_WEBHOOK_SECRET is set, only on an actual verify', async () => {
+    const plugin = stripe();
+    const rawBody = JSON.stringify({ id: 'evt_1' });
+    const timestamp = Math.floor(Date.now() / 1000);
+    const req = makeRequest(rawBody, { 'stripe-signature': `t=${timestamp},v1=deadbeef` });
+    await expect(plugin.verify(req)).rejects.toThrow('STRIPE_WEBHOOK_SECRET');
   });
 
   it('sign() produces a signature verify() accepts', async () => {

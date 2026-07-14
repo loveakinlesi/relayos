@@ -23,13 +23,23 @@
   "type": "module",
   "sideEffects": false,
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "publishConfig": {
     "access": "public"
   },
   "bin": {
     "relay": "./dist/index.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./lib": {
+      "types": "./dist/lib.d.ts",
+      "default": "./dist/lib.js"
+    }
   },
   "files": [
     "dist"
@@ -44,10 +54,13 @@
   },
   "dependencies": {
     "@relayos/core": "workspace:^",
-    "@relayos/postgres": "workspace:^",
     "@relayos/stripe": "workspace:^",
     "@relayos/github": "workspace:^",
-    "drizzle-orm": "^0.45.2"
+    "@relayos/clerk": "workspace:^",
+    "@relayos/shopify": "workspace:^",
+    "@relayos/resend": "workspace:^",
+    "@clack/prompts": "^1.7.0",
+    "jiti": "^2.7.0"
   },
   "devDependencies": {
     "rimraf": "^6.0.0",

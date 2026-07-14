@@ -13,3 +13,10 @@ coverage/
 
 # OS
 .DS_Store
+
+# Local tooling artifacts
+.playwright-mcp/
+.pnpm-store/
+
+# e2e fixture output (temp apps created per test run)
+e2e/.tmp/

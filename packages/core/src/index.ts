@@ -17,5 +17,4 @@ export type {
   RetryPolicy,
   RelayConfig,
 } from './types';
-export { createMemoryExecutionStore } from './memory-store';
 export { createRelayEngine } from './engine';

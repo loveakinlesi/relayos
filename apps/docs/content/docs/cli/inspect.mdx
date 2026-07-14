@@ -1,33 +1,33 @@
 ---
 title: relay inspect
-description: Show an execution's status, steps, and logs directly from the database.
+description: Show an execution's status, steps, and logs directly from your relay.
 ---
 
-Query the database for an execution and display its status, step history, and logs. Doesn't require the app to be running.
+Loads your `relay.ts` and displays an execution's status, step history, and logs. Doesn't require the app to be running.
 
 ## Usage
 
 ```sh
-relay inspect <eventId|executionId> [--json] [--history]
+relay inspect <eventId|executionId> [--json] [--history] [--dir <path>]
 ```
 
 ## Arguments
 
-| Argument | Description |
-|----------|-------------|
+| Argument                 | Description                                                                                                      |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------- |
 | `<eventId\|executionId>` | Either an event ID (from `relay trigger` or webhook) or an execution ID (from a previous `relay inspect` output) |
 
 ## Options
 
-| Flag | Default | Description |
-|------|---------|-------------|
-| `--json` | false | Output structured JSON instead of human-readable text |
-| `--history` | false | Show every step attempt (full audit trail); default shows only the latest attempt per step |
+| Flag        | Default           | Description                                                                                |
+| ----------- | ----------------- | ------------------------------------------------------------------------------------------ |
+| `--json`    | false             | Output structured JSON instead of human-readable text                                      |
+| `--history` | false             | Show every step attempt (full audit trail); default shows only the latest attempt per step |
+| `--dir`     | current directory | Directory containing `relay.ts`                                                            |
 
 ## Requirements
 
-- `DATABASE_URL` must be set to a valid Postgres connection string
-- The database must exist and have RelayOS migrations applied
+- A `relay.ts` in the target directory, exporting `relay` (see [relay init](/docs/cli/init))
 
 ## Examples
 
@@ -40,7 +40,7 @@ Execution evt_abc123xyz
   event:      stripe.charge.succeeded (evt_abc123xyz)
   status:     ✓ completed (attempt 1)
   duration:   234ms
-  
+
 Steps:
   ✓ record-payment completed
   ✓ calculate-fee completed
@@ -126,6 +126,7 @@ The command automatically looks up by both event ID and execution ID, so either 
 ## Understanding the output
 
 **Execution header:**
+
 - `event`: Event type and ID
 - `status`: Completed, failed, or pending, plus attempt number
 - `duration`: Time from creation to completion
@@ -133,6 +134,7 @@ The command automatically looks up by both event ID and execution ID, so either 
 - `error` (if failed): Error message from the handler
 
 **Steps:**
+
 - Status icon (✓/✗)
 - Step name
 - Status and optional error message
@@ -140,6 +142,7 @@ The command automatically looks up by both event ID and execution ID, so either 
 - With `--history`: shows every attempt, in chronological order
 
 **Logs:**
+
 - `[source]` — `system` (runtime lifecycle) or `handler` (your `ctx.log` calls)
 - `[level]` — debug, info, warn, error
 - Message and optional structured data

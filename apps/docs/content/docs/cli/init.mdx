@@ -1,81 +1,103 @@
 ---
 title: relay init
-description: Scaffold a relayos.config.ts file in your project.
+description: Interactively scaffold relay.ts and relay.handlers.ts in your project.
 ---
 
-Scaffold a basic `relayos.config.ts` file with commented-out examples and next steps.
+Walks you through an interactive setup and scaffolds `relay.ts` + `relay.handlers.ts`, installing exactly the packages your choices need.
 
 ## Usage
 
 ```sh
-relay init [--force]
+relay init [--force] [--dir <path>]
 ```
 
 ## Options
 
-| Flag | Default | Description |
-|------|---------|-------------|
-| `--force` | false | Overwrite an existing `relayos.config.ts` |
+| Flag      | Default           | Description                                         |
+| --------- | ----------------- | --------------------------------------------------- |
+| `--force` | false             | Overwrite existing `relay.ts` / `relay.handlers.ts` |
+| `--dir`   | current directory | Where to scaffold into                              |
+
+## What it asks
+
+1. **App name** - cosmetic, shown in the wizard's closing message
+2. **Framework** - skipped and auto-detected if `package.json` has a `next` dependency; otherwise choose Next.js, Express, Hono, NestJS, or a generic setup
+3. **Database** - SQLite (recommended to get started), Postgres, or MySQL
+4. **Plugins** - Stripe, GitHub, Clerk, Shopify, Resend, or none
+
+It then detects your package manager from whatever lockfile is present (`pnpm-lock.yaml`, `yarn.lock`, `bun.lockb`, or falling back to npm) and installs `relayos`, the driver package for your chosen database, and any plugin packages you selected.
 
 ## Output
 
-Creates `./relayos.config.ts` in the current directory:
+Creates `./relay.handlers.ts` and `./relay.ts` (handlers first, since config imports it). For example, choosing SQLite and Stripe:
 
 ```ts
-import { createRelay } from 'relayos';
-// import { stripe } from '@relayos/stripe';
-// import { github } from '@relayos/github';
-// import { createDb, createPostgresExecutionStore } from '@relayos/postgres';
+// relay.handlers.ts
+import type { AppRelay } from './relay';
 
-export const relay = createRelay({
-  // Executions are kept in memory by default - fine for getting started, but
-  // they won't survive a restart. Swap in Postgres once you're ready:
+// Handlers live here, not in relay.ts - that file stays
+// wiring-only (storage, plugins, retry policy), while the business logic
+// that runs when an event arrives lives in its own module. For a larger
+// app, split this across multiple files (e.g. one per feature) and call
+// each from registerHandlers.
+export function registerHandlers(relay: AppRelay): void {
+  // Events from @relayos provider plugins are fully typed - relay.on()
+  // autocompletes their event names and types event.data per event:
   //
-  //   const db = createDb(process.env.DATABASE_URL!);
-  //   database: createPostgresExecutionStore(db),
+  // relay.on('stripe.charge.succeeded', async (event, ctx) => {
+  //   const charge = event.data.object; // a typed Stripe.Charge
+  //
+  //   const payment = await ctx.step.run('record-payment', async () => {
+  //     return { chargeId: charge.id, amount: charge.amount };
+  //   });
+  //
+  //   ctx.log.info('payment recorded', payment);
+  // });
+}
+```
 
+```ts
+// relay.ts
+import { relayos } from 'relayos';
+import Database from 'better-sqlite3';
+import { stripe } from '@relayos/stripe';
+import { registerHandlers } from './relay.handlers';
+
+export const relay = relayos({
+  database: new Database('relay.db'),
   plugins: [
-    // stripe({ webhookSecret: process.env.STRIPE_WEBHOOK_SECRET! }),
-    // github({ webhookSecret: process.env.GITHUB_WEBHOOK_SECRET! }),
+    stripe(), // reads STRIPE_WEBHOOK_SECRET automatically
   ],
 });
 
-// Register a handler for each event you care about. Events from @relayos
-// provider plugins are fully typed - relay.on() autocompletes their event
-// names and types event.data per event:
-//
-// relay.on('stripe.charge.succeeded', async (event, ctx) => {
-//   const charge = event.data.object; // a typed Stripe.Charge
-//
-//   const payment = await ctx.step.run('record-payment', async () => {
-//     return { chargeId: charge.id, amount: charge.amount };
-//   });
-//
-//   ctx.log.info('payment recorded', payment);
-// });
+// The concrete relay type, including the typed event catalog inferred from
+// the plugins above - exported so relay.handlers.ts can register handlers
+// with full event.data typing without re-deriving the plugins list.
+export type AppRelay = typeof relay;
+
+registerHandlers(relay);
 ```
+
+If Next.js was detected (or chosen), it also creates `app/api/webhook/[...all]/route.ts`:
+
+```ts
+import { toNextJsHandler } from 'relayos/next-js';
+import { relay } from '../../../../relay';
+
+export const { POST } = toNextJsHandler(relay);
+```
+
+If Express, Hono, or NestJS was chosen, it creates the matching adapter file instead:
+
+- `relay.express.ts`
+- `relay.hono.ts`
+- `relay.controller.ts`
 
 ## Next steps
 
-1. Install the plugins you want:
-   ```sh
-   pnpm add relayos @relayos/postgres @relayos/stripe stripe @relayos/nextjs
-   ```
+1. Add a `relay.on(...)` call inside `registerHandlers()` and call `relay.ingest(...)` to try it.
+2. Not using one of the built-in framework adapters? Wire `relay.handler` into your framework's request handling yourself - see [Installation](/docs/installation) step 7.
+3. Ready to receive real webhooks? Set the matching `<PROVIDER>_WEBHOOK_SECRET` env var for any plugin you enabled.
+4. Ready for production? See [Database](/docs/database) to swap SQLite for Postgres or MySQL, and run `relay migrate` before scaling up new instances.
 
-2. Wire the config into your framework (Next.js example):
-   ```ts
-   // app/api/relay/[...all]/route.ts
-   import { toNextJsHandler } from '@relayos/nextjs';
-   import { relay } from '@/relayos.config';
-
-   export const { POST } = toNextJsHandler(relay);
-   ```
-
-3. Uncomment a plugin and register a handler with `relay.on(...)`.
-
-4. When ready for persistence, uncomment the Postgres lines, create a database, and run:
-   ```sh
-   DATABASE_URL=postgres://localhost:5432/myapp relay migrate
-   ```
-
-See the [full Quickstart](/docs/quickstart) for more.
+See the [full Installation guide](/docs/installation) for more.

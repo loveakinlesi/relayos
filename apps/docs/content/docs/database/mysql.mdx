@@ -1,0 +1,54 @@
+---
+title: MySQL
+description: Use a mysql2 pool as your RelayOS execution store.
+---
+
+Pass a `mysql2` pool straight into `relayos({ database })` - the dialect is
+detected automatically, and RelayOS applies its schema migrations for you.
+
+<Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
+  <Tab value="pnpm">
+  ```sh
+  pnpm add mysql2
+  ```
+  </Tab>
+  <Tab value="npm">
+  ```sh
+  npm install mysql2
+  ```
+  </Tab>
+  <Tab value="yarn">
+  ```sh
+  yarn add mysql2
+  ```
+  </Tab>
+  <Tab value="bun">
+  ```sh
+  bun add mysql2
+  ```
+  </Tab>
+</Tabs>
+
+```ts
+// relay.ts
+import { relayos } from 'relayos';
+import { createPool } from 'mysql2';
+
+export const relay = relayos({
+  database: createPool({
+    uri: process.env.DATABASE_URL!,
+    timezone: 'Z', // keeps timestamps consistent in UTC
+  }),
+  plugins: [
+    // ...
+  ],
+});
+```
+
+Use `mysql2`'s pool directly, not `mysql2/promise` - RelayOS's dialect
+detection and the underlying query engine (Kysely) both expect the
+callback-style pool.
+
+Recommended for production and any deployment running more than one instance
+of your app. See [Migrations](/docs/database#migrations) for how to apply
+schema changes before scaling up.

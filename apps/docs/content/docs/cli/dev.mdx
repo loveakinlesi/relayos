@@ -13,17 +13,18 @@ relay dev [--dir <path>]
 
 ## Options
 
-| Flag | Default | Description |
-|------|---------|-------------|
+| Flag    | Default           | Description                                        |
+| ------- | ----------------- | -------------------------------------------------- |
 | `--dir` | current directory | Path to the project root (where `package.json` is) |
 
 ## What it does
 
 1. Spawns `pnpm run dev` in the given directory (or current directory if `--dir` is not set)
-2. If `DATABASE_URL` is set, polls the database every 1 second for new executions and prints them to the terminal
+2. Loads `relay.ts` from that same directory and polls it every 1 second for new executions, printing them to the terminal - works with whatever database dialect your `relay.ts` configures
 3. Captures SIGINT (Ctrl+C) and gracefully shuts down both processes
 
 The execution output includes:
+
 - Status icon (✓ completed, ✗ failed, ⏱ pending)
 - Event type (e.g., `stripe.charge.succeeded`)
 - Attempt number
@@ -33,16 +34,14 @@ The execution output includes:
 
 ```sh
 # Run dev server in current directory, tail executions
-DATABASE_URL=postgres://localhost:5432/myapp relay dev
+relay dev
 
 # Run dev server in a subdirectory
-DATABASE_URL=postgres://localhost:5432/myapp relay dev --dir apps/web
-
-# Run without execution tailing (DATABASE_URL not set)
-relay dev --dir apps/web
+relay dev --dir path/to/app
 ```
 
 Output:
+
 ```
 [relay dev] starting dev server in /Users/alice/myapp
 [relay dev] watching for executions...
@@ -54,15 +53,15 @@ Output:
 ## Requirements
 
 - The dev server must be runnable via `pnpm run dev`
-- For execution tailing: `DATABASE_URL` environment variable must be set
+- A `relay.ts` in the target directory, for the execution feed
 
-## Without DATABASE_URL
+## Without a relay.ts
 
-If `DATABASE_URL` is not set, `relay dev` simply runs the dev server without the execution feed:
+If `relay.ts` can't be found or fails to load, `relay dev` simply runs the dev server without the execution feed:
 
 ```
 [relay dev] starting dev server in /Users/alice/myapp
-[relay dev] DATABASE_URL not set - skipping live execution feed
+[relay dev] Could not find relay.ts in /Users/alice/myapp. Run "relay init" first, or pass --dir. - skipping live execution feed
 ```
 
 This is fine for quick testing, but you won't see the live feed of executions.

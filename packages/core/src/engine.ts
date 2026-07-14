@@ -10,12 +10,14 @@ import type {
   RetryPolicy,
   RuntimeContext,
 } from './types';
-import { createMemoryExecutionStore } from './memory-store';
+import { resolveDatabase } from './db/resolve';
 
 const defaultRetryPolicy: RetryPolicy = {
   maxAttempts: 3,
   backoff: (attempt) => Math.min(1000 * 2 ** (attempt - 1), 30_000),
 };
+
+const defaultMaxRequestBodyBytes = 10 * 1024 * 1024;
 
 /**
  * The engine registers handlers untyped internally - the typed `on` overloads
@@ -27,14 +29,23 @@ type RelayInternal = Omit<Relay, 'on'> & {
 };
 
 export function createRelayEngine<const TPlugins extends readonly RelayPlugin<any>[] = []>(
-  config: RelayConfig<TPlugins> = {},
+  config: RelayConfig<TPlugins>,
 ): Relay<EventMapOf<TPlugins>> {
   const handlers = new Map<string, EventHandler[]>();
-  const store = config.database ?? createMemoryExecutionStore();
+  const { store, migrate } = resolveDatabase(config.database);
+
+  let migrated: Promise<void> | undefined;
+  function ensureMigrated(): Promise<void> {
+    if (process.env['NODE_ENV'] === 'production') return Promise.resolve();
+    if (!migrated) migrated = migrate();
+    return migrated;
+  }
+
   const plugins = new Map<string, RelayPlugin<any>>(
     (config.plugins ?? []).map((plugin) => [plugin.id, plugin]),
   );
   const retryPolicy = config.retry ?? defaultRetryPolicy;
+  const maxRequestBodyBytes = config.maxRequestBodyBytes ?? defaultMaxRequestBodyBytes;
 
   function logSystemEvent(executionId: string, message: string, data?: unknown): Promise<void> {
     return store.saveLog({
@@ -190,6 +201,8 @@ export function createRelayEngine<const TPlugins extends readonly RelayPlugin<an
   }
 
   async function ingest(event: NormalizedEvent): Promise<Execution> {
+    await ensureMigrated();
+
     // Fast path: providers redeliver seconds apart on timeout, so this
     // avoids a wasted insert attempt for the common sequential-retry case.
     const existing = await store.findByEventId(event.id);
@@ -231,6 +244,7 @@ export function createRelayEngine<const TPlugins extends readonly RelayPlugin<an
     executionId: string,
     reason: 'manual' | 'scheduled' = 'manual',
   ): Promise<Execution> {
+    await ensureMigrated();
     return runExclusive(executionId, async () => {
       const execution = await store.get(executionId);
       if (!execution) {
@@ -252,6 +266,7 @@ export function createRelayEngine<const TPlugins extends readonly RelayPlugin<an
   }
 
   async function restartExecution(executionId: string): Promise<Execution> {
+    await ensureMigrated();
     return runExclusive(executionId, async () => {
       const execution = await store.get(executionId);
       if (!execution) {
@@ -276,6 +291,7 @@ export function createRelayEngine<const TPlugins extends readonly RelayPlugin<an
   }
 
   async function replayExecution(executionId: string): Promise<Execution> {
+    await ensureMigrated();
     const source = await store.get(executionId);
     if (!source) {
       throw new Error(`no execution found with id "${executionId}"`);
@@ -324,15 +340,19 @@ export function createRelayEngine<const TPlugins extends readonly RelayPlugin<an
     retryExecution,
     restartExecution,
     replayExecution,
-    listExecutions() {
+    async listExecutions() {
+      await ensureMigrated();
       return store.list();
     },
-    listSteps(executionId) {
+    async listSteps(executionId) {
+      await ensureMigrated();
       return store.listSteps(executionId);
     },
-    listLogs(executionId) {
+    async listLogs(executionId) {
+      await ensureMigrated();
       return store.listLogs(executionId);
     },
+    migrate,
     async handler(req, ctx) {
       const pluginId = ctx.params.all[0];
       const plugin = pluginId ? plugins.get(pluginId) : undefined;
@@ -340,14 +360,39 @@ export function createRelayEngine<const TPlugins extends readonly RelayPlugin<an
         return Response.json({ error: `unknown provider "${pluginId}"` }, { status: 404 });
       }
 
+      const contentLength = req.headers.get('content-length');
+      if (contentLength) {
+        const bodyBytes = Number(contentLength);
+        if (Number.isFinite(bodyBytes) && bodyBytes > maxRequestBodyBytes) {
+          return Response.json({ error: 'request body too large' }, { status: 413 });
+        }
+      }
+
       const verified = await plugin.verify(req.clone());
       if (!verified) {
         return Response.json({ error: 'invalid signature' }, { status: 401 });
       }
 
-      const rawBody = await req.json();
-      const event = plugin.normalize(rawBody, req.headers);
-      const execution = await ingest(event);
+      let rawBody: unknown;
+      try {
+        rawBody = await req.json();
+      } catch {
+        return Response.json({ error: 'invalid JSON payload' }, { status: 400 });
+      }
+
+      let event: NormalizedEvent;
+      try {
+        event = plugin.normalize(rawBody, req.headers);
+      } catch {
+        return Response.json({ error: 'invalid provider payload' }, { status: 400 });
+      }
+
+      let execution: Execution;
+      try {
+        execution = await ingest(event);
+      } catch {
+        return Response.json({ error: 'failed to ingest event' }, { status: 500 });
+      }
 
       return Response.json({ execution });
     },

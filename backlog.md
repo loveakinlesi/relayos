@@ -790,6 +790,26 @@ Replay functionality should be operationally accessible.
 
 ---
 
+## REL-056a — `relay studio`: local studio instead of a hosted dashboard app
+
+### Context
+
+Preferred direction over a separately-hosted `apps/web`-style dashboard: a
+`relay studio` CLI command, in the spirit of `prisma studio` / `drizzle
+studio` - loads the user's `relay.ts`, spins up a local web UI (executions
+list, execution detail with steps/logs, retry/replay actions) bound to
+their real local database, no deployment or separate app required. Backed
+by the same `ExecutionStore` methods `relay inspect`/`relay events list`
+already use.
+
+### Acceptance Criteria
+
+- `relay studio` starts a local server and opens a browser tab
+- Execution list, detail (steps/logs), and retry/replay all work against
+  the user's real configured database
+
+---
+
 ## REL-056 — Initialize dashboard application
 
 ### Context

@@ -5,21 +5,40 @@ description: Plugin authoring kit with signature verification helpers and define
 
 ## Install
 
-```sh
-pnpm add @relayos/plugin
-```
+<Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
+  <Tab value="pnpm">
+  ```sh
+  pnpm add @relayos/plugin
+  ```
+  </Tab>
+  <Tab value="npm">
+  ```sh
+  npm install @relayos/plugin
+  ```
+  </Tab>
+  <Tab value="yarn">
+  ```sh
+  yarn add @relayos/plugin
+  ```
+  </Tab>
+  <Tab value="bun">
+  ```sh
+  bun add @relayos/plugin
+  ```
+  </Tab>
+</Tabs>
 
 Peer dependency: `@relayos/core`
 
 ## Exports
 
-| Export | Kind | Description |
-|--------|------|-------------|
-| `definePlugin` | Function | Identity helper for authoring plugins with full type inference. |
-| `hmacSha256Hex` | Function | HMAC-SHA256 signature generation used by Stripe, GitHub, and other providers. |
-| `safeEqualHex` | Function | Constant-time hex signature comparison to prevent timing attacks. |
-| `NormalizedEvent` | Type | Re-exported from @relayos/core. |
-| `RelayPlugin` | Type | Re-exported from @relayos/core. |
+| Export            | Kind     | Description                                                                   |
+| ----------------- | -------- | ----------------------------------------------------------------------------- |
+| `definePlugin`    | Function | Identity helper for authoring plugins with full type inference.               |
+| `hmacSha256Hex`   | Function | HMAC-SHA256 signature generation used by Stripe, GitHub, and other providers. |
+| `safeEqualHex`    | Function | Constant-time hex signature comparison to prevent timing attacks.             |
+| `NormalizedEvent` | Type     | Re-exported from @relayos/core.                                               |
+| `RelayPlugin`     | Type     | Re-exported from @relayos/core.                                               |
 
 ## Functions
 
@@ -31,7 +50,7 @@ function definePlugin<TEventMap extends Record<string, unknown> = {}>(
 ): RelayPlugin<TEventMap>;
 ```
 
-An identity helper for authoring plugins. Acts like `defineConfig` in other frameworks: it gives full inference and type checking of the plugin shape and pins the plugin's typed event map so it survives through `createRelay`'s plugins array without widening to `any`. Use this when building custom provider plugins.
+An identity helper for authoring plugins. Acts like `defineConfig` in other frameworks: it gives full inference and type checking of the plugin shape and pins the plugin's typed event map so it survives through `relayos`'s plugins array without widening to `any`. Use this when building custom provider plugins.
 
 ### hmacSha256Hex
 
@@ -51,6 +70,6 @@ Constant-time comparison of two hex-encoded signatures. Returns `false` (instead
 
 ## See also
 
-- [Building plugins](/docs/guides/building-plugins)
+- [Writing plugins](/docs/plugins/writing-plugins)
 - [@relayos/core](/docs/reference/core)
 - [@relayos/stripe](/docs/reference/stripe) (example plugin implementation)

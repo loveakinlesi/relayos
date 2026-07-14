@@ -1,0 +1,37 @@
+---
+title: Roadmap
+description: What's planned next for RelayOS - none of this is scheduled or committed to a release, just the direction.
+---
+
+RelayOS is pre-1.0 and under active development. This page tracks the biggest things planned next, roughly grouped by theme. Nothing here has a committed date - it's the direction, not a promise.
+
+## Storage
+
+- **MongoDB, and other dialects beyond Postgres/SQLite/MySQL** - the current storage layer is built on [Kysely](https://kysely.dev), which is SQL-only, so a document store like MongoDB needs its own `ExecutionStore` implementation rather than a new Kysely dialect. The `ExecutionStore` interface (see [Writing a custom store](/docs/database#writing-a-custom-store)) is already the extension point - this is about shipping one, and more dialects, out of the box.
+- **ORM adapters** - first-class adapters for Prisma and Drizzle, so a project that already manages its schema through one of those can hand RelayOS its existing client instead of a raw `pg.Pool`/`mysql2` pool/`better-sqlite3` database.
+
+## Developer experience
+
+- **`relay studio`** - a local dev GUI in the spirit of [Prisma Studio](https://www.prisma.io/studio) or [Drizzle Studio](https://orm.drizzle.team/drizzle-studio/overview): loads your `relay.ts`, starts a local web UI against your real database - execution list, execution detail with steps/logs, retry/replay actions - no deployment or separate app required. See the [backlog entry](https://github.com/loveakinlesi/relayos/blob/main/backlog.md) for the current shape of this.
+- **Local webhook forwarding** - `relay trigger` simulates payloads well, but there's no built-in way to point a *real* Stripe/GitHub/etc. webhook at local dev today (no bundled tunnel, unlike the Stripe CLI's `stripe listen --forward-to`). Planned: a `relay dev --tunnel` (or similar) that exposes your local server and registers/forwards real provider deliveries.
+
+## AI / agent tooling
+
+- **LLM skills** - packaged Claude Code / Cursor skill files (and/or an MCP server exposing execution inspection) so an AI agent can scaffold a `relay.ts`, add handlers, and debug a failing execution through natural language instead of you driving the CLI by hand.
+
+## Scale
+
+- **Cross-instance retry/lock coordination** - retry scheduling and concurrency-safe execution locking are in-process only today (see [Status](https://github.com/loveakinlesi/relayos#status)), so they don't yet coordinate across multiple server instances. Planned: a shared coordination layer (likely backed by the same database already configured, no new infra to run) so retries and locks are safe under horizontal scaling.
+
+## Ecosystem
+
+- **More framework adapters** - Fastify, Remix, and edge runtimes (Cloudflare Workers) are the next likely candidates after Next.js/Express/Hono/NestJS.
+- **More provider plugins** - the same `definePlugin` pattern that powers Stripe/GitHub/Clerk/Shopify/Resend extends to any webhook provider; more official plugins (e.g. Twilio, Slack, PayPal) are planned as demand shows up.
+
+## Recently shipped
+
+- Zero-install onboarding (`npx relayos@latest init`) - the `relay` CLI now ships bundled inside `relayos` itself, no separate `@relayos/cli` install needed to get started.
+- Multi-dialect storage (Postgres, SQLite, MySQL) auto-detected from the client you pass, replacing a Postgres-only `@relayos/postgres` package.
+- Clerk, Shopify, and Resend provider plugins, and Express/Hono/NestJS framework adapters, alongside the original Stripe/GitHub/Next.js support.
+
+Have a feature you'd like to see prioritized? Open an issue on [GitHub](https://github.com/loveakinlesi/relayos/issues).

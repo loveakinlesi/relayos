@@ -11,10 +11,10 @@ Every event has this structure:
 
 ```ts
 type NormalizedEvent = {
-  id: string;              // Unique identifier for this webhook delivery
-  type: string;            // Namespaced event type (e.g., "stripe.charge.succeeded")
-  data: Record<string, unknown>;  // Provider-specific payload
-  receivedAt: string;      // ISO 8601 timestamp
+  id: string; // Unique identifier for this webhook delivery
+  type: string; // Namespaced event type (e.g., "stripe.charge.succeeded")
+  data: Record<string, unknown>; // Provider-specific payload
+  receivedAt: string; // ISO 8601 timestamp
 };
 ```
 
@@ -45,6 +45,37 @@ relay.on('github.pull_request.opened', async (event, ctx) => {
 ```
 
 Multiple handlers can listen to the same event type—they run in the order they were registered.
+
+## Organizing handlers
+
+`relay.on(...)` calls don't belong in `relay.ts`. That file's job is wiring - storage, plugins, retry policy - and if every event's business logic gets appended there too, it turns into an unmaintainable dumping ground as the app grows.
+
+Keep `relay.ts` wiring-only, and register handlers from a separate module (or several, one per feature). The trick is preserving type inference: `relay`'s event map is inferred from the plugins array at the `relayos(...)` call site, so a handler-registration function needs the _concrete_ relay type, not a generic `Relay`. Export it with `typeof`:
+
+```ts
+// relay.ts
+export const relay = relayos({ plugins: [stripe({ ... })] });
+
+// typeof relay carries the concrete, inferred event map forward.
+export type AppRelay = typeof relay;
+
+registerHandlers(relay);
+```
+
+```ts
+// relay.handlers.ts
+import type { AppRelay } from './relay';
+
+export function registerHandlers(relay: AppRelay): void {
+  relay.on('stripe.charge.succeeded', async (event, ctx) => {
+    event.data.object.amount; // still typed - AppRelay preserved the catalog
+  });
+}
+```
+
+`relay.handlers.ts` only imports a _type_ from `relay.ts` (`import type { AppRelay }`), which TypeScript erases entirely at compile time - so even though `relay.ts` imports `registerHandlers` as a real value, there's no runtime circular dependency between the two files. `relay init` scaffolds exactly this split - see [`relay init`](/docs/cli/init).
+
+For a larger app, split further: one file per feature (`relay/handlers/payments.ts`, `relay/handlers/repos.ts`, ...), each exporting its own `register*(relay: AppRelay)` function, called in sequence from a single `registerHandlers`.
 
 ## Event deduplication
 

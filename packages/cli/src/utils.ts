@@ -1,3 +1,4 @@
+import { resolve } from 'node:path';
 import type { ExecutionStep } from '@relayos/core';
 
 export function getFlag(args: string[], name: string): string | undefined {
@@ -9,8 +10,13 @@ export function hasFlag(args: string[], name: string): boolean {
   return args.includes(name);
 }
 
-export function resolveRuntimeUrl(args: string[], env: NodeJS.ProcessEnv = process.env): string {
-  return getFlag(args, '--forward') ?? env['RELAYOS_RUNTIME_URL'] ?? 'http://localhost:3000';
+export function resolveBaseUrl(args: string[], env: NodeJS.ProcessEnv = process.env): string {
+  return getFlag(args, '--forward') ?? env['RELAYOS_BASE_URL'] ?? 'http://localhost:3000';
+}
+
+export function resolveDir(args: string[]): string {
+  const dir = getFlag(args, '--dir');
+  return dir ? resolve(dir) : process.cwd();
 }
 
 export function statusIcon(status: string): string {

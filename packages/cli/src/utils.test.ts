@@ -1,9 +1,11 @@
 import { describe, it, expect } from 'vitest';
+import { resolve } from 'node:path';
 import type { ExecutionStep } from '@relayos/core';
 import {
   getFlag,
   hasFlag,
-  resolveRuntimeUrl,
+  resolveBaseUrl,
+  resolveDir,
   statusIcon,
   formatDuration,
   latestStepsByName,
@@ -33,21 +35,31 @@ describe('hasFlag', () => {
   });
 });
 
-describe('resolveRuntimeUrl', () => {
+describe('resolveBaseUrl', () => {
   it('prefers --forward over everything else', () => {
-    const url = resolveRuntimeUrl(['--forward', 'http://example.com'], {
-      RELAYOS_RUNTIME_URL: 'http://env.example.com',
+    const url = resolveBaseUrl(['--forward', 'http://example.com'], {
+      RELAYOS_BASE_URL: 'http://env.example.com',
     });
     expect(url).toBe('http://example.com');
   });
 
-  it('falls back to RELAYOS_RUNTIME_URL when --forward is absent', () => {
-    const url = resolveRuntimeUrl([], { RELAYOS_RUNTIME_URL: 'http://env.example.com' });
+  it('falls back to RELAYOS_BASE_URL when --forward is absent', () => {
+    const url = resolveBaseUrl([], { RELAYOS_BASE_URL: 'http://env.example.com' });
     expect(url).toBe('http://env.example.com');
   });
 
   it('defaults to localhost:3000 when neither is set', () => {
-    expect(resolveRuntimeUrl([], {})).toBe('http://localhost:3000');
+    expect(resolveBaseUrl([], {})).toBe('http://localhost:3000');
+  });
+});
+
+describe('resolveDir', () => {
+  it('resolves --dir relative to cwd', () => {
+    expect(resolveDir(['--dir', 'apps/web'])).toBe(resolve('apps/web'));
+  });
+
+  it('defaults to process.cwd() when --dir is absent', () => {
+    expect(resolveDir([])).toBe(process.cwd());
   });
 });
 

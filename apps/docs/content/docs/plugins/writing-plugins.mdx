@@ -11,7 +11,7 @@ A RelayPlugin is a webhook adapter: it knows how to verify a provider's signatur
 import type { RelayPlugin, NormalizedEvent } from '@relayos/core';
 
 const myPlugin: RelayPlugin = {
-  id: 'myprovider', // Used as the URL segment: /api/relay/myprovider
+  id: 'myprovider', // Used as the URL segment: /api/webhook/myprovider
 
   // Verify the request signature, return true if valid
   async verify(req: Request): Promise<boolean> {
@@ -25,7 +25,9 @@ const myPlugin: RelayPlugin = {
     return {
       id: 'unique-webhook-id',
       type: 'myprovider.event.name',
-      data: { /* normalized payload */ },
+      data: {
+        /* normalized payload */
+      },
       receivedAt: new Date().toISOString(),
     };
   },
@@ -62,13 +64,21 @@ type MyEventMap = {
 
 const myPlugin = definePlugin<MyEventMap>({
   id: 'myprovider',
-  async verify(req) { /* ... */ },
-  normalize(rawBody, headers) { /* ... */ },
-  sign(rawBody, secret) { /* ... */ },
-  buildTestPayload(eventType, data) { /* ... */ },
+  async verify(req) {
+    /* ... */
+  },
+  normalize(rawBody, headers) {
+    /* ... */
+  },
+  sign(rawBody, secret) {
+    /* ... */
+  },
+  buildTestPayload(eventType, data) {
+    /* ... */
+  },
 });
 
-// Now when you pass myPlugin to createRelay, relay.on() autocompletes the event names
+// Now when you pass myPlugin to relayos, relay.on() autocompletes the event names
 // and types event.data per event.
 ```
 
@@ -91,7 +101,7 @@ const isValid = safeEqualHex(expected, actualSignature);
 
 ## Worked example: dev-only pass-through plugin
 
-Here's the test plugin from `apps/web/relayos.config.ts` — it never verifies signatures, and forces all events under the `test.*` namespace so it can't spoof real providers:
+Here's a dev-only test plugin — it never verifies signatures, and forces all events under the `test.*` namespace so it can't spoof real providers:
 
 ```ts
 import { definePlugin } from '@relayos/plugin';
@@ -126,12 +136,9 @@ Use it in dev only:
 ```ts
 const isProduction = process.env.NODE_ENV === 'production';
 
-export const relay = createRelay({
-  database: createPostgresExecutionStore(db),
-  plugins: [
-    ...(isProduction ? [] : [testPlugin]),
-    stripe({ webhookSecret: process.env.STRIPE_WEBHOOK_SECRET! }),
-  ],
+export const relay = relayos({
+  database: pool,
+  plugins: [...(isProduction ? [] : [testPlugin]), stripe()],
 });
 ```
 

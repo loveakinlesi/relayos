@@ -5,30 +5,50 @@ description: GitHub webhook plugin with signature verification and fully-typed e
 
 ## Install
 
-```sh
-pnpm add @relayos/github
-```
+<Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
+  <Tab value="pnpm">
+  ```sh
+  pnpm add @relayos/github
+  ```
+  </Tab>
+  <Tab value="npm">
+  ```sh
+  npm install @relayos/github
+  ```
+  </Tab>
+  <Tab value="yarn">
+  ```sh
+  yarn add @relayos/github
+  ```
+  </Tab>
+  <Tab value="bun">
+  ```sh
+  bun add @relayos/github
+  ```
+  </Tab>
+</Tabs>
 
 Peer dependency: `@relayos/core`
 
 ## Exports
 
-| Export | Kind | Description |
-|--------|------|-------------|
-| `github` | Function | Creates a GitHub plugin for webhook ingestion. |
-| `GitHubEventMap` | Type | Fully-typed catalog of every GitHub webhook event. |
-| `GitHubPluginOptions` | Type | Configuration for the GitHub plugin. |
+| Export                | Kind     | Description                                        |
+| --------------------- | -------- | -------------------------------------------------- |
+| `github`              | Function | Creates a GitHub plugin for webhook ingestion.     |
+| `GitHubEventMap`      | Type     | Fully-typed catalog of every GitHub webhook event. |
+| `GitHubPluginOptions` | Type     | Configuration for the GitHub plugin.               |
 
 ## Types
 
 ### GitHubEventMap
 
 ```ts
-type GitHubEventMap = UnionToIntersection<
-  { [K in keyof EventPayloadMap & string]: EventEntries<K> }[keyof EventPayloadMap & string]
-> extends infer TMap
-  ? { [K in keyof TMap]: TMap[K] }
-  : never;
+type GitHubEventMap =
+  UnionToIntersection<
+    { [K in keyof EventPayloadMap & string]: EventEntries<K> }[keyof EventPayloadMap & string]
+  > extends infer TMap
+    ? { [K in keyof TMap]: TMap[K] }
+    : never;
 ```
 
 A fully-typed map of every GitHub webhook event. Events are keyed by their event name and action (e.g., `"github.pull_request.opened"`, `"github.push"`), mapped to their payload types from the `@octokit/webhooks-types` package. Actions are automatically parsed from the request body, so each combination has its own type-safe entry.
@@ -55,6 +75,6 @@ Creates a GitHub plugin. Verifies webhook signatures using GitHub's HMAC-SHA256 
 
 ## See also
 
-- [Integrating GitHub](/docs/guides/integrating-github)
-- [Plugins](/docs/concepts/plugins)
+- [GitHub plugin guide](/docs/plugins/github)
+- [Writing plugins](/docs/plugins/writing-plugins)
 - [@relayos/plugin](/docs/reference/plugin)
