@@ -32,7 +32,7 @@ RelayOS gives you:
 pnpm add relayos better-sqlite3
 ```
 
-`relayos` ships the engine and Next.js support (`relayos/next-js`) out of the box — `better-sqlite3` is the fastest way to get a real database running locally, with no separate server.
+`relayos` ships the engine and framework adapters (`relayos/next-js`, `relayos/express`, `relayos/hono`, `relayos/nestjs`) out of the box — `better-sqlite3` is the fastest way to get a real database running locally, with no separate server.
 
 ```ts
 // relay.ts — wiring only
@@ -76,22 +76,25 @@ const execution = await relay.ingest({
 console.log(execution.status); // "completed" — charge-payment never re-runs on retry
 ```
 
-From here: `pnpm add @relayos/stripe stripe` (or `@relayos/github`) once you're ready to receive real, signature-verified webhooks; swap `database` for a `pg.Pool` or `mysql2.Pool` once you're ready for a multi-instance production deployment; `import { toNextJsHandler } from 'relayos/next-js'` to mount as a Next.js route — nothing extra to install for that last one. See `apps/docs` (`pnpm --filter docs dev`, served on `:3001`) for the full installation guide, basic usage, and API reference.
+From here: add provider plugins once you're ready to receive real, signature-verified webhooks; swap `database` for a `pg.Pool` or `mysql2.Pool` once you're ready for a multi-instance production deployment; import a framework adapter like `relayos/next-js`, `relayos/express`, `relayos/hono`, or `relayos/nestjs` to mount HTTP routes. See `apps/docs` (`pnpm --filter docs dev`, served on `:3001`) for the full installation guide, basic usage, and API reference.
 
 ## Packages
 
 This is a Turborepo monorepo:
 
-| Package                                    | Purpose                                                                                                                                                                      |
-| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`relayos`](./packages/relayos)            | The SDK: `relayos`, the user-facing types, and Next.js support (`relayos/next-js`). The only required install.                     |
-| [`@relayos/core`](./packages/core)         | The engine: durable executions, steps, retries, replay, and the contracts (`ExecutionStore`, `RelayPlugin`) everything else builds on. Also owns database support — pass a raw Postgres/SQLite/MySQL client into `relayos({ database })` and the dialect is auto-detected (built on [Kysely](https://kysely.dev), with hand-written versioned migrations). Pulled in automatically by `relayos`. |
-| [`@relayos/plugin`](./packages/plugin)     | Plugin authoring kit: `definePlugin` + webhook signature helpers for building your own providers. Optional.                                                                  |
-| [`@relayos/stripe`](./packages/stripe)     | Stripe plugin: signature verification + a fully-typed catalog of every Stripe event (peer-depends on `stripe`). Optional.                                                    |
-| [`@relayos/github`](./packages/github)     | GitHub plugin: signature verification + a fully-typed catalog of every GitHub webhook event. Optional.                                                                       |
-| [`@relayos/cli`](./packages/cli)           | `relay init`, `relay migrate`, `relay dev`, `relay trigger`, `relay inspect`, `relay replay`, `relay events list`.                                                           |
-| [`apps/web`](./apps/web)                   | A Next.js app used as the local dev/test harness for the runtime, wired up in `apps/web/relay.ts`.                                                                  |
-| [`apps/docs`](./apps/docs)                 | The documentation site (Fumadocs). `pnpm --filter docs dev` serves it on port 3001.                                                                                          |
+| Package                                  | Purpose                                                                                                                                                                                                                                                                                                                                                                                          |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [`relayos`](./packages/relayos)          | The SDK: `relayos`, the user-facing types, and framework adapters (`relayos/next-js`, `relayos/express`, `relayos/hono`, `relayos/nestjs`). The only required install.                                                                                                                                                                                                                           |
+| [`@relayos/core`](./packages/core)       | The engine: durable executions, steps, retries, replay, and the contracts (`ExecutionStore`, `RelayPlugin`) everything else builds on. Also owns database support — pass a raw Postgres/SQLite/MySQL client into `relayos({ database })` and the dialect is auto-detected (built on [Kysely](https://kysely.dev), with hand-written versioned migrations). Pulled in automatically by `relayos`. |
+| [`@relayos/plugin`](./packages/plugin)   | Plugin authoring kit: `definePlugin` + webhook signature helpers for building your own providers. Optional.                                                                                                                                                                                                                                                                                      |
+| [`@relayos/stripe`](./packages/stripe)   | Stripe plugin: signature verification + a fully-typed catalog of every Stripe event (peer-depends on `stripe`). Optional.                                                                                                                                                                                                                                                                        |
+| [`@relayos/github`](./packages/github)   | GitHub plugin: signature verification + a fully-typed catalog of every GitHub webhook event. Optional.                                                                                                                                                                                                                                                                                           |
+| [`@relayos/clerk`](./packages/clerk)     | Clerk plugin: Svix signature verification + typed event names for common Clerk webhook events. Optional.                                                                                                                                                                                                                                                                                         |
+| [`@relayos/shopify`](./packages/shopify) | Shopify plugin: HMAC signature verification + typed event names for common Shopify webhook topics. Optional.                                                                                                                                                                                                                                                                                     |
+| [`@relayos/resend`](./packages/resend)   | Resend plugin: Svix signature verification + typed event names for Resend email events. Optional.                                                                                                                                                                                                                                                                                                |
+| [`@relayos/cli`](./packages/cli)         | `relay init`, `relay migrate`, `relay dev`, `relay trigger`, `relay inspect`, `relay replay`, `relay events list`.                                                                                                                                                                                                                                                                               |
+| [`apps/web`](./apps/web)                 | A Next.js app used as the local dev/test harness for the runtime, wired up in `apps/web/relay.ts`.                                                                                                                                                                                                                                                                                               |
+| [`apps/docs`](./apps/docs)               | The documentation site (Fumadocs). `pnpm --filter docs dev` serves it on port 3001.                                                                                                                                                                                                                                                                                                              |
 
 ## Local Development
 
@@ -137,7 +140,7 @@ This starts `apps/web`'s dev server and tails new executions live to the termina
 **6. Confirm it's working**, from another terminal, using the dev-only `test` provider (no signature needed) or a real one:
 
 ```sh
-curl -X POST http://localhost:3000/api/relay/test -H "Content-Type: application/json" -d '{"type":"ping"}'
+curl -X POST http://localhost:3000/api/webhook/test -H "Content-Type: application/json" -d '{"type":"ping"}'
 
 # or simulate a real signed Stripe event:
 STRIPE_WEBHOOK_SECRET=whsec_test_secret pnpm exec relay trigger stripe charge.succeeded --data '{"id":"ch_1","amount":1000,"currency":"usd"}'

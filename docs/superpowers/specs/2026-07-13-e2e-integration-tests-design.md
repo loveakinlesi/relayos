@@ -11,6 +11,7 @@ Every package in this monorepo already has strong unit-test coverage of its own 
 ## Scope
 
 Two things, per explicit decision:
+
 1. **Full CLI + app lifecycle** — scaffold a fixture app, start it as a real server process, drive it via the built CLI binary (`migrate`, `trigger`, `inspect`, `events list`).
 2. **HTTP-level API tests** — same running app, but driven directly with `fetch` against its routes, no CLI process involved.
 
@@ -36,6 +37,7 @@ e2e/
 `pnpm-workspace.yaml` gains `e2e` alongside `packages/*` and `apps/*`.
 
 Dependencies (all `workspace:*` except the last two):
+
 - `relayos`
 - `@relayos/core`
 - `@relayos/cli`
@@ -47,9 +49,10 @@ No real `npm install` is performed anywhere in these tests. Because `e2e/` is it
 
 ## Sharing the wizard's real generated code
 
-The point of the CLI-lifecycle test is to prove what the wizard *actually produces* works — not a hand-copied approximation that could quietly drift from the real thing. Today `@relayos/cli`'s `package.json` has no importable surface at all (`bin` only, no `exports`, no `.d.ts` output — confirmed by reading its `tsup.config.ts`, which only builds `src/index.ts`, and its `package.json`, which has no `main`/`exports`/`types` fields).
+The point of the CLI-lifecycle test is to prove what the wizard _actually produces_ works — not a hand-copied approximation that could quietly drift from the real thing. Today `@relayos/cli`'s `package.json` has no importable surface at all (`bin` only, no `exports`, no `.d.ts` output — confirmed by reading its `tsup.config.ts`, which only builds `src/index.ts`, and its `package.json`, which has no `main`/`exports`/`types` fields).
 
 This design adds a second tsup entry, `src/lib.ts`, re-exporting exactly the functions the wizard itself calls:
+
 - `buildRelayConfigTemplate`
 - `databasePackages`
 - `pluginPackages`
@@ -94,7 +97,7 @@ const { relay } = await jiti.import('./relay.ts');
 
 const server = createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
-  const match = url.pathname.match(/^\/api\/relay\/([^/]+)$/);
+  const match = url.pathname.match(/^\/api\/webhook\/([^/]+)$/);
   if (!match || req.method !== 'POST') {
     res.writeHead(404).end();
     return;
@@ -112,7 +115,7 @@ server.listen(process.env.PORT ?? 0, () => {
 });
 ```
 
-Deliberately narrow: only the one route the lifecycle test needs (`POST /api/relay/:provider`). Not a stand-in for `apps/web` — proving the Next.js integration itself is `apps/web`'s own concern, already covered by its existing build.
+Deliberately narrow: only the one route the lifecycle test needs (`POST /api/webhook/:provider`). Not a stand-in for `apps/web` — proving the Next.js integration itself is `apps/web`'s own concern, already covered by its existing build.
 
 Spawned as a real child process (`node server.mjs`, `PORT=0` for an OS-assigned free port), with the test reading the `listening:<port>` line off stdout to know where to point the CLI's `--forward` and the `fetch` calls. This mirrors reality: the app and the CLI are two separate processes talking over HTTP, not one process calling into itself.
 
@@ -131,7 +134,7 @@ Teardown: kill the server process, `cleanup()` the fixture directory.
 
 Per test: `createFixtureApp()` → spawn `server.mjs` → wait for its port → then use `fetch` directly:
 
-1. `POST http://localhost:<port>/api/relay/stripe` with a real Stripe-signed test payload (signed the same way `@relayos/stripe`'s own tests sign one) — assert `200` and the JSON body shape (`{ execution: { status: 'completed', ... } }`).
+1. `POST http://localhost:<port>/api/webhook/stripe` with a real Stripe-signed test payload (signed the same way `@relayos/stripe`'s own tests sign one) — assert `200` and the JSON body shape (`{ execution: { status: 'completed', ... } }`).
 2. A second `POST` with the same event ID — assert it's deduped (same execution `id` returned, not a new one).
 3. An unsigned/garbage-signature `POST` — assert `401`.
 

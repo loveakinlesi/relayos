@@ -2,7 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { stripe } from './index';
 
 function makeRequest(body: string, headers: Record<string, string>): Request {
-  return new Request('http://x/api/relay/stripe', { method: 'POST', headers, body });
+  return new Request('http://x/api/webhook/stripe', { method: 'POST', headers, body });
 }
 
 describe('stripe plugin', () => {
