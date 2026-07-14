@@ -54,7 +54,7 @@ export const relay = relayos({
   database: pool,
   plugins: [
     ...(isProduction ? [] : [testPlugin]),
-    stripe({ webhookSecret: requireWebhookSecret('STRIPE_WEBHOOK_SECRET', 'whsec_test_secret') }),
+    stripe({ webhookSecret: process.env.STRIPE_WEBHOOK_SECRET! }),
     github({ webhookSecret: requireWebhookSecret('GITHUB_WEBHOOK_SECRET', 'ghsec_test_secret') }),
   ],
 });

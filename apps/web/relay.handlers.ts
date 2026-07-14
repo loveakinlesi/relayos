@@ -1,8 +1,8 @@
-import type { AppRelay } from './relayos.config';
+import type { AppRelay } from './relay';
 
 /**
  * All of this app's event handlers, registered here rather than in
- * relayos.config.ts - keeps the relay's wiring (storage, plugins, retry
+ * relay.ts - keeps the relay's wiring (storage, plugins, retry
  * policy) separate from the business logic that runs when an event arrives.
  */
 export function registerHandlers(relay: AppRelay): void {
