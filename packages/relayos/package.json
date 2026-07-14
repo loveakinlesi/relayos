@@ -19,12 +19,15 @@
     "sdk",
     "stripe",
     "github",
-    "nextjs"
+    "nextjs",
+    "express",
+    "hono",
+    "nestjs"
   ],
   "type": "module",
   "sideEffects": false,
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "publishConfig": {
     "access": "public"
@@ -49,16 +52,49 @@
         "types": "./dist/next-js.d.cts",
         "default": "./dist/next-js.cjs"
       }
+    },
+    "./express": {
+      "import": {
+        "types": "./dist/express.d.ts",
+        "default": "./dist/express.js"
+      },
+      "require": {
+        "types": "./dist/express.d.cts",
+        "default": "./dist/express.cjs"
+      }
+    },
+    "./hono": {
+      "import": {
+        "types": "./dist/hono.d.ts",
+        "default": "./dist/hono.js"
+      },
+      "require": {
+        "types": "./dist/hono.d.cts",
+        "default": "./dist/hono.cjs"
+      }
+    },
+    "./nestjs": {
+      "import": {
+        "types": "./dist/nestjs.d.ts",
+        "default": "./dist/nestjs.js"
+      },
+      "require": {
+        "types": "./dist/nestjs.d.cts",
+        "default": "./dist/nestjs.cjs"
+      }
     }
   },
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "bin": {
+    "relay": "./dist/bin.js"
+  },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "tsup",
+    "build": "tsup && tsup --config tsup.bin.config.ts && chmod +x dist/bin.js",
     "dev": "tsup --watch",
     "lint": "tsc --noEmit",
     "test": "vitest run",
@@ -66,7 +102,8 @@
     "clean": "rimraf dist coverage tsconfig.tsbuildinfo"
   },
   "dependencies": {
-    "@relayos/core": "workspace:^"
+    "@relayos/core": "workspace:^",
+    "@relayos/cli": "workspace:^"
   },
   "devDependencies": {
     "rimraf": "^6.0.0",

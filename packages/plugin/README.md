@@ -15,7 +15,7 @@ type MyEventMap = {
 
 export function acme(options: { webhookSecret: string }) {
   return definePlugin<MyEventMap>({
-    id: 'acme', // mounted at /api/relay/acme
+    id: 'acme', // mounted at /api/webhook/acme
     async verify(req) {
       const signature = req.headers.get('x-acme-signature');
       if (!signature) return false;

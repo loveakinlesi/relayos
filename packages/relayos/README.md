@@ -6,7 +6,9 @@
 pnpm add relayos better-sqlite3
 ```
 
-Next.js support (`relayos/next-js`) ships in this package - nothing extra to install for that. Database support (Postgres/SQLite/MySQL, auto-detected) lives in `@relayos/core`, pulled in automatically. Add `@relayos/stripe` or `@relayos/github` only once you need them.
+Framework adapters (`relayos/next-js`, `relayos/express`, `relayos/hono`, `relayos/nestjs`) and the `relay` CLI ship in this package - nothing extra to install for either. Database support (Postgres/SQLite/MySQL, auto-detected) lives in `@relayos/core`, pulled in automatically. Add provider plugins like `@relayos/stripe`, `@relayos/github`, `@relayos/clerk`, `@relayos/shopify`, or `@relayos/resend` only once you need them.
+
+No project yet? `npx relayos@latest init` scaffolds one with nothing pre-installed.
 
 ```ts
 // relay.ts — wiring only: storage, plugins, retry policy
@@ -37,7 +39,7 @@ export function registerHandlers(relay: AppRelay): void {
 ```
 
 ```ts
-// app/api/relay/[...all]/route.ts (Next.js — nothing extra to install)
+// app/api/webhook/[...all]/route.ts (Next.js — nothing extra to install)
 import { toNextJsHandler } from 'relayos/next-js';
 import { relay } from '@/relay';
 

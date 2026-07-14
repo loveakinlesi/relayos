@@ -33,6 +33,6 @@ export function registerHandlers(relay: AppRelay): void {
 }
 ```
 
-Point your Stripe webhook endpoint at `/api/relay/stripe`. Events are namespaced `stripe.<event type>` (`stripe.invoice.paid`, `stripe.customer.subscription.created`, …). Signatures are verified with a timestamp tolerance of 300 seconds by default (`toleranceSeconds` option).
+Point your Stripe webhook endpoint at `/api/webhook/stripe`. Events are namespaced `stripe.<event type>` (`stripe.invoice.paid`, `stripe.customer.subscription.created`, …). Signatures are verified with a timestamp tolerance of 300 seconds by default (`toleranceSeconds` option).
 
 See the [RelayOS documentation](https://github.com/loveakinlesi/relayos#readme) for guides.

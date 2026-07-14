@@ -34,6 +34,6 @@ export function registerHandlers(relay: AppRelay): void {
 }
 ```
 
-Point your GitHub webhook (JSON content type) at `/api/relay/github`. Events are namespaced `github.<event>` for action-less events (`github.push`) and `github.<event>.<action>` for action-carrying ones (`github.issues.closed`) — matching exactly what GitHub delivers. The delivery ID deduplicates redeliveries.
+Point your GitHub webhook (JSON content type) at `/api/webhook/github`. Events are namespaced `github.<event>` for action-less events (`github.push`) and `github.<event>.<action>` for action-carrying ones (`github.issues.closed`) — matching exactly what GitHub delivers. The delivery ID deduplicates redeliveries.
 
 See the [RelayOS documentation](https://github.com/loveakinlesi/relayos#readme) for guides.
