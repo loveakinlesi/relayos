@@ -102,7 +102,7 @@ Setting up this monorepo (not just consuming the published packages) to hack on 
 
 **1. Prerequisites**
 
-- Node >=20, pnpm >=9
+- Node >=22, pnpm >=9
 - A local Postgres (for running `apps/web`). Separately, `@relayos/core`'s database contract tests want a container runtime (Docker, Colima, or Podman) for the Postgres/MySQL legs — see [Testing](#testing) below if you don't have one.
 
 **2. Clone the repo:**

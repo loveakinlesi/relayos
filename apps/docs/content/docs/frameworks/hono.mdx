@@ -19,7 +19,7 @@ app.post('/api/webhook/:provider', toHonoHandler(relay));
 export default app;
 ```
 
-This single route handles plugin endpoints such as `/api/webhook/stripe`, `/api/webhook/github`, `/api/webhook/clerk`, `/api/webhook/shopify`, and `/api/webhook/resend`.
+This single route serves every plugin you register, at `/api/webhook/<provider>` (e.g. `/api/webhook/stripe`).
 
 ## Custom param name
 

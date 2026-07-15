@@ -25,14 +25,7 @@ import { relay } from '@/relay';
 export const { POST } = toNextJsHandler(relay);
 ```
 
-This single route handles all plugin endpoints:
-
-- `/api/webhook/stripe` — Stripe webhooks
-- `/api/webhook/github` — GitHub webhooks
-- `/api/webhook/clerk` — Clerk webhooks
-- `/api/webhook/shopify` — Shopify webhooks
-- `/api/webhook/resend` — Resend webhooks
-- `/api/webhook/test` — Your custom plugins
+This single route serves every plugin you register, at `/api/webhook/<provider>` (e.g. `/api/webhook/stripe`).
 
 ## How it works
 

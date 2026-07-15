@@ -54,19 +54,19 @@ A fully-typed map of every Stripe webhook event. Event keys are prefixed with `"
 
 ```ts
 type StripePluginOptions = {
-  webhookSecret: string;
+  webhookSecret?: string;
   toleranceSeconds?: number;
 };
 ```
 
-Configuration for the Stripe plugin. `webhookSecret` is the signing secret from your Stripe Dashboard webhook endpoint. `toleranceSeconds` (default: 300) sets the maximum age of a signed timestamp before it's rejected.
+Configuration for the Stripe plugin. `webhookSecret` defaults to `process.env.STRIPE_WEBHOOK_SECRET` if not passed. `toleranceSeconds` (default: 300) sets the maximum age of a signed timestamp before it's rejected.
 
 ## Functions
 
 ### stripe
 
 ```ts
-function stripe(options: StripePluginOptions): RelayPlugin<StripeEventMap>;
+function stripe(options?: StripePluginOptions): RelayPlugin<StripeEventMap>;
 ```
 
 Creates a Stripe plugin. Verifies webhook signatures using Stripe's HMAC-SHA256 scheme and normalizes incoming events into RelayOS's format. Registers as the `"stripe"` provider and makes all Stripe event types available for typed handler registration via `relay.on()`.
