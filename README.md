@@ -93,7 +93,6 @@ This is a Turborepo monorepo:
 | [`@relayos/shopify`](./packages/shopify) | Shopify plugin: HMAC signature verification + typed event names for common Shopify webhook topics. Optional.                                                                                                                                                                                                                                                                                     |
 | [`@relayos/resend`](./packages/resend)   | Resend plugin: Svix signature verification + typed event names for Resend email events. Optional.                                                                                                                                                                                                                                                                                                |
 | [`@relayos/cli`](./packages/cli)         | `relay init`, `relay migrate`, `relay dev`, `relay trigger`, `relay inspect`, `relay replay`, `relay events list`.                                                                                                                                                                                                                                                                               |
-| [`apps/web`](./apps/web)                 | A Next.js app used as the local dev/test harness for the runtime, wired up in `apps/web/relay.ts`.                                                                                                                                                                                                                                                                                               |
 | [`apps/docs`](./apps/docs)               | The documentation site (Fumadocs). `pnpm --filter docs dev` serves it on port 3001.                                                                                                                                                                                                                                                                                                              |
 
 ## Local Development
@@ -103,7 +102,7 @@ Setting up this monorepo (not just consuming the published packages) to hack on 
 **1. Prerequisites**
 
 - Node >=22, pnpm >=9
-- A local Postgres (for running `apps/web`). Separately, `@relayos/core`'s database contract tests want a container runtime (Docker, Colima, or Podman) for the Postgres/MySQL legs — see [Testing](#testing) below if you don't have one.
+- `@relayos/core`'s database contract tests want a container runtime (Docker, Colima, or Podman) for the Postgres/MySQL legs — see [Testing](#testing) below if you don't have one.
 
 **2. Clone the repo:**
 
@@ -112,47 +111,21 @@ git clone <repo-url> && cd relayos
 pnpm install
 ```
 
-**3. Create a database and apply migrations:**
+**3. Build everything:**
 
 ```sh
-createdb relayos_dev   # or: psql -c "CREATE DATABASE relayos_dev"
-DATABASE_URL=postgres://localhost:5432/relayos_dev pnpm exec relay migrate
+pnpm build
 ```
 
-This creates the `relayos` schema and its tables. `relay` won't be on your `$PATH` the first time — `pnpm install` links it into the workspace root's `node_modules/.bin`, so `pnpm exec relay ...` (or `pnpm exec` from any workspace package) always resolves it.
+`relay` won't be on your `$PATH` the first time — `pnpm install` links it into the workspace root's `node_modules/.bin`, so `pnpm exec relay ...` (or `pnpm exec` from any workspace package) always resolves it.
 
-**4. Build everything once:**
+**4. Run the tests:**
 
 ```sh
-STRIPE_WEBHOOK_SECRET=whsec_dev GITHUB_WEBHOOK_SECRET=ghsec_dev pnpm build
+pnpm test
 ```
 
-The webhook secrets are only required for a _production_ build (`next build` fails closed if they're missing — see `apps/web/relay.ts`). Plain `pnpm dev`/`relay dev` doesn't need them; it falls back to fixed dev-only secrets automatically.
-
-**5. Run the app:**
-
-```sh
-DATABASE_URL=postgres://localhost:5432/relayos_dev pnpm exec relay dev --dir apps/web
-```
-
-This starts `apps/web`'s dev server and tails new executions live to the terminal.
-
-**6. Confirm it's working**, from another terminal, using the dev-only `test` provider (no signature needed) or a real one:
-
-```sh
-curl -X POST http://localhost:3000/api/webhook/test -H "Content-Type: application/json" -d '{"type":"ping"}'
-
-# or simulate a real signed Stripe event:
-STRIPE_WEBHOOK_SECRET=whsec_test_secret pnpm exec relay trigger stripe charge.succeeded --data '{"id":"ch_1","amount":1000,"currency":"usd"}'
-```
-
-⚠️ **Gotcha**: `relay trigger` requires `<PROVIDER>_WEBHOOK_SECRET` to be set (it signs the payload with it), while the app falls back to a fixed dev secret (`whsec_test_secret`/`ghsec_test_secret`, see `apps/web/relay.ts`) when its variable is unset. Signatures only match when both sides use the same value — simplest in dev: leave the app's env unset and pass the matching fallback to trigger, e.g. `STRIPE_WEBHOOK_SECRET=whsec_test_secret pnpm exec relay trigger stripe ...`.
-
-Then inspect what happened:
-
-```sh
-DATABASE_URL=postgres://localhost:5432/relayos_dev pnpm exec relay inspect <eventId>
-```
+There's no bundled sample app in this repo — `e2e/` is the workspace-linked, end-to-end check: it spawns a real HTTP server from a generated `relay.ts`, exercised via the built `relay` CLI binary and direct `fetch` calls, so it verifies actual local changes to every package before they'd reach a published release. See [Testing](#testing) for how it and the rest of the suite fit together.
 
 ## Testing
 
