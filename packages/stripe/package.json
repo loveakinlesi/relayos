@@ -1,6 +1,6 @@
 {
   "name": "@relayos/stripe",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "The RelayOS Stripe plugin: signature-verified webhook ingestion with a fully-typed catalog of every Stripe event.",
   "license": "MIT",
   "repository": {
