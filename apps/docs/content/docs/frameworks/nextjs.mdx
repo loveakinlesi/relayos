@@ -3,15 +3,7 @@ title: Next.js
 description: Wire RelayOS into a Next.js App Router catch-all route.
 ---
 
-Next.js support ships in `relayos` itself, as the `relayos/next-js` subpath - there's no separate package to install. `toNextJsHandler` converts your Relay instance into a standard Next.js route handler.
-
-## Installation
-
-Nothing extra - if you've already run `pnpm add relayos`, you have it:
-
-```ts
-import { toNextJsHandler } from 'relayos/next-js';
-```
+Next.js support ships with `relayos` — no separate package. If you've already run `pnpm add relayos`, you have `toNextJsHandler`, which converts your Relay instance into a standard App Router route handler.
 
 ## Setup
 
@@ -25,11 +17,11 @@ import { relay } from '@/relay';
 export const { POST } = toNextJsHandler(relay);
 ```
 
-This single route serves every plugin you register, at `/api/webhook/<provider>` (e.g. `/api/webhook/stripe`).
+This one route serves every plugin you register, at `/api/webhook/<provider>` (e.g. `/api/webhook/stripe`).
 
 ## How it works
 
-`toNextJsHandler(relay)` returns a Next.js route handler object:
+`toNextJsHandler(relay)` returns a route handler object:
 
 ```ts
 const handler = toNextJsHandler(relay);
@@ -37,20 +29,13 @@ const handler = toNextJsHandler(relay);
 // async (req: Request, ctx: { params: Promise<{ all: string[] }> }) => Response
 ```
 
-The handler:
+On each request it awaits `ctx.params` (required for dynamic routes since Next.js 16), pulls the provider segment out of it (e.g. `"stripe"` from `/api/webhook/stripe`), and delegates to `relay.handler(req, { params: { all } })`.
 
-1. Awaits `ctx.params` (Next.js 16+ requirement for dynamic routes)
-2. Extracts the route segment (e.g., `"stripe"` from `/api/webhook/stripe`)
-3. Delegates to `relay.handler(req, { params: { all } })`
-4. Returns the response
-
-## No Next.js imports needed
-
-`toNextJsHandler` uses only web-standard `Request` and `Response` objects. No `import from 'next'` is required — the code is framework-agnostic and runs in any Node.js runtime.
+It's built entirely on web-standard `Request`/`Response` — no `import from 'next'` anywhere — so the same code runs in any Node.js runtime, not just Next.js.
 
 ## Management endpoints
 
-Beyond the webhook ingestion route, you'll likely want to add management endpoints to list, inspect, retry, and replay executions. Here are some examples:
+Beyond webhook ingestion, you'll likely want endpoints to list, inspect, retry, and replay executions:
 
 ```ts
 // app/api/executions/route.ts — List executions
@@ -97,4 +82,4 @@ export async function POST(_req: Request, ctx: { params: Promise<{ id: string }>
 }
 ```
 
-These endpoints give you HTTP access to the full Relay API. Build a dashboard on top of them, or call them from your CLI or internal tools.
+These give you HTTP access to the full Relay API. Build a dashboard on top of them, or call them from your CLI or internal tools.

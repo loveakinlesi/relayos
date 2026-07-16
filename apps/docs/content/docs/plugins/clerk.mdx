@@ -48,7 +48,7 @@ export const relay = relayos({
 });
 ```
 
-1. In your Clerk Dashboard, go to **Webhooks** and add an endpoint pointing at `/api/webhook/clerk` on your deployed app - see [Sync Clerk data to your app with webhooks](https://clerk.com/docs/webhooks/sync-data) for the full walkthrough.
+1. In your Clerk Dashboard, go to **Webhooks** and add an endpoint pointing at `/api/webhook/clerk` on your deployed app — see [Sync Clerk data to your app with webhooks](https://clerk.com/docs/webhooks/sync-data) for the full walkthrough.
 2. Copy the **Signing Secret** (starts with `whsec_`) and set it as `CLERK_WEBHOOK_SECRET`.
 
 Pass `webhookSecret` explicitly instead if you'd rather not rely on the env var:
@@ -68,14 +68,14 @@ clerk({ webhookSecret: 'whsec_...', toleranceSeconds: 300 }),
 
 Clerk signs webhooks the way [Svix does](https://docs.svix.com/receiving/verifying-payloads/how-manual): three headers (`svix-id`, `svix-timestamp`, `svix-signature`) instead of Stripe/GitHub's single-header scheme.
 
-1. Reads the `svix-id`, `svix-timestamp`, and `svix-signature` headers - rejects the request if any are missing
+1. Reads the `svix-id`, `svix-timestamp`, and `svix-signature` headers — rejects the request if any are missing
 2. Rejects if the timestamp is older than `toleranceSeconds`
 3. Computes HMAC-SHA256 of `${svix-id}.${svix-timestamp}.${rawBody}`, using the webhook secret's base64-decoded bytes after stripping its `whsec_` prefix
-4. `svix-signature` can contain multiple space-separated `v1,<signature>` values (for secret rotation) - the request is valid if any of them match, compared using constant-time comparison
+4. `svix-signature` can contain multiple space-separated `v1,<signature>` values (for secret rotation) — the request is valid if any of them match, compared using constant-time comparison
 
 ## Event types
 
-Events are namespaced as `clerk.<clerk-event-type>` - see the **Event Catalog** tab on your Clerk Dashboard's Webhooks page for the full list Clerk can send:
+Events are namespaced as `clerk.<clerk-event-type>` — see the **Event Catalog** tab on your Clerk Dashboard's Webhooks page for the full list Clerk can send:
 
 ```ts
 // relay.handlers.ts

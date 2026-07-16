@@ -3,7 +3,7 @@ title: NestJS
 description: Wire RelayOS into a NestJS controller.
 ---
 
-NestJS support ships in `relayos` itself, as the `relayos/nestjs` subpath. `toNestJsHandler` adapts your Relay instance to a controller method that receives `@Req()` and `@Res()`.
+NestJS support ships with `relayos` — no separate package, just import from the `relayos/nestjs` subpath. `toNestJsHandler` adapts your Relay instance to a controller method that takes `@Req()` and `@Res()`.
 
 ## Setup
 
@@ -23,13 +23,13 @@ export class RelayController {
 }
 ```
 
-`NestJsRelayRequest`/`NestJsRelayResponse` are the Node request/response shapes `toNestJsHandler` actually expects - the global Fetch API `Request`/`Response` types are not compatible with them.
+This one controller serves every plugin you register, at `/api/webhook/<provider>` (e.g. `/api/webhook/stripe`).
 
-This single controller route serves every plugin you register, at `/api/webhook/<provider>` (e.g. `/api/webhook/stripe`).
+`NestJsRelayRequest` and `NestJsRelayResponse` are the Node request/response shapes `toNestJsHandler` expects — the Fetch API's global `Request`/`Response` types won't fit here.
 
 ## Raw body requirement
 
-Provider signatures must be verified against the exact raw request body. In Express-backed NestJS apps, configure raw body access for the webhook route or mount it before JSON body parsing.
+Provider signatures are verified against the exact raw request body. In Express-backed Nest apps, mount this route before JSON body parsing, or scope raw body access to it directly.
 
 ## Custom param name
 

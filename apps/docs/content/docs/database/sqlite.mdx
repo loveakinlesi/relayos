@@ -3,9 +3,9 @@ title: SQLite
 description: Use better-sqlite3 for local development and small deployments.
 ---
 
-Pass a `better-sqlite3` database straight into `relayos({ database })` - the
-dialect is detected automatically, and RelayOS applies its schema migrations
-for you.
+Pass a `better-sqlite3` database straight into `relayos({ database })`.
+RelayOS detects the dialect automatically and applies its own schema
+migrations.
 
 <Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
   <Tab value="pnpm">
@@ -44,5 +44,5 @@ export const relay = relayos({
 ```
 
 Good for local development, testing, and small single-instance deployments.
-Not recommended once you're running multiple instances of your app - see
+Once you're running more than one instance of your app, move to
 [Postgres](/docs/database/postgres) or [MySQL](/docs/database/mysql) instead.

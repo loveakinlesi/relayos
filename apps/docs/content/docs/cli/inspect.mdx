@@ -38,14 +38,14 @@ $ relay inspect evt_abc123xyz
 
 Execution evt_abc123xyz
   event:      stripe.charge.succeeded (evt_abc123xyz)
-  status:     ✓ completed (attempt 1)
+  status:     ✔ completed (attempt 1)
   duration:   234ms
 
 Steps:
-  ✓ record-payment completed
-  ✓ calculate-fee completed
-  ✓ send-receipt completed
-  ✓ notify-fulfillment completed
+  ✔ record-payment completed
+  ✔ calculate-fee completed
+  ✔ send-receipt completed
+  ✔ notify-fulfillment completed
 
 Logs:
   [system] [info] retrying (attempt 2, scheduled)
@@ -64,12 +64,12 @@ $ relay inspect evt_abc123xyz --history
 
 Execution evt_abc123xyz
   event:      stripe.charge.succeeded (evt_abc123xyz)
-  status:     ✓ completed (attempt 2)
+  status:     ✔ completed (attempt 2)
   duration:   500ms
 
 Steps (full history):
-  ✗ send-receipt failed - receipt email provider timed out (attempt 1)
-  ✓ send-receipt completed (attempt 2)
+  ✖ send-receipt failed - receipt email provider timed out (attempt 1)
+  ✔ send-receipt completed (attempt 2)
 ```
 
 ### JSON output
@@ -135,11 +135,9 @@ The command automatically looks up by both event ID and execution ID, so either 
 
 **Steps:**
 
-- Status icon (✓/✗)
-- Step name
-- Status and optional error message
-- Without `--history`: shows only the latest attempt per step name
-- With `--history`: shows every attempt, in chronological order
+- Status icon (`✔`/`✖`), step name, status, and error message if it failed
+- Without `--history`: only the latest attempt per step name
+- With `--history`: every attempt, in chronological order
 
 **Logs:**
 
@@ -154,7 +152,7 @@ If an execution was created by `relay replay`, the output includes:
 ```
 Execution exec_new456
   event:      stripe.charge.succeeded (evt_old123)
-  status:     ✓ completed (attempt 1)
+  status:     ✔ completed (attempt 1)
   replayed from: exec_old123
 ```
 

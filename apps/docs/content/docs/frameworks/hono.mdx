@@ -3,7 +3,7 @@ title: Hono
 description: Wire RelayOS into a Hono route.
 ---
 
-Hono support ships in `relayos` itself, as the `relayos/hono` subpath. `toHonoHandler` converts your Relay instance into a Hono handler.
+Hono support ships with `relayos` — no separate package, just import from the `relayos/hono` subpath. `toHonoHandler` turns your Relay instance into a Hono handler.
 
 ## Setup
 
@@ -19,7 +19,11 @@ app.post('/api/webhook/:provider', toHonoHandler(relay));
 export default app;
 ```
 
-This single route serves every plugin you register, at `/api/webhook/<provider>` (e.g. `/api/webhook/stripe`).
+This one route serves every plugin you register, at `/api/webhook/<provider>` (e.g. `/api/webhook/stripe`).
+
+## Raw body
+
+Hono hands the handler the raw `Request` directly, with no body-parsing in the way — so provider signature verification just works. The only way to break this is adding your own body-parsing middleware in front of the route.
 
 ## Custom param name
 

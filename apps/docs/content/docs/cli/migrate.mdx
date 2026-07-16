@@ -3,7 +3,7 @@ title: relay migrate
 description: Apply RelayOS's database migrations, for whichever dialect your relay.ts uses.
 ---
 
-Apply RelayOS's schema to your database. This is idempotent — safe to run multiple times. Works with Postgres, SQLite, or MySQL, whichever client your `relay.ts` configures.
+Apply RelayOS's schema to your database — Postgres, SQLite, or MySQL, whichever client your `relay.ts` configures.
 
 ## Usage
 
@@ -11,12 +11,12 @@ Apply RelayOS's schema to your database. This is idempotent — safe to run mult
 relay migrate [--dir <path>]
 ```
 
-`--dir` points at the directory containing `relay.ts` - it defaults to the current working directory.
+`--dir` points at the directory containing `relay.ts` — it defaults to the current working directory.
 
 ## Requirements
 
 - A `relay.ts` in the target directory, exporting `relay` (see [relay init](/docs/cli/init))
-- Nothing else - `relay migrate` loads your `relay.ts` directly and calls its `migrate()` method, so whatever database client you configured there is what gets migrated. No `DATABASE_URL` or other env var is read by the CLI itself.
+- Nothing else — `relay migrate` loads your `relay.ts` directly and calls its `migrate()` method, so whatever database client you configured there is what gets migrated. No `DATABASE_URL` or other env var is read by the CLI itself.
 
 ## What it does
 
@@ -49,7 +49,7 @@ relay migrate --dir path/to/app
 
 ## When you actually need this
 
-Outside production, migrations apply automatically the first time your relay processes an event - you don't need to run this command in local development at all. In production, run it explicitly before scaling up new instances (e.g. as a step in your deploy pipeline), since concurrent instances booting at the same time could otherwise race on the same schema changes.
+Outside production, migrations apply automatically the first time your relay processes an event — you don't need to run this command in local development at all. In production, run it explicitly before scaling up new instances (e.g. as a step in your deploy pipeline), since concurrent instances booting at the same time could otherwise race on the same schema changes.
 
 ## Idempotency
 

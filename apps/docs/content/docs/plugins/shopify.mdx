@@ -70,7 +70,7 @@ The plugin verifies the `X-Shopify-Hmac-Sha256` header, per [Shopify's own webho
 1. Computes HMAC-SHA256 of the raw request body with your webhook secret, base64-encoded
 2. Compares it against the `X-Shopify-Hmac-Sha256` header using constant-time comparison
 
-Unlike Stripe/Clerk/Resend, Shopify's scheme has no timestamp - it's a plain HMAC of the body, so there's no `toleranceSeconds` option.
+Unlike Stripe/Clerk/Resend, Shopify's scheme has no timestamp — it's a plain HMAC of the body, so there's no `toleranceSeconds` option.
 
 ## Event types
 

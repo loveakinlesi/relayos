@@ -3,7 +3,7 @@ title: CLI
 description: Manage RelayOS from the command line with migrate, dev, trigger, inspect, replay, and more.
 ---
 
-The `relay` command comes bundled with `relayos` - nothing to install separately. Since `relayos` is already the one required dependency of any RelayOS project, the CLI is available the moment you install it.
+The `relay` command ships inside `relayos` itself — install the one package your project already needs, and the CLI comes with it.
 
 ## Zero-install: scaffolding a brand new project
 
@@ -13,7 +13,7 @@ No project yet, nothing installed? One command:
 npx relayos@latest init
 ```
 
-This fetches `relayos` (and its bundled CLI) ephemerally, runs the [interactive wizard](/docs/cli/init), and scaffolds `relay.ts` + `relay.handlers.ts` - installing `relayos` for real along the way, so every command after this one runs locally.
+This fetches `relayos` (and its bundled CLI) ephemerally, runs the [interactive wizard](/docs/cli/init), and scaffolds `relay.ts` + `relay.handlers.ts` — installing `relayos` for real along the way, so every command after this one runs locally.
 
 ## Already have `relayos` installed?
 
@@ -66,7 +66,7 @@ Want the CLI as its own dependency instead (e.g. a CI image that only runs `rela
   </Tab>
 </Tabs>
 
-Don't install both in the same project - they provide the same `relay` bin name, and only one will win the symlink.
+Don't install both in the same project — they register the same `relay` bin, and only one wins the symlink.
 
 ## Global environment variables
 
@@ -79,7 +79,7 @@ Don't install both in the same project - they provide the same `relay` bin name,
 | `RESEND_WEBHOOK_SECRET`  | `relay trigger resend ...`      | Webhook secret for signing test Resend events                         |
 | `RELAYOS_BASE_URL`       | `relay trigger`, `relay replay` | Where to POST webhook deliveries; defaults to `http://localhost:3000` |
 
-Note there's no `DATABASE_URL` here - every command that touches the database (`migrate`, `dev`, `inspect`, `replay`, `events list`) loads your `relay.ts` directly and uses whatever client it configures, so the CLI itself never needs a connection string.
+Note there's no `DATABASE_URL` here — every command that touches the database (`migrate`, `dev`, `inspect`, `replay`, `events list`) loads your `relay.ts` directly and uses whatever client it configures, so the CLI itself never needs a connection string.
 
 ## Commands
 

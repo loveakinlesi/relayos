@@ -51,12 +51,7 @@ const relay = relayos({
 
 ## In-process coordination only
 
-**Important**: Retry scheduling and step-level deduplication (caching) are currently in-process only. If you have multiple server instances:
-
-- Each instance can retry its own in-flight executions
-- But there's no database-level lock yet to prevent two instances from running the same execution simultaneously
-
-In a multi-instance deployment, you need external coordination (Redis, etc.) to guard against concurrent execution. This is on the roadmap.
+**Important**: Retry scheduling is in-process only. Each server instance can retry its own in-flight executions, but there's no database-level lock yet to stop two instances from retrying the same execution at once — see [in-process execution locking](/docs/concepts/idempotency#in-process-execution-locking) for the mechanism and what a multi-instance deployment needs instead.
 
 ## Manual retry
 
@@ -73,7 +68,7 @@ relay inspect <executionId>  # Check the status
 relay events list            # Find the execution ID
 ```
 
-Then call `relay.retryExecution(executionId)` from a management API route in your app to trigger the retry - see [Management endpoints](/docs/frameworks/nextjs#management-endpoints) for example routes.
+Then call `relay.retryExecution(executionId)` from a management API route in your app to trigger the retry — see [Management endpoints](/docs/frameworks/nextjs#management-endpoints) for example routes.
 
 ## Viewing retry history
 

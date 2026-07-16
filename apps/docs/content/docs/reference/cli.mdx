@@ -3,11 +3,11 @@ title: '@relayos/cli'
 description: CLI for RelayOS migrations, development, and execution inspection.
 ---
 
-`relayos` bundles this package's `relay` bin automatically - most projects
+`relayos` bundles this package's `relay` bin automatically — most projects
 never need to install `@relayos/cli` directly. See [CLI](/docs/cli) for the
 zero-install `npx relayos@latest init` flow. Install it standalone only if
-you want the CLI as its own dependency without the rest of `relayos` (e.g.
-a CI image that only runs `relay migrate`).
+you want the CLI without the rest of `relayos` (e.g. a CI image that only
+runs `relay migrate`).
 
 ## Install
 
@@ -65,161 +65,34 @@ relay --help
 
 ## Commands
 
-| Command                                                                    | Description                                                                                    |
-| -------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| `init [--force] [--dir <path>]`                                            | Interactive wizard: scaffold relay.ts + relay.handlers.ts and install the packages you choose. |
-| `migrate [--dir <path>]`                                                   | Apply pending schema migrations (loads relay.ts).                                              |
-| `dev [--dir <path>]`                                                       | Run the app's dev server and tail new executions live.                                         |
-| `trigger <provider> <eventType> [--data '<json>'] [--forward <url>]`       | Simulate a signed provider webhook delivery for testing.                                       |
-| `inspect <eventId\|executionId> [--json] [--history] [--dir <path>]`       | Show an execution's status, steps, and logs.                                                   |
-| `replay <eventId\|executionId> [--forward <url>] [--print] [--dir <path>]` | Replay a historical execution as a new one.                                                    |
-| `events list [--json] [--limit <n>] [--dir <path>]`                        | List recent executions, newest first.                                                          |
+| Command                                                                    | Description                                                        |
+| --------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| [`init [--force] [--dir <path>]`](/docs/cli/init)                          | Scaffold `relay.ts` + `relay.handlers.ts` and install packages     |
+| [`migrate [--dir <path>]`](/docs/cli/migrate)                              | Apply pending schema migrations                                    |
+| [`dev [--dir <path>]`](/docs/cli/dev)                                      | Run the app's dev server and tail executions live                  |
+| [`trigger <provider> <eventType> [--data] [--forward]`](/docs/cli/trigger) | Simulate a signed provider webhook                                 |
+| [`inspect <id> [--json] [--history] [--dir]`](/docs/cli/inspect)           | Show an execution's status, steps, and logs                        |
+| [`replay <id> [--forward] [--print] [--dir]`](/docs/cli/replay)           | Replay a historical execution as a new one                         |
+| [`events list [--json] [--limit] [--dir]`](/docs/cli/events)              | List recent executions, newest first                                |
 
-## init
-
-```sh
-relay init [--force] [--dir <path>]
-```
-
-Runs an interactive wizard (app name, framework, database, plugins), then scaffolds `relay.ts` + `relay.handlers.ts` and installs exactly the packages your choices need, using whichever package manager's lockfile it finds. If the files already exist, use `--force` to overwrite them. See [relay init](/docs/cli/init) for the full walkthrough.
-
-**Output:** Creates `relay.ts` and `relay.handlers.ts`. For framework choices, it also creates the matching adapter file: Next.js route, `relay.express.ts`, `relay.hono.ts`, or `relay.controller.ts`.
-
-## migrate
-
-```sh
-relay migrate [--dir <path>]
-```
-
-Loads `relay.ts` from `--dir` (defaults to cwd) and calls its `migrate()` method - applies whatever schema your configured database dialect needs (Postgres, SQLite, or MySQL). Idempotent—safe to run multiple times.
-
-**Requires:** a `relay.ts` in the target directory
-
-## dev
-
-```sh
-relay dev [--dir <path>]
-```
-
-Runs your application's dev server (`pnpm run dev` in `--dir`, defaults to cwd) and tails new executions live in the console, loading `relay.ts` from the same directory. Displays event type, status, and execution ID as events are processed.
-
-**Requires:** a `relay.ts` in `--dir` for live tailing (optional—dev runs without it, just without live output, if `relay.ts` can't be found or loaded)
-
-**Options:**
-
-- `--dir <path>` — Directory containing the app and its `relay.ts` (defaults to cwd)
-
-## trigger
-
-```sh
-relay trigger <provider> <eventType> [--data '<json>'] [--forward <url>]
-```
-
-Simulates a signed provider webhook delivery for testing without hitting the actual provider. The command signs the payload using your webhook secret and sends it to your relay handler.
-
-**Requires:** `<PROVIDER>_WEBHOOK_SECRET` environment variable (e.g., `STRIPE_WEBHOOK_SECRET`, `GITHUB_WEBHOOK_SECRET`)
-
-**Options:**
-
-- `--data '<json>'` — JSON payload for the event (defaults to empty object)
-- `--forward <url>` — URL to POST to (defaults to `RELAYOS_BASE_URL` or `http://localhost:3000`)
-
-**Example:**
-
-```bash
-STRIPE_WEBHOOK_SECRET=whsec_test relay trigger stripe charge.succeeded \
-  --data '{"amount": 5000, "currency": "usd"}'
-```
-
-## inspect
-
-```sh
-relay inspect <eventId|executionId> [--json] [--history] [--dir <path>]
-```
-
-Shows an execution's full details: status, attempt count, all steps, and logs. Looks up by execution ID or event ID.
-
-**Requires:** a `relay.ts` in `--dir` (loads it directly, no running app needed)
-
-**Options:**
-
-- `--json` — Output as JSON
-- `--history` — Show full step history (all re-attempts); default shows only the latest attempt per step
-- `--dir <path>` — Directory containing `relay.ts` (defaults to cwd)
-
-**Output:**
-
-```
-Execution <id>
-  event:      stripe.charge.succeeded (<eventId>)
-  status:     ✓ completed (attempt 1)
-  duration:   1.2s
-  error:      (none)
-
-Steps:
-  ✓ process_charge completed
-  ✓ send_receipt completed
-
-Logs:
-  [system] [info] Execution started
-  [handler] [info] Processing charge
-```
-
-## replay
-
-```sh
-relay replay <eventId|executionId> [--forward <url>] [--print] [--dir <path>]
-```
-
-Replays a historical execution as a new one, re-running all steps from scratch. Creates a brand-new execution linked back to the original via `Execution.replayedFrom`.
-
-**Requires:** a `relay.ts` in `--dir` (loads it directly to find the historical execution)
-
-**Options:**
-
-- `--forward <url>` — URL to replay to (defaults to `RELAYOS_BASE_URL` or `http://localhost:3000`)
-- `--print` — Dry run: show what would be replayed without sending the HTTP request
-- `--dir <path>` — Directory containing `relay.ts` (defaults to cwd)
-
-**Example:**
-
-```bash
-relay replay <executionId> --forward http://localhost:3000
-```
-
-## events list
-
-```sh
-relay events list [--json] [--limit <n>] [--dir <path>]
-```
-
-Lists recent executions in reverse chronological order (newest first). Useful for checking what's been processed and their statuses.
-
-**Requires:** a `relay.ts` in `--dir`
-
-**Options:**
-
-- `--json` — Output as JSON
-- `--limit <n>` — Maximum number of executions to list (defaults to all)
-- `--dir <path>` — Directory containing `relay.ts` (defaults to cwd)
-
-**Output:**
-
-```
-✓ stripe.charge.succeeded       attempt 1  2024-01-15 10:23:45.123  exec_abc123
-✗ github.pull_request.opened    attempt 2  2024-01-15 10:23:12.456  exec_def456
-⋯ stripe.subscription.created   attempt 1  2024-01-15 10:22:59.789  exec_ghi789
-```
+Every command except `init` and `trigger` loads `relay.ts` from `--dir` (defaults to cwd) — see the full page for each command for options, examples, and output.
 
 ## Environment variables
 
-- `RELAYOS_BASE_URL` — URL to send webhook deliveries to (defaults to `http://localhost:3000`; used by `trigger` and `replay` if `--forward` is not provided)
-- `<PROVIDER>_WEBHOOK_SECRET` — Webhook secret for a provider (required by `trigger`; e.g., `STRIPE_WEBHOOK_SECRET`, `GITHUB_WEBHOOK_SECRET`)
+| Variable                    | Read by                    | Purpose                                                                |
+| ---------------------------- | --------------------------- | ------------------------------------------------------------------------ |
+| `RELAYOS_BASE_URL`           | `trigger`, `replay`         | Base URL for webhook/replay requests when `--forward` isn't passed. Defaults to `http://localhost:3000` |
+| `<PROVIDER>_WEBHOOK_SECRET`  | `trigger`                   | Signs the simulated webhook (e.g. `STRIPE_WEBHOOK_SECRET`)              |
 
-There's no `DATABASE_URL` read by the CLI itself - `migrate`, `dev`, `inspect`, `replay`, and `events list` all load your `relay.ts` directly and use whatever database client it configures.
+There's no `DATABASE_URL` here — `migrate`, `dev`, `inspect`, `replay`, and `events list` all load `relay.ts` and use whatever database client it configures.
+
+## Status icons
+
+Executions and steps print as `✔` completed, `✖` failed, or `…` pending — used by `dev`, `inspect`, and `events list`.
 
 ## See also
 
+- [CLI overview](/docs/cli)
 - [Installation](/docs/installation)
 - [Database](/docs/database)
-- [Plugins](/docs/plugins/writing-plugins)
+- [Writing plugins](/docs/plugins/writing-plugins)

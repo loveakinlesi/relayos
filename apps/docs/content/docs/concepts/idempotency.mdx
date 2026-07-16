@@ -69,30 +69,12 @@ The `charge-card` step's output from attempt 1 is returned immediately, without 
 
 ## Caching behavior
 
-- **Completed step**: Output is cached, `fn` never runs again (even on restart)
+- **Completed step**: Output is cached, `fn` never runs again on retry
 - **Failed step**: On retry, `fn` runs again (the assumption is that transient failures may have been resolved)
 - **Unknown step** (first time): `fn` runs
-- **Restart** (`forceRerun: true`): Every step is re-run, even completed ones
+- **Restart** (`forceRerun: true`): Every step re-runs, even ones that already completed
 
-The final case is important: if you call `restartExecution()` after fixing a bug, every step—including ones with side effects—will run again. Make sure your handler can tolerate this (idempotent operations) or clean up duplicates manually.
-
-## Log sources
-
-RelayOS distinguishes system logs from handler logs so you can tell when the runtime made a decision vs. when your code did:
-
-```ts
-type LogSource = 'system' | 'handler';
-
-// 'system' logs:
-// - "event ingested"
-// - "retrying (attempt 2, scheduled)"
-// - "restarting (attempt 2) - all steps will re-run"
-
-// 'handler' logs:
-// - Everything from ctx.log.info(), ctx.log.error(), etc.
-```
-
-When you call `relay listLogs(executionId)` or `relay inspect <executionId>`, the source is tagged so you can filter or understand causality.
+That last case is the one exception to caching: if you call `restartExecution()` after fixing a bug, every step—including ones with side effects—runs again. Make sure your handler can tolerate that (idempotent operations) or clean up duplicates manually.
 
 ## In-process execution locking
 

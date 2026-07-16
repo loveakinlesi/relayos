@@ -19,6 +19,29 @@ Peer dependency: `@relayos/core`
 | `ResendEventMap`      | Type     | Typed event map for Resend email events.       |
 | `ResendPluginOptions` | Type     | Configuration for the Resend plugin.           |
 
+## Types
+
+### ResendEventMap
+
+```ts
+type ResendEventMap = {
+  [K in ResendEventType as `resend.${K}`]: ResendWebhookPayload;
+};
+```
+
+Covers Resend's email lifecycle events — `email.sent`, `email.delivered`, `email.delivery_delayed`, `email.complained`, `email.bounced`, `email.opened`, `email.clicked`. Resend doesn't publish a typed events SDK, so `ResendWebhookPayload` is `Record<string, unknown> & { email_id?: string }` rather than a per-event shape — see [Webhook event types](https://resend.com/docs/dashboard/webhooks/event-types) for each event's exact fields.
+
+### ResendPluginOptions
+
+```ts
+type ResendPluginOptions = {
+  webhookSecret?: string;
+  toleranceSeconds?: number;
+};
+```
+
+Configuration for the Resend plugin. `webhookSecret` defaults to `process.env.RESEND_WEBHOOK_SECRET` if not passed. `toleranceSeconds` (default: 300) sets the maximum age of a signed timestamp before it's rejected.
+
 ## Functions
 
 ### resend
@@ -28,3 +51,9 @@ function resend(options?: ResendPluginOptions): RelayPlugin<ResendEventMap>;
 ```
 
 Creates a Resend plugin. Verifies Svix webhook signatures from `Svix-Id`, `Svix-Timestamp`, and `Svix-Signature`, normalizes incoming events as `resend.<event type>`, and uses `RESEND_WEBHOOK_SECRET` by default.
+
+## See also
+
+- [Resend plugin guide](/docs/plugins/resend)
+- [Writing plugins](/docs/plugins/writing-plugins)
+- [@relayos/plugin](/docs/reference/plugin)
