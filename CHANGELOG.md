@@ -1,3 +1,19 @@
+## [0.1.1](https://github.com/loveakinlesi/relayos/compare/v0.1.0...v0.1.1) (2026-07-17)
+
+
+### Bug Fixes
+
+* **deps:** patch 4 Dependabot alerts (esbuild, vite, postcss) ([8da7cca](https://github.com/loveakinlesi/relayos/commit/8da7ccaa56e3774ebb3eda533dbb46112c8202ec))
+* **release:** send npm auth token as NODE_AUTH_TOKEN ([74df556](https://github.com/loveakinlesi/relayos/commit/74df556342b760d6aafb0a5f374233ad2a9e7a46))
+* **release:** unblock the automated release pipeline ([b292426](https://github.com/loveakinlesi/relayos/commit/b29242620144e30cbe3032f3385fb9218653bf6a))
+* **release:** use HUSKY=0 to skip the commit-msg hook, not hooksPath ([f4a6c0d](https://github.com/loveakinlesi/relayos/commit/f4a6c0de7890cae7b9f39c02145307dd6c24bbc3))
+
+
+### Reverts
+
+* undo phantom 0.1.1 release commit ([341a7e5](https://github.com/loveakinlesi/relayos/commit/341a7e52f44a80121f7c09be2dfc31e03e012a64))
+* undo second phantom 0.1.1 release commit ([18adc70](https://github.com/loveakinlesi/relayos/commit/18adc70562a5ac8a4b9d5a7c72de5882923bcfcb))
+
 # Changelog
 
 All notable changes to RelayOS are documented here. Entries below this point are generated automatically by [semantic-release](https://github.com/semantic-release/semantic-release) from commit history.
