@@ -1,6 +1,6 @@
 {
   "name": "@relayos/plugin",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "The RelayOS plugin authoring kit: definePlugin and webhook signature helpers for building provider plugins.",
   "license": "MIT",
   "repository": {
