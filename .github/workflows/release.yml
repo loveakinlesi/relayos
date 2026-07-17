@@ -37,15 +37,16 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      # @semantic-release/git's automated release commit isn't a human
-      # writing a conventional-commit message - it's a generated changelog
-      # dump that will legitimately violate commitlint rules (e.g. a commit
-      # link pushes a line over 100 chars). The commit-msg hook exists to
-      # keep human commits honest; it has nothing to check here.
-      - run: git config core.hooksPath /dev/null
-
       - run: pnpm release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
+          # @semantic-release/git's automated release commit isn't a human
+          # writing a conventional-commit message - it's a generated
+          # changelog dump that will legitimately violate commitlint rules
+          # (e.g. a commit link pushes a line over 100 chars). HUSKY=0 is
+          # husky's own documented escape hatch (checked inside its
+          # .husky/_/h wrapper) - the commit-msg hook still applies to
+          # every human commit, just not this generated one.
+          HUSKY: 0
