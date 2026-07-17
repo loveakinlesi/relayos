@@ -12,6 +12,10 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch: # manual retry - always runs fresh against current main,
+    # unlike re-running a past run, which checks out that run's original
+    # (possibly now-stale) commit and gets rejected by semantic-release's
+    # own stale-branch guard
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
