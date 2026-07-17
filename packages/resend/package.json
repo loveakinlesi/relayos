@@ -1,6 +1,6 @@
 {
   "name": "@relayos/resend",
-  "version": "0.1.1",
+  "version": "0.1.0",
   "description": "The RelayOS Resend plugin: Svix signature-verified webhook ingestion for Resend email events.",
   "license": "MIT",
   "repository": {
