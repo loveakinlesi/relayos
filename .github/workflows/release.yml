@@ -1,9 +1,12 @@
 name: Release
 
-# Publishes via changesets. This workflow is intentionally inert until:
-#   1. an NPM_TOKEN secret is configured on the repository, and
-#   2. a "Version Packages" PR (opened by this workflow) is merged to main.
-# Until then it only maintains the Version Packages PR - nothing is published.
+# Publishes via semantic-release, driven by Conventional Commits on main.
+# Every push to main is analyzed; if the new commits warrant a release
+# (feat/fix/BREAKING CHANGE), semantic-release computes the next version,
+# writes it to every package in scripts/release/packages.mjs, builds,
+# publishes each to npm, tags, and cuts a GitHub release. Otherwise it's a
+# no-op. This workflow is intentionally inert until an NPM_TOKEN secret
+# (npm automation token, bypasses 2FA prompts) is configured on the repo.
 
 on:
   push:
@@ -14,7 +17,6 @@ concurrency: ${{ github.workflow }}-${{ github.ref }}
 
 permissions:
   contents: write
-  pull-requests: write
   id-token: write # npm provenance
 
 jobs:
@@ -22,6 +24,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # semantic-release needs full history/tags
 
       - uses: pnpm/action-setup@v6
 
@@ -33,11 +37,7 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - name: Create release PR or publish
-        uses: changesets/action@v1
-        with:
-          version: pnpm version-packages
-          publish: pnpm release
+      - run: pnpm release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

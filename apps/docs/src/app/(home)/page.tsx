@@ -8,9 +8,24 @@ import {
   ShieldCheck,
   Sparkles,
 } from 'lucide-react';
+import { highlight } from 'fumadocs-core/highlight';
 import { TechIcon } from '@/components/tech-icon';
 import { WebhookFlowDiagram } from '@/components/webhook-flow-diagram';
 import { techIcons } from '@/lib/tech-icons';
+
+const shikiThemes = { light: 'github-light', dark: 'github-dark' } as const;
+
+const handlerSnippet = `relay.on('stripe.charge.succeeded', async (event, ctx) => {
+  const charge = event.data.object; // typed as Stripe.Charge
+
+  const payment = await ctx.step.run('charge-payment', async () => {
+    return { orderId: charge.metadata.orderId, amount: charge.amount };
+  });
+
+  await ctx.step.run('send-confirmation', async () => {
+    ctx.log.info('order confirmed', payment);
+  });
+});`;
 
 const features = [
   {
@@ -60,7 +75,12 @@ const features = [
 const frameworks: (keyof typeof techIcons)[] = ['nextdotjs', 'express', 'hono', 'nestjs'];
 const providers: (keyof typeof techIcons)[] = ['stripe', 'github', 'clerk', 'shopify', 'resend'];
 
-export default function HomePage() {
+export default async function HomePage() {
+  const [initCommandCode, handlerCode] = await Promise.all([
+    highlight('npx relayos@latest init', { lang: 'bash', themes: shikiThemes, defaultColor: false }),
+    highlight(handlerSnippet, { lang: 'ts', themes: shikiThemes, defaultColor: false }),
+  ]);
+
   return (
     <main className="relative flex flex-1 flex-col items-center overflow-hidden">
       <div
@@ -117,12 +137,10 @@ export default function HomePage() {
             <span className="size-2.5 rounded-full bg-yellow-400/70" />
             <span className="size-2.5 rounded-full bg-green-400/70" />
           </div>
-          <pre className="overflow-x-auto px-5 py-4 text-left text-sm">
-            <code>
-              <span className="text-fd-muted-foreground">$ </span>
-              npx relayos@latest init
-            </code>
-          </pre>
+          <div className="overflow-x-auto px-5 py-4 text-left text-sm [&_pre]:m-0 [&_pre]:inline [&_pre]:bg-transparent [&_pre]:p-0">
+            <span className="text-fd-muted-foreground">$ </span>
+            {initCommandCode}
+          </div>
         </div>
         <p className="mt-3 text-xs text-fd-muted-foreground">
           Nothing to install first - scaffolds <code>relay.ts</code> and installs exactly what you
@@ -200,19 +218,9 @@ export default function HomePage() {
             <span className="size-2.5 rounded-full bg-green-400/70" />
             <span className="ml-2 text-xs text-fd-muted-foreground">relay.handlers.ts</span>
           </div>
-          <pre className="overflow-x-auto px-5 py-4 text-sm leading-relaxed">
-            <code>{`relay.on('stripe.charge.succeeded', async (event, ctx) => {
-  const charge = event.data.object; // typed as Stripe.Charge
-
-  const payment = await ctx.step.run('charge-payment', async () => {
-    return { orderId: charge.metadata.orderId, amount: charge.amount };
-  });
-
-  await ctx.step.run('send-confirmation', async () => {
-    ctx.log.info('order confirmed', payment);
-  });
-});`}</code>
-          </pre>
+          <div className="overflow-x-auto px-5 py-4 text-sm leading-relaxed [&_pre]:m-0 [&_pre]:bg-transparent [&_pre]:p-0">
+            {handlerCode}
+          </div>
         </div>
       </section>
 

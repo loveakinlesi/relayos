@@ -60,10 +60,10 @@ relay.on('stripe.charge.succeeded', async (event, ctx) => {
 2. `error` is recorded and `status` becomes `failed`.
 3. A retry is automatically scheduled after a delay.
 4. On retry:
-   - Step 1 is skipped (cached output returned)
-   - Step 2 is skipped (cached output returned)
-   - Step 3 re-runs (it failed before)
-   - Step 4 runs (hasn't run yet)
+   — Step 1 is skipped (cached output returned)
+   — Step 2 is skipped (cached output returned)
+   — Step 3 re-runs (it failed before)
+   — Step 4 runs (hasn't run yet)
 5. If step 3 succeeds this time, the execution completes and fulfillment is notified exactly once.
 
 Without durable steps, you'd have to manually track what succeeded and what didn't—or re-run everything and risk double-charging the customer or sending duplicate receipts.

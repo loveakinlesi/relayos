@@ -65,11 +65,11 @@ function relayos<const TPlugins extends readonly RelayPlugin<any>[] = []>(
 ): Relay<EventMapOf<TPlugins>>;
 ```
 
-Creates a RelayOS runtime instance. This is the main entry point for developers: register event handlers via `relay.on()`, receive provider webhooks through `relay.handler`, and configure persistence via `config.database` - a Postgres/SQLite/MySQL client (auto-detected), a `{ dialect }` Kysely escape hatch, or a custom `ExecutionStore`. The relay's event types are inferred from the plugins you register—typed plugins make `relay.on()` autocomplete event names and narrow event payloads.
+Creates a RelayOS runtime instance. This is the main entry point for developers: register event handlers via `relay.on()`, receive provider webhooks through `relay.handler`, and configure persistence via `config.database` — a Postgres/SQLite/MySQL client (auto-detected), a `{ dialect }` Kysely escape hatch, or a custom `ExecutionStore`. The relay's event types are inferred from the plugins you register—typed plugins make `relay.on()` autocomplete event names and narrow event payloads.
 
 ## `relayos/next-js`
 
-Next.js support is a subpath export of this package - no separate install.
+Next.js support is a subpath export of this package — no separate install.
 
 | Export            | Kind     | Description                                                     |
 | ----------------- | -------- | --------------------------------------------------------------- |
@@ -97,7 +97,7 @@ Provider webhooks are then received at `/api/webhook/<provider>` (e.g., `/api/we
 
 ## Other framework adapters
 
-Express, Hono, and NestJS support are subpath exports of this package - no separate installs.
+Express, Hono, and NestJS support are subpath exports of this package — no separate installs.
 
 ```ts
 import { toExpressHandler } from 'relayos/express';

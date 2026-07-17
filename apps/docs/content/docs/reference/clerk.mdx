@@ -19,6 +19,29 @@ Peer dependency: `@relayos/core`
 | `ClerkEventMap`      | Type     | Typed event map for common Clerk webhook events. |
 | `ClerkPluginOptions` | Type     | Configuration for the Clerk plugin.              |
 
+## Types
+
+### ClerkEventMap
+
+```ts
+type ClerkEventMap = {
+  [K in ClerkEventType as `clerk.${K}`]: ClerkWebhookPayload;
+};
+```
+
+Covers Clerk's most common events — `user.created/updated/deleted`, `session.*`, `organization.*`, `organizationMembership.*`, `organizationInvitation.*`. Clerk doesn't publish a typed events SDK the way Stripe or GitHub do, so `ClerkWebhookPayload` is `Record<string, unknown> & { id?: string }` rather than a per-event shape — check the [Event Catalog](https://clerk.com/docs/webhooks/overview) in your Clerk Dashboard for a given event's exact fields.
+
+### ClerkPluginOptions
+
+```ts
+type ClerkPluginOptions = {
+  webhookSecret?: string;
+  toleranceSeconds?: number;
+};
+```
+
+Configuration for the Clerk plugin. `webhookSecret` defaults to `process.env.CLERK_WEBHOOK_SECRET` if not passed. `toleranceSeconds` (default: 300) sets the maximum age of a signed timestamp before it's rejected.
+
 ## Functions
 
 ### clerk
@@ -28,3 +51,9 @@ function clerk(options?: ClerkPluginOptions): RelayPlugin<ClerkEventMap>;
 ```
 
 Creates a Clerk plugin. Verifies Svix webhook signatures from `Svix-Id`, `Svix-Timestamp`, and `Svix-Signature`, normalizes incoming events as `clerk.<event type>`, and uses `CLERK_WEBHOOK_SECRET` by default.
+
+## See also
+
+- [Clerk plugin guide](/docs/plugins/clerk)
+- [Writing plugins](/docs/plugins/writing-plugins)
+- [@relayos/plugin](/docs/reference/plugin)

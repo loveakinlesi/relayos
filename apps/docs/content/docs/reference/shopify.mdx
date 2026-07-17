@@ -19,6 +19,28 @@ Peer dependency: `@relayos/core`
 | `ShopifyEventMap`      | Type     | Typed event map for common Shopify topics.      |
 | `ShopifyPluginOptions` | Type     | Configuration for the Shopify plugin.           |
 
+## Types
+
+### ShopifyEventMap
+
+```ts
+type ShopifyEventMap = {
+  [K in ShopifyTopic as `shopify.${NormalizeTopic<K>}`]: ShopifyWebhookPayload;
+};
+```
+
+Covers Shopify's most common topics — `app/uninstalled`, `customers/*`, `orders/*`, `products/*`, `refunds/create`, `checkouts/*`, `carts/*` — each converted from Shopify's slash-separated topic to a dot-separated event name. Shopify doesn't publish a typed events SDK, so `ShopifyWebhookPayload` is `Record<string, unknown> & { id?: string | number }` rather than a per-topic shape — see the [webhooks reference](https://shopify.dev/docs/api/webhooks) for each topic's exact payload.
+
+### ShopifyPluginOptions
+
+```ts
+type ShopifyPluginOptions = {
+  webhookSecret?: string;
+};
+```
+
+Configuration for the Shopify plugin. `webhookSecret` defaults to `process.env.SHOPIFY_WEBHOOK_SECRET` if not passed. Shopify's scheme has no timestamp, so unlike Stripe/Clerk/Resend there's no `toleranceSeconds` option.
+
 ## Functions
 
 ### shopify
@@ -28,3 +50,9 @@ function shopify(options?: ShopifyPluginOptions): RelayPlugin<ShopifyEventMap>;
 ```
 
 Creates a Shopify plugin. Verifies `X-Shopify-Hmac-Sha256`, reads `X-Shopify-Topic` and `X-Shopify-Webhook-Id`, and normalizes topics like `orders/create` as `shopify.orders.create`.
+
+## See also
+
+- [Shopify plugin guide](/docs/plugins/shopify)
+- [Writing plugins](/docs/plugins/writing-plugins)
+- [@relayos/plugin](/docs/reference/plugin)

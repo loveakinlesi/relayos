@@ -199,3 +199,8 @@ const acmePlugin = definePlugin<MyEventMap>({
 2. **Use constant-time comparison**: `safeEqualHex` prevents timing attacks by comparing every byte, not short-circuiting on mismatch.
 3. **Namespacing**: Use your plugin's `id` in event type names (e.g., `stripe.charge.succeeded`) to avoid collisions with other providers.
 4. **Event type format**: Let providers use their natural naming (e.g., GitHub's `pull_request.opened` with the dot) — just prefix it with your plugin id and normalize as needed.
+
+## See also
+
+- [@relayos/plugin](/docs/reference/plugin) — the `definePlugin` and HMAC helpers used above
+- [@relayos/stripe](/docs/reference/stripe) — a real plugin implementation to read alongside this guide

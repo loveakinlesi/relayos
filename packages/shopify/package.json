@@ -1,6 +1,6 @@
 {
   "name": "@relayos/shopify",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "The RelayOS Shopify plugin: signature-verified webhook ingestion for Shopify topics.",
   "license": "MIT",
   "repository": {

@@ -204,7 +204,7 @@ type Relay<TEventMap extends Record<string, unknown> = {}> = {
 };
 ```
 
-The relay runtime. Typed `on()` overloads narrow event types and payloads based on registered plugins. `ingest()` is the low-level event entry point (plugins and adapters call this). Execution replay, retry, and restart methods allow recovery from failures. `migrate()` applies pending schema migrations - it runs automatically once, lazily, outside production, and should be called explicitly in production before scaling up instances.
+The relay runtime. Typed `on()` overloads narrow event types and payloads based on registered plugins. `ingest()` is the low-level event entry point (plugins and adapters call this). Execution replay, retry, and restart methods allow recovery from failures. `migrate()` applies pending schema migrations — it runs automatically once, lazily, outside production, and should be called explicitly in production before scaling up instances.
 
 ### RelayConfig
 

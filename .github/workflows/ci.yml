@@ -29,25 +29,11 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       - run: pnpm build
-        env:
-          # Only fail-closed checks need these to be non-empty; the actual
-          # values are never used against a real provider in CI.
-          STRIPE_WEBHOOK_SECRET: whsec_ci_dummy
-          GITHUB_WEBHOOK_SECRET: ghsec_ci_dummy
 
       - run: pnpm lint
 
       - run: pnpm test
-        # No DATABASE_URL/TEST_DATABASE_URL needed - @relayos/postgres's
-        # integration tests provision their own Postgres via testcontainers,
-        # using the Docker already available on GitHub-hosted runners.
-        #
-        # STRIPE_WEBHOOK_SECRET/GITHUB_WEBHOOK_SECRET must match the build
-        # step's values - turbo's "test" task depends on "build", and since
-        # turbo.json lists these as build-task cache-key inputs, a mismatch
-        # here forces a fresh apps/web rebuild without them, which fails
-        # closed (apps/web/relay.ts requires GITHUB_WEBHOOK_SECRET in
-        # production builds).
-        env:
-          STRIPE_WEBHOOK_SECRET: whsec_ci_dummy
-          GITHUB_WEBHOOK_SECRET: ghsec_ci_dummy
+        # No DATABASE_URL/TEST_DATABASE_URL needed - @relayos/core's
+        # integration tests provision their own Postgres/MySQL via
+        # testcontainers, using the Docker already available on
+        # GitHub-hosted runners.

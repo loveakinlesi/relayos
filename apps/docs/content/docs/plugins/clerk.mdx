@@ -3,7 +3,7 @@ title: Clerk Plugin
 description: Receive and verify Clerk webhooks with RelayOS.
 ---
 
-The `@relayos/clerk` plugin handles Clerk webhook verification and provides typed RelayOS event names for common Clerk webhook events.
+The `@relayos/clerk` plugin handles [Clerk webhook](https://clerk.com/docs/webhooks/overview) verification and provides typed RelayOS event names for common Clerk webhook events. Clerk delivers webhooks via [Svix](https://www.svix.com), so verification follows the Svix signature scheme.
 
 ## Installation
 
@@ -30,6 +30,10 @@ The `@relayos/clerk` plugin handles Clerk webhook verification and provides type
   </Tab>
 </Tabs>
 
+```ts
+import { clerk } from '@relayos/clerk';
+```
+
 ## Setup
 
 ```ts
@@ -44,20 +48,60 @@ export const relay = relayos({
 });
 ```
 
-Point your Clerk webhook endpoint to `/api/webhook/clerk`.
+1. In your Clerk Dashboard, go to **Webhooks** and add an endpoint pointing at `/api/webhook/clerk` on your deployed app — see [Sync Clerk data to your app with webhooks](https://clerk.com/docs/webhooks/sync-data) for the full walkthrough.
+2. Copy the **Signing Secret** (starts with `whsec_`) and set it as `CLERK_WEBHOOK_SECRET`.
+
+Pass `webhookSecret` explicitly instead if you'd rather not rely on the env var:
+
+```ts
+clerk({ webhookSecret: 'whsec_...', toleranceSeconds: 300 }),
+```
+
+## Configuration
+
+| Option           | Type     | Default                            | Description                                          |
+| ---------------- | -------- | ------------------------------------ | -------------------------------------------------------- |
+| webhookSecret    | `string` | `process.env.CLERK_WEBHOOK_SECRET` | The endpoint's signing secret from the Clerk dashboard    |
+| toleranceSeconds | `number` | 300                                  | Max age of a signed timestamp before rejection             |
+
+## Signature verification
+
+Clerk signs webhooks the way [Svix does](https://docs.svix.com/receiving/verifying-payloads/how-manual): three headers (`svix-id`, `svix-timestamp`, `svix-signature`) instead of Stripe/GitHub's single-header scheme.
+
+1. Reads the `svix-id`, `svix-timestamp`, and `svix-signature` headers — rejects the request if any are missing
+2. Rejects if the timestamp is older than `toleranceSeconds`
+3. Computes HMAC-SHA256 of `${svix-id}.${svix-timestamp}.${rawBody}`, using the webhook secret's base64-decoded bytes after stripping its `whsec_` prefix
+4. `svix-signature` can contain multiple space-separated `v1,<signature>` values (for secret rotation) — the request is valid if any of them match, compared using constant-time comparison
 
 ## Event types
 
-Events are namespaced as `clerk.<clerk-event-type>`:
+Events are namespaced as `clerk.<clerk-event-type>` — see the **Event Catalog** tab on your Clerk Dashboard's Webhooks page for the full list Clerk can send:
 
 ```ts
-relay.on('clerk.user.created', async (event, ctx) => {
-  ctx.log.info('user created', { id: event.data.id });
-});
+// relay.handlers.ts
+import type { AppRelay } from './relay';
+
+export function registerHandlers(relay: AppRelay): void {
+  relay.on('clerk.user.created', async (event, ctx) => {
+    ctx.log.info('user created', { id: event.data.id });
+  });
+
+  relay.on('clerk.session.created', async (event, ctx) => {
+    ctx.log.info('session started', { userId: event.data.user_id });
+  });
+}
 ```
 
+## Deduplication
+
+Every Svix-delivered webhook carries a `svix-id` header that stays the same across delivery retries. The plugin uses it as the RelayOS event ID, so a redelivered event collapses into the same execution instead of running your handler twice.
+
 ## Testing locally
+
+Use `relay trigger` to simulate a signed Clerk webhook:
 
 ```sh
 relay trigger clerk user.created --data '{"id":"user_123"}'
 ```
+
+Make sure `CLERK_WEBHOOK_SECRET` is set to the same value on both `relay dev` and `relay trigger`, or unset on both — see [the Local Development gotcha](/docs/cli#dev-secret-gotcha) for why.

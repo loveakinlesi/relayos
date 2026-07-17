@@ -71,3 +71,18 @@ relay inspect <executionId> --history
 When you call `replayExecution(executionId)`, a brand-new execution is created with a fresh `eventId` (so it won't be deduped against the original). The new execution records the source execution's ID in its `replayedFrom` field so you can trace the lineage.
 
 The original execution is never modified. This is useful for testing handler changes against real historical data without affecting past audit trails.
+
+## Log sources
+
+Every log line is tagged with where it came from, so you can tell a runtime decision from your own handler's output:
+
+```ts
+type LogSource = 'system' | 'handler';
+
+// 'system' — written by the runtime itself:
+// "event ingested", "retrying (attempt 2, scheduled)", "restarting (attempt 2) - all steps will re-run"
+
+// 'handler' — written by your code via ctx.log.info(), ctx.log.error(), etc.
+```
+
+`listLogs(executionId)` and `relay inspect <executionId>` both return this tag, so you can filter for just your own logs or just the runtime's.

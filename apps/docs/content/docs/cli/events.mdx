@@ -30,15 +30,15 @@ relay events list [--json] [--limit <n>] [--dir <path>]
 ```sh
 $ relay events list
 
-✓ stripe.charge.succeeded       attempt 1  2024-01-15T10:30:45.123Z  exec_abc123xyz
-✓ test.ping                     attempt 1  2024-01-15T10:28:12.456Z  exec_def456uvw
-✗ github.push                   attempt 2  2024-01-15T10:25:00.789Z  exec_ghi789rst
-✓ stripe.refund.created         attempt 1  2024-01-15T10:22:33.012Z  exec_jkl012mno
+✔ stripe.charge.succeeded       attempt 1  2024-01-15T10:30:45.123Z  exec_abc123xyz
+✔ test.ping                     attempt 1  2024-01-15T10:28:12.456Z  exec_def456uvw
+✖ github.push                   attempt 2  2024-01-15T10:25:00.789Z  exec_ghi789rst
+✔ stripe.refund.created         attempt 1  2024-01-15T10:22:33.012Z  exec_jkl012mno
 ```
 
 Columns (left to right):
 
-- Status icon (✓/✗/⏱)
+- Status icon (`✔`/`✖`/`…`)
 - Event type
 - Attempt number
 - Creation timestamp
@@ -51,11 +51,11 @@ Show only the last 5 executions:
 ```sh
 $ relay events list --limit 5
 
-✓ stripe.charge.succeeded  attempt 1  2024-01-15T10:30:45.123Z  exec_abc123xyz
-✓ test.ping                attempt 1  2024-01-15T10:28:12.456Z  exec_def456uvw
-✗ github.push              attempt 2  2024-01-15T10:25:00.789Z  exec_ghi789rst
-✓ stripe.refund.created    attempt 1  2024-01-15T10:22:33.012Z  exec_jkl012mno
-✓ test.fail                attempt 3  2024-01-15T10:20:15.345Z  exec_pqr345stu
+✔ stripe.charge.succeeded  attempt 1  2024-01-15T10:30:45.123Z  exec_abc123xyz
+✔ test.ping                attempt 1  2024-01-15T10:28:12.456Z  exec_def456uvw
+✖ github.push              attempt 2  2024-01-15T10:25:00.789Z  exec_ghi789rst
+✔ stripe.refund.created    attempt 1  2024-01-15T10:22:33.012Z  exec_jkl012mno
+✔ test.fail                attempt 3  2024-01-15T10:20:15.345Z  exec_pqr345stu
 ```
 
 ### JSON output
@@ -87,9 +87,9 @@ $ relay events list --json --limit 2
 
 ## Status indicators
 
-- **✓** (completed) — execution finished successfully
-- **✗** (failed) — execution failed with an error
-- **⏱** (pending) — execution is still running or awaiting a retry
+- **✔** (completed) — execution finished successfully
+- **✖** (failed) — execution failed with an error
+- **…** (pending) — still running, or waiting on a scheduled retry
 
 ## Next steps
 

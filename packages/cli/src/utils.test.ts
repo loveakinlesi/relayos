@@ -55,7 +55,7 @@ describe('resolveBaseUrl', () => {
 
 describe('resolveDir', () => {
   it('resolves --dir relative to cwd', () => {
-    expect(resolveDir(['--dir', 'apps/web'])).toBe(resolve('apps/web'));
+    expect(resolveDir(['--dir', 'my-app'])).toBe(resolve('my-app'));
   });
 
   it('defaults to process.cwd() when --dir is absent', () => {

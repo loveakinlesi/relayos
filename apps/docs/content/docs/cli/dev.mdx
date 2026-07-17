@@ -20,15 +20,10 @@ relay dev [--dir <path>]
 ## What it does
 
 1. Spawns `pnpm run dev` in the given directory (or current directory if `--dir` is not set)
-2. Loads `relay.ts` from that same directory and polls it every 1 second for new executions, printing them to the terminal - works with whatever database dialect your `relay.ts` configures
+2. Loads `relay.ts` from that same directory and polls it every 1 second for new executions, printing them to the terminal — works with whatever database dialect your `relay.ts` configures
 3. Captures SIGINT (Ctrl+C) and gracefully shuts down both processes
 
-The execution output includes:
-
-- Status icon (✓ completed, ✗ failed, ⏱ pending)
-- Event type (e.g., `stripe.charge.succeeded`)
-- Attempt number
-- Execution ID
+Each line shows the status icon (`✔` completed, `✖` failed, `…` pending), event type, attempt number, and execution ID.
 
 ## Examples
 
@@ -45,9 +40,9 @@ Output:
 ```
 [relay dev] starting dev server in /Users/alice/myapp
 [relay dev] watching for executions...
-✓ stripe.charge.succeeded (attempt 1) evt_a1b2c3d4...
-✓ test.ping (attempt 1) test_1234...
-✗ stripe.charge.succeeded (attempt 2) evt_e5f6g7h8...
+✔ stripe.charge.succeeded (attempt 1) evt_a1b2c3d4...
+✔ test.ping (attempt 1) test_1234...
+✖ stripe.charge.succeeded (attempt 2) evt_e5f6g7h8...
 ```
 
 ## Requirements

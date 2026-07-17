@@ -5,28 +5,9 @@ description: GitHub webhook plugin with signature verification and fully-typed e
 
 ## Install
 
-<Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
-  <Tab value="pnpm">
-  ```sh
-  pnpm add @relayos/github
-  ```
-  </Tab>
-  <Tab value="npm">
-  ```sh
-  npm install @relayos/github
-  ```
-  </Tab>
-  <Tab value="yarn">
-  ```sh
-  yarn add @relayos/github
-  ```
-  </Tab>
-  <Tab value="bun">
-  ```sh
-  bun add @relayos/github
-  ```
-  </Tab>
-</Tabs>
+```sh
+pnpm add @relayos/github
+```
 
 Peer dependency: `@relayos/core`
 
@@ -57,18 +38,18 @@ A fully-typed map of every GitHub webhook event. Events are keyed by their event
 
 ```ts
 type GitHubPluginOptions = {
-  webhookSecret: string;
+  webhookSecret?: string;
 };
 ```
 
-Configuration for the GitHub plugin. `webhookSecret` is the signing secret configured in your GitHub webhook settings (Settings > Webhooks > Secret).
+Configuration for the GitHub plugin. `webhookSecret` defaults to `process.env.GITHUB_WEBHOOK_SECRET` if not passed.
 
 ## Functions
 
 ### github
 
 ```ts
-function github(options: GitHubPluginOptions): RelayPlugin<GitHubEventMap>;
+function github(options?: GitHubPluginOptions): RelayPlugin<GitHubEventMap>;
 ```
 
 Creates a GitHub plugin. Verifies webhook signatures using GitHub's HMAC-SHA256 scheme (`X-Hub-Signature-256` header), parses event type and action from request headers and body, and normalizes deliveries into RelayOS's format. Registers as the `"github"` provider and makes all GitHub event types available for typed handler registration via `relay.on()`.
