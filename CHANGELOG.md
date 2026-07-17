@@ -1,12 +1,3 @@
-## [0.1.1](https://github.com/loveakinlesi/relayos/compare/v0.1.0...v0.1.1) (2026-07-17)
-
-
-### Bug Fixes
-
-* **deps:** patch 4 Dependabot alerts (esbuild, vite, postcss) ([8da7cca](https://github.com/loveakinlesi/relayos/commit/8da7ccaa56e3774ebb3eda533dbb46112c8202ec))
-* **release:** unblock the automated release pipeline ([b292426](https://github.com/loveakinlesi/relayos/commit/b29242620144e30cbe3032f3385fb9218653bf6a))
-* **release:** use HUSKY=0 to skip the commit-msg hook, not hooksPath ([f4a6c0d](https://github.com/loveakinlesi/relayos/commit/f4a6c0de7890cae7b9f39c02145307dd6c24bbc3))
-
 # Changelog
 
 All notable changes to RelayOS are documented here. Entries below this point are generated automatically by [semantic-release](https://github.com/semantic-release/semantic-release) from commit history.
