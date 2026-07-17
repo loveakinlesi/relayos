@@ -40,7 +40,11 @@ jobs:
       - run: pnpm release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          # actions/setup-node's registry-url writes a ~/.npmrc that reads
+          # the token from NODE_AUTH_TOKEN specifically - NPM_TOKEN (the
+          # name changesets/action expected) is a no-op here and silently
+          # sends an unauthenticated request instead.
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
           # @semantic-release/git's automated release commit isn't a human
           # writing a conventional-commit message - it's a generated
