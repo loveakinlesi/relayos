@@ -1,3 +1,10 @@
+## [0.1.2](https://github.com/loveakinlesi/restaq/compare/v0.1.1...v0.1.2) (2026-07-20)
+
+
+### Bug Fixes
+
+* rename scaffolded relay.ts export from relay to restaq ([e8709c6](https://github.com/loveakinlesi/restaq/commit/e8709c6ac9729c52e197218a200fa3d49c6885df))
+
 ## [0.1.1](https://github.com/loveakinlesi/restaq/compare/v0.1.0...v0.1.1) (2026-07-17)
 
 

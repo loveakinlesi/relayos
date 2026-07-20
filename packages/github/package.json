@@ -1,6 +1,6 @@
 {
   "name": "@restaq/github",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "The Restaq GitHub plugin: signature-verified webhook ingestion with a fully-typed catalog of every GitHub webhook event.",
   "license": "MIT",
   "repository": {

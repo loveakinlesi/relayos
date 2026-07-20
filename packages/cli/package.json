@@ -1,6 +1,6 @@
 {
   "name": "@restaq/cli",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "CLI for Restaq - migrations and local dev tooling.",
   "license": "MIT",
   "repository": {

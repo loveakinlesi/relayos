@@ -1,6 +1,6 @@
 {
   "name": "@restaq/clerk",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "The Restaq Clerk plugin: Svix signature-verified webhook ingestion for Clerk events.",
   "license": "MIT",
   "repository": {
