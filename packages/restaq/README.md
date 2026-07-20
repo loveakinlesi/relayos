@@ -12,13 +12,13 @@ No project yet? `npx restaq@latest init` scaffolds one with nothing pre-installe
 
 ```ts
 // relay.ts — wiring only: storage, plugins, retry policy
-import { restaq } from 'restaq';
+import { restaq as createRestaq } from 'restaq';
 import Database from 'better-sqlite3';
 import { registerHandlers } from './relay.handlers';
 
-export const relay = restaq({ database: new Database('relay.db') });
-export type AppRelay = typeof relay; // carries the typed event catalog forward
-registerHandlers(relay);
+export const restaq = createRestaq({ database: new Database('restaq.db') });
+export type AppRelay = typeof restaq; // carries the typed event catalog forward
+registerHandlers(restaq);
 ```
 
 ```ts
@@ -41,9 +41,9 @@ export function registerHandlers(relay: AppRelay): void {
 ```ts
 // app/api/webhook/[...all]/route.ts (Next.js — nothing extra to install)
 import { toNextJsHandler } from 'restaq/next-js';
-import { relay } from '@/relay';
+import { restaq } from '@/relay';
 
-export const { POST } = toNextJsHandler(relay);
+export const { POST } = toNextJsHandler(restaq);
 ```
 
 If `charge-payment` fails, the execution retries automatically with exponential backoff — steps that already completed never re-run.

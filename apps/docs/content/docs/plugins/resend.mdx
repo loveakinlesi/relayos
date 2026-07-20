@@ -38,10 +38,10 @@ import { resend } from '@restaq/resend';
 
 ```ts
 // relay.ts
-import { restaq } from 'restaq';
+import { restaq as createRestaq } from 'restaq';
 import { resend } from '@restaq/resend';
 
-export const relay = restaq({
+export const restaq = createRestaq({
   plugins: [
     resend(), // reads RESEND_WEBHOOK_SECRET automatically
   ],

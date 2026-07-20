@@ -10,15 +10,15 @@ pnpm add @restaq/stripe stripe
 
 ```ts
 // relay.ts — wiring only
-import { restaq } from 'restaq';
+import { restaq as createRestaq } from 'restaq';
 import { stripe } from '@restaq/stripe';
 import { registerHandlers } from './relay.handlers';
 
-export const relay = restaq({
+export const restaq = createRestaq({
   plugins: [stripe()], // reads STRIPE_WEBHOOK_SECRET automatically
 });
-export type AppRelay = typeof relay;
-registerHandlers(relay);
+export type AppRelay = typeof restaq;
+registerHandlers(restaq);
 ```
 
 ```ts

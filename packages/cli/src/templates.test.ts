@@ -5,7 +5,7 @@ describe('buildRelayConfigTemplate', () => {
   it('wires a sqlite database expression with no plugins', () => {
     const output = buildRelayConfigTemplate({ database: 'sqlite', plugins: [] });
     expect(output).toContain("import Database from 'better-sqlite3';");
-    expect(output).toContain("database: new Database('relay.db')");
+    expect(output).toContain("database: new Database('restaq.db')");
     expect(output).not.toContain('stripe');
   });
 

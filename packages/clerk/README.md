@@ -8,15 +8,15 @@ pnpm add @restaq/clerk
 
 ```ts
 // relay.ts - wiring only
-import { restaq } from 'restaq';
+import { restaq as createRestaq } from 'restaq';
 import { clerk } from '@restaq/clerk';
 import { registerHandlers } from './relay.handlers';
 
-export const relay = restaq({
+export const restaq = createRestaq({
   plugins: [clerk()], // reads CLERK_WEBHOOK_SECRET automatically
 });
-export type AppRelay = typeof relay;
-registerHandlers(relay);
+export type AppRelay = typeof restaq;
+registerHandlers(restaq);
 ```
 
 ```ts

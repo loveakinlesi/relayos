@@ -32,11 +32,11 @@ migrations.
 
 ```ts
 // relay.ts
-import { restaq } from 'restaq';
+import { restaq as createRestaq } from 'restaq';
 import Database from 'better-sqlite3';
 
-export const relay = restaq({
-  database: new Database('relay.db'),
+export const restaq = createRestaq({
+  database: new Database('restaq.db'),
   plugins: [
     // ...
   ],

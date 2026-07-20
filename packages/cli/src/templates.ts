@@ -22,7 +22,7 @@ const databaseImportLine: Record<DatabaseChoice, string> = {
 };
 
 const databaseExpression: Record<DatabaseChoice, string> = {
-  sqlite: "new Database('relay.db')",
+  sqlite: "new Database('restaq.db')",
   postgres: 'new Pool({ connectionString: process.env.DATABASE_URL! })',
   mysql: "createPool({ uri: process.env.DATABASE_URL!, timezone: 'Z' })",
 };
@@ -50,7 +50,7 @@ export function buildRelayConfigTemplate(options: {
   plugins: PluginChoice[];
 }): string {
   const imports = [
-    "import { restaq } from 'restaq';",
+    "import { restaq as createRestaq } from 'restaq';",
     databaseImportLine[options.database],
     ...options.plugins.map((plugin) => pluginImportLine[plugin]),
     "import { registerHandlers } from './relay.handlers';",
@@ -62,7 +62,7 @@ export function buildRelayConfigTemplate(options: {
 
   return `${imports}
 
-export const relay = restaq({
+export const restaq = createRestaq({
   database: ${databaseExpression[options.database]},
   plugins: [
 ${pluginLines}
@@ -73,9 +73,9 @@ ${pluginLines}
 // the plugins above - exported so relay.handlers.ts (or any other module)
 // can register handlers with full event.data typing, without needing to
 // duplicate the plugins list.
-export type AppRelay = typeof relay;
+export type AppRelay = typeof restaq;
 
-registerHandlers(relay);
+registerHandlers(restaq);
 `;
 }
 

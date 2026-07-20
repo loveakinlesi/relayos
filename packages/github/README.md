@@ -8,15 +8,15 @@ pnpm add @restaq/github
 
 ```ts
 // relay.ts — wiring only
-import { restaq } from 'restaq';
+import { restaq as createRestaq } from 'restaq';
 import { github } from '@restaq/github';
 import { registerHandlers } from './relay.handlers';
 
-export const relay = restaq({
+export const restaq = createRestaq({
   plugins: [github()], // reads GITHUB_WEBHOOK_SECRET automatically
 });
-export type AppRelay = typeof relay;
-registerHandlers(relay);
+export type AppRelay = typeof restaq;
+registerHandlers(restaq);
 ```
 
 ```ts

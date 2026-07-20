@@ -18,7 +18,7 @@ Restaq gives you three ways to recover from or debug a failed execution. They so
 Resume the same execution, skipping completed steps.
 
 ```ts
-await relay.retryExecution(executionId);
+await restaq.retryExecution(executionId);
 ```
 
 **When to use**: The handler is correct, but a flaky external service (email, payment gateway, etc.) timed out. Retrying continues from where it left off without re-running side effects that already succeeded.
@@ -44,7 +44,7 @@ await relay.restartExecution(executionId);
 Create a brand-new execution from historical event data.
 
 ```ts
-await relay.replayExecution(executionId);
+await restaq.replayExecution(executionId);
 ```
 
 **When to use**: You want to test a handler change against real historical data without modifying the original execution's audit trail. Or you want to reprocess a high-priority order through a new fulfillment system.

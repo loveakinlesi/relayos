@@ -10,11 +10,11 @@ Hono support ships with `restaq` — no separate package, just import from the `
 ```ts
 import { Hono } from 'hono';
 import { toHonoHandler } from 'restaq/hono';
-import { relay } from './relay';
+import { restaq } from './relay';
 
 const app = new Hono();
 
-app.post('/api/webhook/:provider', toHonoHandler(relay));
+app.post('/api/webhook/:provider', toHonoHandler(restaq));
 
 export default app;
 ```
@@ -30,5 +30,5 @@ Hono hands the handler the raw `Request` directly, with no body-parsing in the w
 If your route uses a different parameter name, pass it explicitly:
 
 ```ts
-app.post('/webhooks/:source', toHonoHandler(relay, { paramName: 'source' }));
+app.post('/webhooks/:source', toHonoHandler(restaq, { paramName: 'source' }));
 ```

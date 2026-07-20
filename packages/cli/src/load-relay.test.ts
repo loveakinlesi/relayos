@@ -11,11 +11,11 @@ describe('loadRelay', () => {
     if (dir) await rm(dir, { recursive: true, force: true });
   });
 
-  it('imports relay.ts from the given directory and returns its `relay` export', async () => {
+  it('imports relay.ts from the given directory and returns its `restaq` export', async () => {
     dir = await mkdtemp(join(tmpdir(), 'relay-load-'));
     await writeFile(
       join(dir, 'relay.ts'),
-      `export const relay = {
+      `export const restaq = {
         migrate: async () => 'migrated',
         listExecutions: async () => [{ id: '1' }],
       };

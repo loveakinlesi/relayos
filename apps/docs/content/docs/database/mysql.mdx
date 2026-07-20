@@ -31,10 +31,10 @@ the dialect automatically and applies its own schema migrations.
 
 ```ts
 // relay.ts
-import { restaq } from 'restaq';
+import { restaq as createRestaq } from 'restaq';
 import { createPool } from 'mysql2';
 
-export const relay = restaq({
+export const restaq = createRestaq({
   database: createPool({
     uri: process.env.DATABASE_URL!,
     timezone: 'Z', // keeps timestamps consistent in UTC

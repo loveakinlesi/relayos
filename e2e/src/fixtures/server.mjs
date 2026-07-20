@@ -10,7 +10,7 @@ if (!fixtureDir) {
 }
 
 const jiti = createJiti(pathToFileURL(join(fixtureDir, 'server.mjs')).href);
-const { relay } = await jiti.import(join(fixtureDir, 'relay.ts'));
+const { restaq } = await jiti.import(join(fixtureDir, 'relay.ts'));
 
 const server = createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
@@ -24,7 +24,7 @@ const server = createServer(async (req, res) => {
   for await (const chunk of req) chunks.push(chunk);
   const rawBody = Buffer.concat(chunks);
 
-  const response = await relay.handler(
+  const response = await restaq.handler(
     new Request(url, { method: 'POST', headers: new Headers(req.headers), body: rawBody }),
     { params: { all: [match[1]] } },
   );

@@ -8,15 +8,15 @@ pnpm add @restaq/shopify
 
 ```ts
 // relay.ts - wiring only
-import { restaq } from 'restaq';
+import { restaq as createRestaq } from 'restaq';
 import { shopify } from '@restaq/shopify';
 import { registerHandlers } from './relay.handlers';
 
-export const relay = restaq({
+export const restaq = createRestaq({
   plugins: [shopify()], // reads SHOPIFY_WEBHOOK_SECRET automatically
 });
-export type AppRelay = typeof relay;
-registerHandlers(relay);
+export type AppRelay = typeof restaq;
+registerHandlers(restaq);
 ```
 
 ```ts

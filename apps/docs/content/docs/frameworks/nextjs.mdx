@@ -12,24 +12,24 @@ Create a catch-all route to receive webhooks from all your plugins:
 ```ts
 // app/api/webhook/[...all]/route.ts
 import { toNextJsHandler } from 'restaq/next-js';
-import { relay } from '@/relay';
+import { restaq } from '@/relay';
 
-export const { POST } = toNextJsHandler(relay);
+export const { POST } = toNextJsHandler(restaq);
 ```
 
 This one route serves every plugin you register, at `/api/webhook/<provider>` (e.g. `/api/webhook/stripe`).
 
 ## How it works
 
-`toNextJsHandler(relay)` returns a route handler object:
+`toNextJsHandler(restaq)` returns a route handler object:
 
 ```ts
-const handler = toNextJsHandler(relay);
+const handler = toNextJsHandler(restaq);
 // handler.POST is a standard Next.js route handler:
 // async (req: Request, ctx: { params: Promise<{ all: string[] }> }) => Response
 ```
 
-On each request it awaits `ctx.params` (required for dynamic routes since Next.js 16), pulls the provider segment out of it (e.g. `"stripe"` from `/api/webhook/stripe`), and delegates to `relay.handler(req, { params: { all } })`.
+On each request it awaits `ctx.params` (required for dynamic routes since Next.js 16), pulls the provider segment out of it (e.g. `"stripe"` from `/api/webhook/stripe`), and delegates to `restaq.handler(req, { params: { all } })`.
 
 It's built entirely on web-standard `Request`/`Response` — no `import from 'next'` anywhere — so the same code runs in any Node.js runtime, not just Next.js.
 
@@ -39,45 +39,45 @@ Beyond webhook ingestion, you'll likely want endpoints to list, inspect, retry, 
 
 ```ts
 // app/api/executions/route.ts — List executions
-import { relay } from '@/relay';
+import { restaq } from '@/relay';
 
 export async function GET() {
-  const executions = await relay.listExecutions();
+  const executions = await restaq.listExecutions();
   return Response.json(executions);
 }
 ```
 
 ```ts
 // app/api/executions/[id]/route.ts — Inspect one execution
-import { relay } from '@/relay';
+import { restaq } from '@/relay';
 
 export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> }) {
   const { id } = await ctx.params;
-  const execution = await relay.listExecutions().then((e) => e.find((x) => x.id === id));
-  const steps = await relay.listSteps(id);
-  const logs = await relay.listLogs(id);
+  const execution = await restaq.listExecutions().then((e) => e.find((x) => x.id === id));
+  const steps = await restaq.listSteps(id);
+  const logs = await restaq.listLogs(id);
   return Response.json({ execution, steps, logs });
 }
 ```
 
 ```ts
 // app/api/executions/[id]/retry/route.ts — Retry an execution
-import { relay } from '@/relay';
+import { restaq } from '@/relay';
 
 export async function POST(_req: Request, ctx: { params: Promise<{ id: string }> }) {
   const { id } = await ctx.params;
-  const execution = await relay.retryExecution(id);
+  const execution = await restaq.retryExecution(id);
   return Response.json(execution);
 }
 ```
 
 ```ts
 // app/api/executions/[id]/replay/route.ts — Replay an execution
-import { relay } from '@/relay';
+import { restaq } from '@/relay';
 
 export async function POST(_req: Request, ctx: { params: Promise<{ id: string }> }) {
   const { id } = await ctx.params;
-  const execution = await relay.replayExecution(id);
+  const execution = await restaq.replayExecution(id);
   return Response.json(execution);
 }
 ```

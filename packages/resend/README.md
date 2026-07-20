@@ -8,15 +8,15 @@ pnpm add @restaq/resend
 
 ```ts
 // relay.ts - wiring only
-import { restaq } from 'restaq';
+import { restaq as createRestaq } from 'restaq';
 import { resend } from '@restaq/resend';
 import { registerHandlers } from './relay.handlers';
 
-export const relay = restaq({
+export const restaq = createRestaq({
   plugins: [resend()], // reads RESEND_WEBHOOK_SECRET automatically
 });
-export type AppRelay = typeof relay;
-registerHandlers(relay);
+export type AppRelay = typeof restaq;
+registerHandlers(restaq);
 ```
 
 ```ts

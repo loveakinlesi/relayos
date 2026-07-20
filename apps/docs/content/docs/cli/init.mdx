@@ -58,13 +58,13 @@ export function registerHandlers(relay: AppRelay): void {
 
 ```ts
 // relay.ts
-import { restaq } from 'restaq';
+import { restaq as createRestaq } from 'restaq';
 import Database from 'better-sqlite3';
 import { stripe } from '@restaq/stripe';
 import { registerHandlers } from './relay.handlers';
 
-export const relay = restaq({
-  database: new Database('relay.db'),
+export const restaq = createRestaq({
+  database: new Database('restaq.db'),
   plugins: [
     stripe(), // reads STRIPE_WEBHOOK_SECRET automatically
   ],
@@ -73,18 +73,18 @@ export const relay = restaq({
 // The concrete relay type, including the typed event catalog inferred from
 // the plugins above - exported so relay.handlers.ts can register handlers
 // with full event.data typing without re-deriving the plugins list.
-export type AppRelay = typeof relay;
+export type AppRelay = typeof restaq;
 
-registerHandlers(relay);
+registerHandlers(restaq);
 ```
 
 If Next.js was detected (or chosen), it also creates `app/api/webhook/[...all]/route.ts`:
 
 ```ts
 import { toNextJsHandler } from 'restaq/next-js';
-import { relay } from '../../../../relay';
+import { restaq } from '../../../../relay';
 
-export const { POST } = toNextJsHandler(relay);
+export const { POST } = toNextJsHandler(restaq);
 ```
 
 If Express, Hono, or NestJS was chosen, it creates the matching adapter file instead:
@@ -95,8 +95,8 @@ If Express, Hono, or NestJS was chosen, it creates the matching adapter file ins
 
 ## Next steps
 
-1. Add a `relay.on(...)` call inside `registerHandlers()` and call `relay.ingest(...)` to try it.
-2. Not using one of the built-in framework adapters? Wire `relay.handler` into your framework's request handling yourself — see [Installation](/docs/installation) step 7.
+1. Add a `relay.on(...)` call inside `registerHandlers()` and call `restaq.ingest(...)` to try it.
+2. Not using one of the built-in framework adapters? Wire `restaq.handler` into your framework's request handling yourself — see [Installation](/docs/installation) step 7.
 3. Ready to receive real webhooks? Set the matching `<PROVIDER>_WEBHOOK_SECRET` env var for any plugin you enabled.
 4. Ready for production? See [Database](/docs/database) to swap SQLite for Postgres or MySQL, and run `relay migrate` before scaling up new instances.
 

@@ -27,7 +27,7 @@ relay replay <eventId|executionId> [--forward <url>] [--print] [--dir <path>]
 
 ## Requirements
 
-- A `relay.ts` in the target directory, exporting `relay` (to load the historical execution)
+- A `relay.ts` in the target directory, exporting `restaq` (to load the historical execution)
 - Your app must be running at the `--forward` URL (unless using `--print`)
 
 ## Examples
@@ -88,7 +88,7 @@ RESTAQ_BASE_URL=https://staging.example.com relay replay evt_abc123
 - External service was down → replay now that it's back up
 - Debugging a failed execution → replay to see if it works with logging/tracing enabled
 
-**Don't use replay if** you just want to retry the same execution — use `relay.retryExecution()` (via API/dashboard) for that instead. Retry resumes in place, skipping already-completed steps.
+**Don't use replay if** you just want to retry the same execution — use `restaq.retryExecution()` (via API/dashboard) for that instead. Retry resumes in place, skipping already-completed steps.
 
 ## Replayed vs. original
 
@@ -115,11 +115,11 @@ Replay is powered by the `/api/executions/<id>/replay` route in your Next.js han
 
 ```ts
 // app/api/executions/[id]/replay/route.ts
-import { relay } from '@/relay';
+import { restaq } from '@/relay';
 
 export async function POST(_req: Request, ctx: { params: Promise<{ id: string }> }) {
   const { id } = await ctx.params;
-  const execution = await relay.replayExecution(id);
+  const execution = await restaq.replayExecution(id);
   return Response.json(execution);
 }
 ```

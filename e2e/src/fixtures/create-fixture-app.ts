@@ -32,8 +32,8 @@ function makeSqliteRelayConfig(): string {
       "import Database from 'better-sqlite3';\nimport { fileURLToPath } from 'node:url';",
     )
     .replace(
-      "new Database('relay.db')",
-      "new Database(fileURLToPath(new URL('./relay.db', import.meta.url)))",
+      "new Database('restaq.db')",
+      "new Database(fileURLToPath(new URL('./restaq.db', import.meta.url)))",
     );
 }
 

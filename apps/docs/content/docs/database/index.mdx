@@ -53,7 +53,7 @@ const myStore: ExecutionStore = {
   async listLogs(executionId) {},
 };
 
-export const relay = restaq({
+export const restaq = createRestaq({
   database: myStore,
   plugins: [
     // ...

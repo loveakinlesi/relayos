@@ -38,10 +38,10 @@ import { github } from '@restaq/github';
 
 ```ts
 // relay.ts
-import { restaq } from 'restaq';
+import { restaq as createRestaq } from 'restaq';
 import { github } from '@restaq/github';
 
-export const relay = restaq({
+export const restaq = createRestaq({
   plugins: [
     github(), // reads GITHUB_WEBHOOK_SECRET automatically
   ],

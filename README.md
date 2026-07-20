@@ -36,13 +36,13 @@ pnpm add restaq better-sqlite3
 
 ```ts
 // relay.ts — wiring only
-import { restaq } from 'restaq';
+import { restaq as createRestaq } from 'restaq';
 import Database from 'better-sqlite3';
 import { registerHandlers } from './relay.handlers';
 
-export const relay = restaq({ database: new Database('relay.db') });
-export type AppRelay = typeof relay; // carries the typed event catalog forward
-registerHandlers(relay);
+export const restaq = createRestaq({ database: new Database('restaq.db') });
+export type AppRelay = typeof restaq; // carries the typed event catalog forward
+registerHandlers(restaq);
 ```
 
 ```ts
@@ -64,9 +64,9 @@ export function registerHandlers(relay: AppRelay): void {
 
 ```ts
 // try it — no HTTP, no plugin required
-import { relay } from './relay';
+import { restaq } from './relay';
 
-const execution = await relay.ingest({
+const execution = await restaq.ingest({
   id: crypto.randomUUID(),
   type: 'order.placed',
   data: { orderId: 'ord_1', amount: 4200 },

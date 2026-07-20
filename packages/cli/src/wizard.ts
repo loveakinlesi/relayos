@@ -129,7 +129,7 @@ export async function runInitWizard(dir: string, force: boolean): Promise<void> 
     const routePath = join(routeDir, 'route.ts');
     await writeFile(
       routePath,
-      `import { toNextJsHandler } from 'restaq/next-js';\nimport { relay } from '../../../../relay';\n\nexport const { POST } = toNextJsHandler(relay);\n`,
+      `import { toNextJsHandler } from 'restaq/next-js';\nimport { restaq } from '../../../../relay';\n\nexport const { POST } = toNextJsHandler(restaq);\n`,
       'utf8',
     );
     p.log.step(`Created ${routePath}`);
@@ -137,7 +137,7 @@ export async function runInitWizard(dir: string, force: boolean): Promise<void> 
     const routePath = join(dir, 'relay.express.ts');
     await writeFile(
       routePath,
-      `import { toExpressHandler } from 'restaq/express';\nimport { relay } from './relay';\n\nexport const relayHandler = toExpressHandler(relay);\n\n// In your Express app:\n// app.post('/api/webhook/:provider', relayHandler);\n`,
+      `import { toExpressHandler } from 'restaq/express';\nimport { restaq } from './relay';\n\nexport const relayHandler = toExpressHandler(restaq);\n\n// In your Express app:\n// app.post('/api/webhook/:provider', relayHandler);\n`,
       'utf8',
     );
     p.log.step(`Created ${routePath}`);
@@ -145,7 +145,7 @@ export async function runInitWizard(dir: string, force: boolean): Promise<void> 
     const routePath = join(dir, 'relay.hono.ts');
     await writeFile(
       routePath,
-      `import { Hono } from 'hono';\nimport { toHonoHandler } from 'restaq/hono';\nimport { relay } from './relay';\n\nexport const relayRoutes = new Hono();\n\nrelayRoutes.post('/api/webhook/:provider', toHonoHandler(relay));\n`,
+      `import { Hono } from 'hono';\nimport { toHonoHandler } from 'restaq/hono';\nimport { restaq } from './relay';\n\nexport const relayRoutes = new Hono();\n\nrelayRoutes.post('/api/webhook/:provider', toHonoHandler(restaq));\n`,
       'utf8',
     );
     p.log.step(`Created ${routePath}`);
@@ -153,7 +153,7 @@ export async function runInitWizard(dir: string, force: boolean): Promise<void> 
     const routePath = join(dir, 'relay.controller.ts');
     await writeFile(
       routePath,
-      `import { Controller, Post, Req, Res } from '@nestjs/common';\nimport { toNestJsHandler, type NestJsRelayRequest, type NestJsRelayResponse } from 'restaq/nestjs';\nimport { relay } from './relay';\n\n@Controller('api/webhook')\nexport class RelayController {\n  private readonly handler = toNestJsHandler(relay);\n\n  @Post(':provider')\n  post(@Req() req: NestJsRelayRequest, @Res() res: NestJsRelayResponse) {\n    return this.handler(req, res);\n  }\n}\n`,
+      `import { Controller, Post, Req, Res } from '@nestjs/common';\nimport { toNestJsHandler, type NestJsRelayRequest, type NestJsRelayResponse } from 'restaq/nestjs';\nimport { restaq } from './relay';\n\n@Controller('api/webhook')\nexport class RelayController {\n  private readonly handler = toNestJsHandler(restaq);\n\n  @Post(':provider')\n  post(@Req() req: NestJsRelayRequest, @Res() res: NestJsRelayResponse) {\n    return this.handler(req, res);\n  }\n}\n`,
       'utf8',
     );
     p.log.step(`Created ${routePath}`);

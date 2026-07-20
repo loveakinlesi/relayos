@@ -12,11 +12,11 @@ export async function loadRelay(dir: string): Promise<Relay> {
   }
 
   const jiti = createJiti(import.meta.url);
-  const mod = (await jiti.import(configPath)) as { relay?: Relay };
-  if (!mod.relay) {
+  const mod = (await jiti.import(configPath)) as { restaq?: Relay };
+  if (!mod.restaq) {
     throw new Error(
-      `${configPath} does not export a "relay" - expected "export const relay = restaq({ ... })".`,
+      `${configPath} does not export a "restaq" - expected "export const restaq = createRestaq({ ... })".`,
     );
   }
-  return mod.relay;
+  return mod.restaq;
 }

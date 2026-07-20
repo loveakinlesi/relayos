@@ -119,8 +119,8 @@ function requireWebhookSecret(envVar: string, devFallback: string): string {
   return devFallback;
 }
 
-export const relay = restaq({
-  database: new Database('relay.db'),
+export const restaq = createRestaq({
+  database: new Database('restaq.db'),
   plugins: [stripe({ webhookSecret: requireWebhookSecret('STRIPE_WEBHOOK_SECRET', 'whsec_dev') })],
 });
 ```

@@ -10,11 +10,11 @@ NestJS support ships with `restaq` — no separate package, just import from the
 ```ts
 import { Controller, Post, Req, Res } from '@nestjs/common';
 import { toNestJsHandler, type NestJsRelayRequest, type NestJsRelayResponse } from 'restaq/nestjs';
-import { relay } from './relay';
+import { restaq } from './relay';
 
 @Controller('api/webhook')
 export class RelayController {
-  private readonly handler = toNestJsHandler(relay);
+  private readonly handler = toNestJsHandler(restaq);
 
   @Post(':provider')
   post(@Req() req: NestJsRelayRequest, @Res() res: NestJsRelayResponse) {
@@ -36,5 +36,5 @@ Provider signatures are verified against the exact raw request body. In Express-
 If your route uses a different parameter name, pass it explicitly:
 
 ```ts
-private readonly handler = toNestJsHandler(relay, { paramName: 'source' });
+private readonly handler = toNestJsHandler(restaq, { paramName: 'source' });
 ```

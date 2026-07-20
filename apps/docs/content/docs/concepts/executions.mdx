@@ -38,16 +38,16 @@ Use the Relay API:
 
 ```ts
 // List all executions (most recent first)
-const executions = await relay.listExecutions();
+const executions = await restaq.listExecutions();
 
 // Get a specific execution
-const exec = await relay.getExecution(executionId);
+const exec = await restaq.getExecution(executionId);
 
 // List all steps for an execution
-const steps = await relay.listSteps(executionId);
+const steps = await restaq.listSteps(executionId);
 
 // List all logs for an execution
-const logs = await relay.listLogs(executionId);
+const logs = await restaq.listLogs(executionId);
 ```
 
 Or use the CLI:

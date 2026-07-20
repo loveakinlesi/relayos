@@ -38,10 +38,10 @@ import { stripe } from '@restaq/stripe';
 
 ```ts
 // relay.ts
-import { restaq } from 'restaq';
+import { restaq as createRestaq } from 'restaq';
 import { stripe } from '@restaq/stripe';
 
-export const relay = restaq({
+export const restaq = createRestaq({
   plugins: [
     stripe(), // reads STRIPE_WEBHOOK_SECRET automatically
   ],

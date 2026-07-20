@@ -78,7 +78,7 @@ const myPlugin = definePlugin<MyEventMap>({
   },
 });
 
-// Now when you pass myPlugin to restaq, relay.on() autocompletes the event names
+// Now when you pass myPlugin to restaq, restaq.on() autocompletes the event names
 // and types event.data per event.
 ```
 
@@ -136,7 +136,7 @@ Use it in dev only:
 ```ts
 const isProduction = process.env.NODE_ENV === 'production';
 
-export const relay = restaq({
+export const restaq = createRestaq({
   database: pool,
   plugins: [...(isProduction ? [] : [testPlugin]), stripe()],
 });

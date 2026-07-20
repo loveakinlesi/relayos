@@ -65,7 +65,7 @@ function restaq<const TPlugins extends readonly RelayPlugin<any>[] = []>(
 ): Relay<EventMapOf<TPlugins>>;
 ```
 
-Creates a Restaq runtime instance. This is the main entry point for developers: register event handlers via `relay.on()`, receive provider webhooks through `relay.handler`, and configure persistence via `config.database` — a Postgres/SQLite/MySQL client (auto-detected), a `{ dialect }` Kysely escape hatch, or a custom `ExecutionStore`. The relay's event types are inferred from the plugins you register—typed plugins make `relay.on()` autocomplete event names and narrow event payloads.
+Creates a Restaq runtime instance. This is the main entry point for developers: register event handlers via `restaq.on()`, receive provider webhooks through `restaq.handler`, and configure persistence via `config.database` — a Postgres/SQLite/MySQL client (auto-detected), a `{ dialect }` Kysely escape hatch, or a custom `ExecutionStore`. The relay's event types are inferred from the plugins you register—typed plugins make `restaq.on()` autocomplete event names and narrow event payloads.
 
 ## `restaq/next-js`
 
@@ -88,9 +88,9 @@ Adapts a relay instance to a Next.js App Router catch-all route. Returns an obje
 ```ts
 // app/api/webhook/[...all]/route.ts
 import { toNextJsHandler } from 'restaq/next-js';
-import { relay } from '@/relay';
+import { restaq } from '@/relay';
 
-export const { POST } = toNextJsHandler(relay);
+export const { POST } = toNextJsHandler(restaq);
 ```
 
 Provider webhooks are then received at `/api/webhook/<provider>` (e.g., `/api/webhook/stripe`).

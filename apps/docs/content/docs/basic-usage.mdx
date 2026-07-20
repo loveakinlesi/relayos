@@ -63,10 +63,10 @@ relay.on('stripe.charge.succeeded', async (event, ctx) => {
 
 ## Ingesting events: webhook vs. direct
 
-In production, events usually arrive via the mounted webhook route (see [Next.js](/docs/frameworks/nextjs)) — the provider plugin verifies the signature and calls `relay.ingest()` for you. In tests or scripts, call `relay.ingest()` directly with the same shape:
+In production, events usually arrive via the mounted webhook route (see [Next.js](/docs/frameworks/nextjs)) — the provider plugin verifies the signature and calls `restaq.ingest()` for you. In tests or scripts, call `restaq.ingest()` directly with the same shape:
 
 ```ts
-const execution = await relay.ingest({
+const execution = await restaq.ingest({
   id: crypto.randomUUID(),
   type: 'order.placed',
   data: { orderId: 'ord_1', amount: 4200 },

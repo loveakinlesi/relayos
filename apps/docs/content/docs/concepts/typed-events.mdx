@@ -10,22 +10,22 @@ When you register a plugin with `restaq`, the event catalog is automatically inf
 Each plugin carries an event map—a TypeScript type that describes what events it can emit and what their payloads look like. When you pass the plugins array to `restaq`, the function infers the union of all those maps:
 
 ```ts
-import { restaq } from 'restaq';
+import { restaq as createRestaq } from 'restaq';
 import { stripe } from '@restaq/stripe';
 import { github } from '@restaq/github';
 
-export const relay = restaq({
+export const restaq = createRestaq({
   plugins: [stripe(), github()],
 });
 
-// relay.on() now autocompletes all Stripe and GitHub event names:
-relay.on('stripe.charge.succeeded', async (event, ctx) => {
+// restaq.on() now autocompletes all Stripe and GitHub event names:
+restaq.on('stripe.charge.succeeded', async (event, ctx) => {
   // event.data is typed as Stripe.Charge
   const charge = event.data.object;
   console.log(charge.amount); // ✓ TypeScript knows this field exists
 });
 
-relay.on('github.pull_request.opened', async (event, ctx) => {
+restaq.on('github.pull_request.opened', async (event, ctx) => {
   // event.data is typed as the GitHub pull_request.opened payload
   console.log(event.data.pull_request.title); // ✓ autocomplete works
 });
@@ -100,11 +100,11 @@ const myPlugin = definePlugin<MyEventMap>({
   },
 });
 
-export const relay = restaq({
+export const restaq = createRestaq({
   plugins: [myPlugin],
 });
 
-relay.on('my.user.created', async (event, ctx) => {
+restaq.on('my.user.created', async (event, ctx) => {
   console.log(event.data.userId); // ✓ typed as string
   console.log(event.data.email); // ✓ typed as string
 });

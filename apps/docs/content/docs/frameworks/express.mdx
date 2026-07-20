@@ -10,11 +10,11 @@ Express support ships with `restaq` — no separate package, just import from th
 ```ts
 import express from 'express';
 import { toExpressHandler } from 'restaq/express';
-import { relay } from './relay';
+import { restaq } from './relay';
 
 const app = express();
 
-app.post('/api/webhook/:provider', toExpressHandler(relay));
+app.post('/api/webhook/:provider', toExpressHandler(restaq));
 
 app.listen(3000);
 ```
@@ -29,7 +29,7 @@ Provider signatures are verified against the exact raw request body. Mount this 
 app.post(
   '/api/webhook/:provider',
   express.raw({ type: 'application/json' }),
-  toExpressHandler(relay),
+  toExpressHandler(restaq),
 );
 ```
 
@@ -38,5 +38,5 @@ app.post(
 If your route uses a different parameter name, pass it explicitly:
 
 ```ts
-app.post('/webhooks/:source', toExpressHandler(relay, { paramName: 'source' }));
+app.post('/webhooks/:source', toExpressHandler(restaq, { paramName: 'source' }));
 ```

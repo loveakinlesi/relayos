@@ -38,10 +38,10 @@ import { shopify } from '@restaq/shopify';
 
 ```ts
 // relay.ts
-import { restaq } from 'restaq';
+import { restaq as createRestaq } from 'restaq';
 import { shopify } from '@restaq/shopify';
 
-export const relay = restaq({
+export const restaq = createRestaq({
   plugins: [
     shopify(), // reads SHOPIFY_WEBHOOK_SECRET automatically
   ],
