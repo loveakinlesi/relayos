@@ -25,7 +25,7 @@ relay init [--force] [--dir <path>]
 3. **Database** — SQLite (recommended to get started), Postgres, or MySQL
 4. **Plugins** — Stripe, GitHub, Clerk, Shopify, Resend, or none
 
-It then detects your package manager from whatever lockfile is present (`pnpm-lock.yaml`, `yarn.lock`, `bun.lockb`, or falling back to npm) and installs `relayos`, the driver package for your chosen database, and any plugin packages you selected.
+It then detects your package manager from whatever lockfile is present (`pnpm-lock.yaml`, `yarn.lock`, `bun.lockb`, or falling back to npm) and installs `restaq`, the driver package for your chosen database, and any plugin packages you selected.
 
 ## Output
 
@@ -41,7 +41,7 @@ import type { AppRelay } from './relay';
 // app, split this across multiple files (e.g. one per feature) and call
 // each from registerHandlers.
 export function registerHandlers(relay: AppRelay): void {
-  // Events from @relayos provider plugins are fully typed - relay.on()
+  // Events from @restaq provider plugins are fully typed - relay.on()
   // autocompletes their event names and types event.data per event:
   //
   // relay.on('stripe.charge.succeeded', async (event, ctx) => {
@@ -58,12 +58,12 @@ export function registerHandlers(relay: AppRelay): void {
 
 ```ts
 // relay.ts
-import { relayos } from 'relayos';
+import { restaq } from 'restaq';
 import Database from 'better-sqlite3';
-import { stripe } from '@relayos/stripe';
+import { stripe } from '@restaq/stripe';
 import { registerHandlers } from './relay.handlers';
 
-export const relay = relayos({
+export const relay = restaq({
   database: new Database('relay.db'),
   plugins: [
     stripe(), // reads STRIPE_WEBHOOK_SECRET automatically
@@ -81,7 +81,7 @@ registerHandlers(relay);
 If Next.js was detected (or chosen), it also creates `app/api/webhook/[...all]/route.ts`:
 
 ```ts
-import { toNextJsHandler } from 'relayos/next-js';
+import { toNextJsHandler } from 'restaq/next-js';
 import { relay } from '../../../../relay';
 
 export const { POST } = toNextJsHandler(relay);

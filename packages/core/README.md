@@ -1,16 +1,16 @@
-# @relayos/core
+# @restaq/core
 
-The RelayOS engine: durable executions, idempotent steps, automatic retries, replay/restart, database support (Postgres/SQLite/MySQL, auto-detected, built on [Kysely](https://kysely.dev)), and the contracts (`ExecutionStore`, `RelayPlugin`, `NormalizedEvent`) every RelayOS package builds on.
+The Restaq engine: durable executions, idempotent steps, automatic retries, replay/restart, database support (Postgres/SQLite/MySQL, auto-detected, built on [Kysely](https://kysely.dev)), and the contracts (`ExecutionStore`, `RelayPlugin`, `NormalizedEvent`) every Restaq package builds on.
 
-Most applications should install [`relayos`](https://www.npmjs.com/package/relayos) (the SDK) instead — it re-exports everything user-facing from this package. Depend on `@relayos/core` directly when you're building a storage adapter, a provider plugin, or a framework integration.
+Most applications should install [`restaq`](https://www.npmjs.com/package/restaq) (the SDK) instead — it re-exports everything user-facing from this package. Depend on `@restaq/core` directly when you're building a storage adapter, a provider plugin, or a framework integration.
 
 ```sh
-pnpm add @relayos/core
+pnpm add @restaq/core
 ```
 
 ```ts
-import { createRelayEngine } from '@relayos/core';
-import type { ExecutionStore, RelayPlugin, NormalizedEvent } from '@relayos/core';
+import { createRelayEngine } from '@restaq/core';
+import type { ExecutionStore, RelayPlugin, NormalizedEvent } from '@restaq/core';
 ```
 
-See the [RelayOS documentation](https://github.com/loveakinlesi/relayos#readme) for guides and the full API reference.
+See the [Restaq documentation](https://github.com/loveakinlesi/restaq#readme) for guides and the full API reference.

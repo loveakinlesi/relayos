@@ -1,9 +1,9 @@
 ---
 title: Next.js
-description: Wire RelayOS into a Next.js App Router catch-all route.
+description: Wire Restaq into a Next.js App Router catch-all route.
 ---
 
-Next.js support ships with `relayos` — no separate package. If you've already run `pnpm add relayos`, you have `toNextJsHandler`, which converts your Relay instance into a standard App Router route handler.
+Next.js support ships with `restaq` — no separate package. If you've already run `pnpm add restaq`, you have `toNextJsHandler`, which converts your Relay instance into a standard App Router route handler.
 
 ## Setup
 
@@ -11,7 +11,7 @@ Create a catch-all route to receive webhooks from all your plugins:
 
 ```ts
 // app/api/webhook/[...all]/route.ts
-import { toNextJsHandler } from 'relayos/next-js';
+import { toNextJsHandler } from 'restaq/next-js';
 import { relay } from '@/relay';
 
 export const { POST } = toNextJsHandler(relay);

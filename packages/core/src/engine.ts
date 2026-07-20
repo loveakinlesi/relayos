@@ -113,7 +113,7 @@ export function createRelayEngine<const TPlugins extends readonly RelayPlugin<an
     };
 
     function write(level: LogLevel, message: string, data?: unknown) {
-      consoleByLevel[level](`[relayos:${level}]`, message, data ?? '');
+      consoleByLevel[level](`[restaq:${level}]`, message, data ?? '');
       pending.push(
         store.saveLog({
           id: crypto.randomUUID(),
@@ -164,7 +164,7 @@ export function createRelayEngine<const TPlugins extends readonly RelayPlugin<an
   function scheduleRetry(executionId: string, delayMs: number) {
     setTimeout(() => {
       retryExecution(executionId, 'scheduled').catch((err) => {
-        console.error(`[relayos] scheduled retry failed for execution ${executionId}`, err);
+        console.error(`[restaq] scheduled retry failed for execution ${executionId}`, err);
       });
     }, delayMs);
   }

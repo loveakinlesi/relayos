@@ -1,22 +1,22 @@
 ---
-title: '@relayos/stripe'
+title: '@restaq/stripe'
 description: Stripe webhook plugin with signature verification and fully-typed event catalog.
 ---
 
 ## Install
 
 ```sh
-pnpm add @relayos/stripe stripe
+pnpm add @restaq/stripe stripe
 ```
 
-Peer dependencies: `@relayos/core`, `stripe` (>=17)
+Peer dependencies: `@restaq/core`, `stripe` (>=17)
 
 ## Exports
 
 | Export                | Kind     | Description                                                                |
 | --------------------- | -------- | -------------------------------------------------------------------------- |
 | `stripe`              | Function | Creates a Stripe plugin for webhook ingestion.                             |
-| `StripeEventMap`      | Type     | Fully-typed catalog of every Stripe event, keyed by RelayOS's namespacing. |
+| `StripeEventMap`      | Type     | Fully-typed catalog of every Stripe event, keyed by Restaq's namespacing. |
 | `StripePluginOptions` | Type     | Configuration for the Stripe plugin.                                       |
 
 ## Types
@@ -50,10 +50,10 @@ Configuration for the Stripe plugin. `webhookSecret` defaults to `process.env.ST
 function stripe(options?: StripePluginOptions): RelayPlugin<StripeEventMap>;
 ```
 
-Creates a Stripe plugin. Verifies webhook signatures using Stripe's HMAC-SHA256 scheme and normalizes incoming events into RelayOS's format. Registers as the `"stripe"` provider and makes all Stripe event types available for typed handler registration via `relay.on()`.
+Creates a Stripe plugin. Verifies webhook signatures using Stripe's HMAC-SHA256 scheme and normalizes incoming events into Restaq's format. Registers as the `"stripe"` provider and makes all Stripe event types available for typed handler registration via `relay.on()`.
 
 ## See also
 
 - [Stripe plugin guide](/docs/plugins/stripe)
 - [Writing plugins](/docs/plugins/writing-plugins)
-- [@relayos/plugin](/docs/reference/plugin)
+- [@restaq/plugin](/docs/reference/plugin)

@@ -3,8 +3,8 @@ title: SQLite
 description: Use better-sqlite3 for local development and small deployments.
 ---
 
-Pass a `better-sqlite3` database straight into `relayos({ database })`.
-RelayOS detects the dialect automatically and applies its own schema
+Pass a `better-sqlite3` database straight into `restaq({ database })`.
+Restaq detects the dialect automatically and applies its own schema
 migrations.
 
 <Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
@@ -32,10 +32,10 @@ migrations.
 
 ```ts
 // relay.ts
-import { relayos } from 'relayos';
+import { restaq } from 'restaq';
 import Database from 'better-sqlite3';
 
-export const relay = relayos({
+export const relay = restaq({
   database: new Database('relay.db'),
   plugins: [
     // ...

@@ -19,7 +19,7 @@ importers:
       '@commitlint/config-conventional':
         specifier: ^19.6.0
         version: 19.8.1
-      '@relayos/cli':
+      '@restaq/cli':
         specifier: workspace:*
         version: link:packages/cli
       '@semantic-release/changelog':
@@ -131,13 +131,13 @@ importers:
 
   e2e:
     devDependencies:
-      '@relayos/cli':
+      '@restaq/cli':
         specifier: workspace:*
         version: link:../packages/cli
-      '@relayos/core':
+      '@restaq/core':
         specifier: workspace:*
         version: link:../packages/core
-      '@relayos/stripe':
+      '@restaq/stripe':
         specifier: workspace:*
         version: link:../packages/stripe
       '@types/better-sqlite3':
@@ -152,9 +152,9 @@ importers:
       jiti:
         specifier: ^2.7.0
         version: 2.7.0
-      relayos:
+      restaq:
         specifier: workspace:*
-        version: link:../packages/relayos
+        version: link:../packages/restaq
       rimraf:
         specifier: ^6.0.0
         version: 6.1.3
@@ -167,11 +167,11 @@ importers:
 
   packages/clerk:
     dependencies:
-      '@relayos/plugin':
+      '@restaq/plugin':
         specifier: workspace:^
         version: link:../plugin
     devDependencies:
-      '@relayos/core':
+      '@restaq/core':
         specifier: workspace:^
         version: link:../core
       rimraf:
@@ -192,22 +192,22 @@ importers:
       '@clack/prompts':
         specifier: ^1.7.0
         version: 1.7.0
-      '@relayos/clerk':
+      '@restaq/clerk':
         specifier: workspace:^
         version: link:../clerk
-      '@relayos/core':
+      '@restaq/core':
         specifier: workspace:^
         version: link:../core
-      '@relayos/github':
+      '@restaq/github':
         specifier: workspace:^
         version: link:../github
-      '@relayos/resend':
+      '@restaq/resend':
         specifier: workspace:^
         version: link:../resend
-      '@relayos/shopify':
+      '@restaq/shopify':
         specifier: workspace:^
         version: link:../shopify
-      '@relayos/stripe':
+      '@restaq/stripe':
         specifier: workspace:^
         version: link:../stripe
       jiti:
@@ -272,11 +272,11 @@ importers:
       '@octokit/webhooks-types':
         specifier: ^7.6.1
         version: 7.6.1
-      '@relayos/plugin':
+      '@restaq/plugin':
         specifier: workspace:^
         version: link:../plugin
     devDependencies:
-      '@relayos/core':
+      '@restaq/core':
         specifier: workspace:^
         version: link:../core
       rimraf:
@@ -294,31 +294,9 @@ importers:
 
   packages/plugin:
     devDependencies:
-      '@relayos/core':
+      '@restaq/core':
         specifier: workspace:^
         version: link:../core
-      rimraf:
-        specifier: ^6.0.0
-        version: 6.1.3
-      tsup:
-        specifier: ^8.0.0
-        version: 8.5.1(jiti@2.7.0)(postcss@8.5.19)(tsx@4.22.3)(typescript@5.9.3)(yaml@2.9.0)
-      typescript:
-        specifier: ^5.0.0
-        version: 5.9.3
-      vitest:
-        specifier: ^4.1.7
-        version: 4.1.7(@types/node@26.1.1)(@vitest/coverage-v8@4.1.7)(vite@8.1.5(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.22.3)(yaml@2.9.0))
-
-  packages/relayos:
-    dependencies:
-      '@relayos/cli':
-        specifier: workspace:^
-        version: link:../cli
-      '@relayos/core':
-        specifier: workspace:^
-        version: link:../core
-    devDependencies:
       rimraf:
         specifier: ^6.0.0
         version: 6.1.3
@@ -334,11 +312,11 @@ importers:
 
   packages/resend:
     dependencies:
-      '@relayos/plugin':
+      '@restaq/plugin':
         specifier: workspace:^
         version: link:../plugin
     devDependencies:
-      '@relayos/core':
+      '@restaq/core':
         specifier: workspace:^
         version: link:../core
       rimraf:
@@ -354,13 +332,35 @@ importers:
         specifier: ^4.1.7
         version: 4.1.7(@types/node@26.1.1)(@vitest/coverage-v8@4.1.7)(vite@8.1.5(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.22.3)(yaml@2.9.0))
 
+  packages/restaq:
+    dependencies:
+      '@restaq/cli':
+        specifier: workspace:^
+        version: link:../cli
+      '@restaq/core':
+        specifier: workspace:^
+        version: link:../core
+    devDependencies:
+      rimraf:
+        specifier: ^6.0.0
+        version: 6.1.3
+      tsup:
+        specifier: ^8.0.0
+        version: 8.5.1(jiti@2.7.0)(postcss@8.5.19)(tsx@4.22.3)(typescript@5.9.3)(yaml@2.9.0)
+      typescript:
+        specifier: ^5.0.0
+        version: 5.9.3
+      vitest:
+        specifier: ^4.1.7
+        version: 4.1.7(@types/node@26.1.1)(@vitest/coverage-v8@4.1.7)(vite@8.1.5(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.22.3)(yaml@2.9.0))
+
   packages/shopify:
     dependencies:
-      '@relayos/plugin':
+      '@restaq/plugin':
         specifier: workspace:^
         version: link:../plugin
     devDependencies:
-      '@relayos/core':
+      '@restaq/core':
         specifier: workspace:^
         version: link:../core
       rimraf:
@@ -378,11 +378,11 @@ importers:
 
   packages/stripe:
     dependencies:
-      '@relayos/plugin':
+      '@restaq/plugin':
         specifier: workspace:^
         version: link:../plugin
     devDependencies:
-      '@relayos/core':
+      '@restaq/core':
         specifier: workspace:^
         version: link:../core
       rimraf:

@@ -1,15 +1,15 @@
 ---
 title: NestJS
-description: Wire RelayOS into a NestJS controller.
+description: Wire Restaq into a NestJS controller.
 ---
 
-NestJS support ships with `relayos` — no separate package, just import from the `relayos/nestjs` subpath. `toNestJsHandler` adapts your Relay instance to a controller method that takes `@Req()` and `@Res()`.
+NestJS support ships with `restaq` — no separate package, just import from the `restaq/nestjs` subpath. `toNestJsHandler` adapts your Relay instance to a controller method that takes `@Req()` and `@Res()`.
 
 ## Setup
 
 ```ts
 import { Controller, Post, Req, Res } from '@nestjs/common';
-import { toNestJsHandler, type NestJsRelayRequest, type NestJsRelayResponse } from 'relayos/nestjs';
+import { toNestJsHandler, type NestJsRelayRequest, type NestJsRelayResponse } from 'restaq/nestjs';
 import { relay } from './relay';
 
 @Controller('api/webhook')

@@ -1,17 +1,17 @@
 {
-  "name": "@relayos/cli",
+  "name": "@restaq/cli",
   "version": "0.1.1",
-  "description": "CLI for RelayOS - migrations and local dev tooling.",
+  "description": "CLI for Restaq - migrations and local dev tooling.",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/loveakinlesi/relayos.git",
+    "url": "git+https://github.com/loveakinlesi/restaq.git",
     "directory": "packages/cli"
   },
-  "homepage": "https://github.com/loveakinlesi/relayos#readme",
-  "bugs": "https://github.com/loveakinlesi/relayos/issues",
+  "homepage": "https://github.com/loveakinlesi/restaq#readme",
+  "bugs": "https://github.com/loveakinlesi/restaq/issues",
   "keywords": [
-    "relayos",
+    "restaq",
     "webhooks",
     "events",
     "durable-execution",
@@ -53,12 +53,12 @@
     "clean": "rimraf dist tsconfig.tsbuildinfo"
   },
   "dependencies": {
-    "@relayos/core": "workspace:^",
-    "@relayos/stripe": "workspace:^",
-    "@relayos/github": "workspace:^",
-    "@relayos/clerk": "workspace:^",
-    "@relayos/shopify": "workspace:^",
-    "@relayos/resend": "workspace:^",
+    "@restaq/core": "workspace:^",
+    "@restaq/stripe": "workspace:^",
+    "@restaq/github": "workspace:^",
+    "@restaq/clerk": "workspace:^",
+    "@restaq/shopify": "workspace:^",
+    "@restaq/resend": "workspace:^",
     "@clack/prompts": "^1.7.0",
     "jiti": "^2.7.0"
   },

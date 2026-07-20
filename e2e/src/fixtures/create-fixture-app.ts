@@ -1,11 +1,11 @@
 import { mkdir, mkdtemp, writeFile, cp, rm } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { buildRelayConfigTemplate, RELAY_HANDLERS_TEMPLATE } from '@relayos/cli/lib';
+import { buildRelayConfigTemplate, RELAY_HANDLERS_TEMPLATE } from '@restaq/cli/lib';
 
 const here = dirname(fileURLToPath(import.meta.url));
 // Deliberately created *inside* e2e/, not os.tmpdir() - Node's module
-// resolution for the fixture's `import 'relayos'` (etc.) walks up from
+// resolution for the fixture's `import 'restaq'` (etc.) walks up from
 // wherever relay.ts lives looking for node_modules. A directory under
 // e2e/.tmp/ walks up into e2e/node_modules and finds the real
 // workspace-linked packages; the OS temp directory never would.

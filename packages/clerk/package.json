@@ -1,17 +1,17 @@
 {
-  "name": "@relayos/clerk",
+  "name": "@restaq/clerk",
   "version": "0.1.1",
-  "description": "The RelayOS Clerk plugin: Svix signature-verified webhook ingestion for Clerk events.",
+  "description": "The Restaq Clerk plugin: Svix signature-verified webhook ingestion for Clerk events.",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/loveakinlesi/relayos.git",
+    "url": "git+https://github.com/loveakinlesi/restaq.git",
     "directory": "packages/clerk"
   },
-  "homepage": "https://github.com/loveakinlesi/relayos#readme",
-  "bugs": "https://github.com/loveakinlesi/relayos/issues",
+  "homepage": "https://github.com/loveakinlesi/restaq#readme",
+  "bugs": "https://github.com/loveakinlesi/restaq/issues",
   "keywords": [
-    "relayos",
+    "restaq",
     "webhooks",
     "events",
     "durable-execution",
@@ -54,13 +54,13 @@
     "clean": "rimraf dist coverage tsconfig.tsbuildinfo"
   },
   "dependencies": {
-    "@relayos/plugin": "workspace:^"
+    "@restaq/plugin": "workspace:^"
   },
   "peerDependencies": {
-    "@relayos/core": "0.x"
+    "@restaq/core": "0.x"
   },
   "devDependencies": {
-    "@relayos/core": "workspace:^",
+    "@restaq/core": "workspace:^",
     "rimraf": "^6.0.0",
     "tsup": "^8.0.0",
     "typescript": "^5.0.0",

@@ -1,17 +1,17 @@
 {
-  "name": "relayos",
+  "name": "restaq",
   "version": "0.1.1",
-  "description": "The RelayOS runtime: durable, replayable webhook and event execution for TypeScript backends.",
+  "description": "The Restaq runtime: durable, replayable webhook and event execution for TypeScript backends.",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/loveakinlesi/relayos.git",
-    "directory": "packages/relayos"
+    "url": "git+https://github.com/loveakinlesi/restaq.git",
+    "directory": "packages/restaq"
   },
-  "homepage": "https://github.com/loveakinlesi/relayos#readme",
-  "bugs": "https://github.com/loveakinlesi/relayos/issues",
+  "homepage": "https://github.com/loveakinlesi/restaq#readme",
+  "bugs": "https://github.com/loveakinlesi/restaq/issues",
   "keywords": [
-    "relayos",
+    "restaq",
     "webhooks",
     "events",
     "durable-execution",
@@ -102,8 +102,8 @@
     "clean": "rimraf dist coverage tsconfig.tsbuildinfo"
   },
   "dependencies": {
-    "@relayos/core": "workspace:^",
-    "@relayos/cli": "workspace:^"
+    "@restaq/core": "workspace:^",
+    "@restaq/cli": "workspace:^"
   },
   "devDependencies": {
     "rimraf": "^6.0.0",

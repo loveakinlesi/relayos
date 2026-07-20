@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { stripe } from '@relayos/stripe';
+import { stripe } from '@restaq/stripe';
 import { createFixtureApp, STRIPE_WEBHOOK_SECRET } from './fixtures/create-fixture-app';
 import { spawnServer } from './fixtures/spawn';
 

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  relayos,
+  restaq,
   type Execution,
   type ExecutionLog,
   type ExecutionStep,
@@ -15,9 +15,9 @@ import {
 } from './index';
 
 // A minimal in-memory ExecutionStore fake, local to this test file. Not part
-// of the public surface (relayos has no zero-config default anymore - a
+// of the public surface (restaq has no zero-config default anymore - a
 // database must always be supplied), just a working store for this suite to
-// prove relayos() end-to-end without depending on a real Postgres/SQLite/
+// prove restaq() end-to-end without depending on a real Postgres/SQLite/
 // MySQL client.
 function createFakeStore(): ExecutionStore {
   const executions = new Map<string, Execution>();
@@ -64,10 +64,10 @@ function createFakeStore(): ExecutionStore {
   };
 }
 
-// The SDK is a thin surface over @relayos/core - the engine's behavior is
-// covered exhaustively in @relayos/core's own tests. This suite just proves
-// the public surface: relayos() works end-to-end and every user-facing
-// type is importable from 'relayos'.
+// The SDK is a thin surface over @restaq/core - the engine's behavior is
+// covered exhaustively in @restaq/core's own tests. This suite just proves
+// the public surface: restaq() works end-to-end and every user-facing
+// type is importable from 'restaq'.
 
 // Referencing each re-exported type so tsc fails the lint gate if one
 // disappears from the public surface.
@@ -85,9 +85,9 @@ type PublicSurface = [
   RuntimeContext,
 ];
 
-describe('relayos SDK', () => {
+describe('restaq SDK', () => {
   it('processes an event end-to-end against a custom ExecutionStore', async () => {
-    const relay = relayos({ database: createFakeStore() });
+    const relay = restaq({ database: createFakeStore() });
     const seen: string[] = [];
 
     relay.on('test.ping', async (event, ctx) => {
@@ -111,7 +111,7 @@ describe('relayos SDK', () => {
 
   it('accepts an explicit ExecutionStore as database', async () => {
     const store = createFakeStore();
-    const relay = relayos({ database: store });
+    const relay = restaq({ database: store });
 
     const execution = await relay.ingest({
       id: 'evt-sdk-2',

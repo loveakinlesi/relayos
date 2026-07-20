@@ -3,7 +3,7 @@ title: relay trigger
 description: Simulate a signed provider webhook delivery for testing.
 ---
 
-Build a properly signed webhook payload and POST it to your running RelayOS instance. Useful for testing handlers without a real provider.
+Build a properly signed webhook payload and POST it to your running Restaq instance. Useful for testing handlers without a real provider.
 
 ## Usage
 
@@ -18,7 +18,7 @@ relay trigger <provider> <eventType> [--data '<json>'] [--forward <url>]
 | `<provider>`      | Yes      | The plugin ID: `stripe`, `github`, `clerk`, `shopify`, `resend`, or a custom plugin            |
 | `<eventType>`     | Yes      | The event name, e.g. `charge.succeeded` for Stripe, `push` or `pull_request.opened` for GitHub |
 | `--data '<json>'` | No       | JSON payload to include in the event. Default is `{}`                                          |
-| `--forward <url>` | No       | URL to POST to. Default is `RELAYOS_BASE_URL` or `http://localhost:3000`                       |
+| `--forward <url>` | No       | URL to POST to. Default is `RESTAQ_BASE_URL` or `http://localhost:3000`                       |
 
 ## Environment variables
 
@@ -29,7 +29,7 @@ relay trigger <provider> <eventType> [--data '<json>'] [--forward <url>]
 | `CLERK_WEBHOOK_SECRET`   | `relay trigger clerk ...`   | Signs the webhook for Clerk verification                       |
 | `SHOPIFY_WEBHOOK_SECRET` | `relay trigger shopify ...` | Signs the webhook for Shopify verification                     |
 | `RESEND_WEBHOOK_SECRET`  | `relay trigger resend ...`  | Signs the webhook for Resend verification                      |
-| `RELAYOS_BASE_URL`       | No `--forward` specified    | Where to POST the webhook. Defaults to `http://localhost:3000` |
+| `RESTAQ_BASE_URL`       | No `--forward` specified    | Where to POST the webhook. Defaults to `http://localhost:3000` |
 
 ## Examples
 
@@ -103,7 +103,7 @@ relay trigger stripe charge.succeeded \
 Or set the environment variable:
 
 ```sh
-RELAYOS_BASE_URL=https://api.example.com \
+RESTAQ_BASE_URL=https://api.example.com \
 relay trigger stripe charge.succeeded --data '{...}'
 ```
 

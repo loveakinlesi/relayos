@@ -1,18 +1,18 @@
-# @relayos/resend
+# @restaq/resend
 
-The RelayOS Resend plugin: Svix-style webhook verification against the raw request body, plus typed RelayOS event names for Resend email events.
+The Restaq Resend plugin: Svix-style webhook verification against the raw request body, plus typed Restaq event names for Resend email events.
 
 ```sh
-pnpm add @relayos/resend
+pnpm add @restaq/resend
 ```
 
 ```ts
 // relay.ts - wiring only
-import { relayos } from 'relayos';
-import { resend } from '@relayos/resend';
+import { restaq } from 'restaq';
+import { resend } from '@restaq/resend';
 import { registerHandlers } from './relay.handlers';
 
-export const relay = relayos({
+export const relay = restaq({
   plugins: [resend()], // reads RESEND_WEBHOOK_SECRET automatically
 });
 export type AppRelay = typeof relay;

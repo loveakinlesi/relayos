@@ -1,17 +1,17 @@
 {
-  "name": "@relayos/plugin",
+  "name": "@restaq/plugin",
   "version": "0.1.1",
-  "description": "The RelayOS plugin authoring kit: definePlugin and webhook signature helpers for building provider plugins.",
+  "description": "The Restaq plugin authoring kit: definePlugin and webhook signature helpers for building provider plugins.",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/loveakinlesi/relayos.git",
+    "url": "git+https://github.com/loveakinlesi/restaq.git",
     "directory": "packages/plugin"
   },
-  "homepage": "https://github.com/loveakinlesi/relayos#readme",
-  "bugs": "https://github.com/loveakinlesi/relayos/issues",
+  "homepage": "https://github.com/loveakinlesi/restaq#readme",
+  "bugs": "https://github.com/loveakinlesi/restaq/issues",
   "keywords": [
-    "relayos",
+    "restaq",
     "webhooks",
     "events",
     "durable-execution",
@@ -55,13 +55,13 @@
     "clean": "rimraf dist coverage tsconfig.tsbuildinfo"
   },
   "devDependencies": {
-    "@relayos/core": "workspace:^",
+    "@restaq/core": "workspace:^",
     "rimraf": "^6.0.0",
     "tsup": "^8.0.0",
     "typescript": "^5.0.0",
     "vitest": "^4.1.7"
   },
   "peerDependencies": {
-    "@relayos/core": "0.x"
+    "@restaq/core": "0.x"
   }
 }

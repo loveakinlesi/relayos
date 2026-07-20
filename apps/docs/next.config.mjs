@@ -5,7 +5,7 @@ const withMDX = createMDX();
 // Set only by the GitHub Pages deploy workflow - keeps `pnpm dev`/`pnpm build`
 // unaffected everywhere else (regular Next.js server build, no base path).
 const isGithubPages = process.env.GITHUB_PAGES === 'true';
-const basePath = isGithubPages ? '/relayos' : '';
+const basePath = isGithubPages ? '/restaq' : '';
 
 /** @type {import('next').NextConfig} */
 const config = {

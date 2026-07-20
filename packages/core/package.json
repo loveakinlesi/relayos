@@ -1,17 +1,17 @@
 {
-  "name": "@relayos/core",
+  "name": "@restaq/core",
   "version": "0.1.1",
-  "description": "The RelayOS engine: durable executions, steps, retries, replay, and the contracts every RelayOS package builds on.",
+  "description": "The Restaq engine: durable executions, steps, retries, replay, and the contracts every Restaq package builds on.",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/loveakinlesi/relayos.git",
+    "url": "git+https://github.com/loveakinlesi/restaq.git",
     "directory": "packages/core"
   },
-  "homepage": "https://github.com/loveakinlesi/relayos#readme",
-  "bugs": "https://github.com/loveakinlesi/relayos/issues",
+  "homepage": "https://github.com/loveakinlesi/restaq#readme",
+  "bugs": "https://github.com/loveakinlesi/restaq/issues",
   "keywords": [
-    "relayos",
+    "restaq",
     "webhooks",
     "events",
     "durable-execution",

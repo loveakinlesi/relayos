@@ -3,13 +3,13 @@ title: Durable Steps
 description: Checkpoint work with ctx.step.run() so retries skip completed steps
 ---
 
-The core feature of RelayOS is `ctx.step.run(name, fn)`—a way to checkpoint work so that retries never re-run a step that already succeeded.
+The core feature of Restaq is `ctx.step.run(name, fn)`—a way to checkpoint work so that retries never re-run a step that already succeeded.
 
 ## How it works
 
 When a handler calls `ctx.step.run(name, fn)`:
 
-1. RelayOS checks if a step with that name has ever completed for this execution.
+1. Restaq checks if a step with that name has ever completed for this execution.
 2. If yes, it returns the cached output without running `fn` again.
 3. If no (or if the step previously failed), `fn` runs and the output is cached.
 4. If `fn` throws, the step is recorded as failed and the exception propagates.

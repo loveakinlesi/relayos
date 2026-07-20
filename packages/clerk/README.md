@@ -1,18 +1,18 @@
-# @relayos/clerk
+# @restaq/clerk
 
-The RelayOS Clerk plugin: Svix-style webhook verification against the raw request body, plus typed RelayOS event names for common Clerk webhook events.
+The Restaq Clerk plugin: Svix-style webhook verification against the raw request body, plus typed Restaq event names for common Clerk webhook events.
 
 ```sh
-pnpm add @relayos/clerk
+pnpm add @restaq/clerk
 ```
 
 ```ts
 // relay.ts - wiring only
-import { relayos } from 'relayos';
-import { clerk } from '@relayos/clerk';
+import { restaq } from 'restaq';
+import { clerk } from '@restaq/clerk';
 import { registerHandlers } from './relay.handlers';
 
-export const relay = relayos({
+export const relay = restaq({
   plugins: [clerk()], // reads CLERK_WEBHOOK_SECRET automatically
 });
 export type AppRelay = typeof relay;

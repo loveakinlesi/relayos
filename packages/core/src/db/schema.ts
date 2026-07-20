@@ -1,6 +1,6 @@
 // All-camelCase, including table names - paired with kysely's CamelCasePlugin
 // (see resolve.ts), which transforms every identifier here to snake_case for
-// the real SQL sent to the database (relayosExecutions -> relayos_executions).
+// the real SQL sent to the database (restaqExecutions -> restaq_executions).
 export interface RelayosExecutionsTable {
   id: string;
   eventId: string;
@@ -35,7 +35,7 @@ export interface RelayosExecutionLogsTable {
 }
 
 export interface Database {
-  relayosExecutions: RelayosExecutionsTable;
-  relayosExecutionSteps: RelayosExecutionStepsTable;
-  relayosExecutionLogs: RelayosExecutionLogsTable;
+  restaqExecutions: RelayosExecutionsTable;
+  restaqExecutionSteps: RelayosExecutionStepsTable;
+  restaqExecutionLogs: RelayosExecutionLogsTable;
 }

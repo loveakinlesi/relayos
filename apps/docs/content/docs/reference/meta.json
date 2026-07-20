@@ -1,4 +1,4 @@
 {
   "title": "Reference",
-  "pages": ["core", "relayos", "plugin", "stripe", "github", "clerk", "shopify", "resend", "cli"]
+  "pages": ["core", "restaq", "plugin", "stripe", "github", "clerk", "shopify", "resend", "cli"]
 }

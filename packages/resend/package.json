@@ -1,17 +1,17 @@
 {
-  "name": "@relayos/resend",
+  "name": "@restaq/resend",
   "version": "0.1.1",
-  "description": "The RelayOS Resend plugin: Svix signature-verified webhook ingestion for Resend email events.",
+  "description": "The Restaq Resend plugin: Svix signature-verified webhook ingestion for Resend email events.",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/loveakinlesi/relayos.git",
+    "url": "git+https://github.com/loveakinlesi/restaq.git",
     "directory": "packages/resend"
   },
-  "homepage": "https://github.com/loveakinlesi/relayos#readme",
-  "bugs": "https://github.com/loveakinlesi/relayos/issues",
+  "homepage": "https://github.com/loveakinlesi/restaq#readme",
+  "bugs": "https://github.com/loveakinlesi/restaq/issues",
   "keywords": [
-    "relayos",
+    "restaq",
     "webhooks",
     "events",
     "durable-execution",
@@ -55,13 +55,13 @@
     "clean": "rimraf dist coverage tsconfig.tsbuildinfo"
   },
   "dependencies": {
-    "@relayos/plugin": "workspace:^"
+    "@restaq/plugin": "workspace:^"
   },
   "peerDependencies": {
-    "@relayos/core": "0.x"
+    "@restaq/core": "0.x"
   },
   "devDependencies": {
-    "@relayos/core": "workspace:^",
+    "@restaq/core": "workspace:^",
     "rimraf": "^6.0.0",
     "tsup": "^8.0.0",
     "typescript": "^5.0.0",

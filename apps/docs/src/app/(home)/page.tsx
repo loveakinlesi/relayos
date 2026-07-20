@@ -60,7 +60,7 @@ const features = [
     icon: Database,
     title: 'Storage, auto-detected',
     description:
-      'Pass a pg.Pool, better-sqlite3 database, or mysql2 pool straight into relayos({ database }) - the dialect is detected automatically, migrations included.',
+      'Pass a pg.Pool, better-sqlite3 database, or mysql2 pool straight into restaq({ database }) - the dialect is detected automatically, migrations included.',
     color: 'text-amber-600 bg-amber-500/10 dark:text-amber-400',
   },
   {
@@ -77,7 +77,7 @@ const providers: (keyof typeof techIcons)[] = ['stripe', 'github', 'clerk', 'sho
 
 export default async function HomePage() {
   const [initCommandCode, handlerCode] = await Promise.all([
-    highlight('npx relayos@latest init', { lang: 'bash', themes: shikiThemes, defaultColor: false }),
+    highlight('npx restaq@latest init', { lang: 'bash', themes: shikiThemes, defaultColor: false }),
     highlight(handlerSnippet, { lang: 'ts', themes: shikiThemes, defaultColor: false }),
   ]);
 
@@ -110,7 +110,7 @@ export default async function HomePage() {
           is the hard part.
         </h1>
         <p className="mb-10 max-w-xl text-balance text-fd-muted-foreground md:text-lg">
-          RelayOS checkpoints every step of your webhook handlers - retries resume past what
+          Restaq checkpoints every step of your webhook handlers - retries resume past what
           already succeeded, historical events replay on demand, and every attempt leaves an
           audit trail.
         </p>

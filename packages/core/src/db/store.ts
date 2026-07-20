@@ -81,7 +81,7 @@ export function createSqlExecutionStore(
         // the insert race" contract is read off the affected-row count of
         // an `insert ignore` instead of a returned row.
         const result = await db
-          .insertInto('relayosExecutions')
+          .insertInto('restaqExecutions')
           .values(values)
           .ignore()
           .executeTakeFirst();
@@ -89,7 +89,7 @@ export function createSqlExecutionStore(
       }
 
       const row = await db
-        .insertInto('relayosExecutions')
+        .insertInto('restaqExecutions')
         .values(values)
         .onConflict((oc) => oc.column('eventId').doNothing())
         .returning('id')
@@ -107,12 +107,12 @@ export function createSqlExecutionStore(
       if ('error' in patch) values['error'] = patch.error ?? null;
       if (Object.keys(values).length === 0) return;
 
-      await db.updateTable('relayosExecutions').set(values).where('id', '=', id).execute();
+      await db.updateTable('restaqExecutions').set(values).where('id', '=', id).execute();
     },
 
     async list() {
       const rows = await db
-        .selectFrom('relayosExecutions')
+        .selectFrom('restaqExecutions')
         .selectAll()
         .orderBy('createdAt', 'desc')
         .execute();
@@ -121,7 +121,7 @@ export function createSqlExecutionStore(
 
     async get(id) {
       const row = await db
-        .selectFrom('relayosExecutions')
+        .selectFrom('restaqExecutions')
         .selectAll()
         .where('id', '=', id)
         .executeTakeFirst();
@@ -130,7 +130,7 @@ export function createSqlExecutionStore(
 
     async findByEventId(eventId) {
       const row = await db
-        .selectFrom('relayosExecutions')
+        .selectFrom('restaqExecutions')
         .selectAll()
         .where('eventId', '=', eventId)
         .executeTakeFirst();
@@ -139,7 +139,7 @@ export function createSqlExecutionStore(
 
     async getStep(executionId, name) {
       const row = await db
-        .selectFrom('relayosExecutionSteps')
+        .selectFrom('restaqExecutionSteps')
         .selectAll()
         .where('executionId', '=', executionId)
         .where('name', '=', name)
@@ -151,7 +151,7 @@ export function createSqlExecutionStore(
 
     async saveStep(step) {
       await db
-        .insertInto('relayosExecutionSteps')
+        .insertInto('restaqExecutionSteps')
         .values({
           id: step.id,
           executionId: step.executionId,
@@ -166,7 +166,7 @@ export function createSqlExecutionStore(
 
     async listSteps(executionId) {
       const rows = await db
-        .selectFrom('relayosExecutionSteps')
+        .selectFrom('restaqExecutionSteps')
         .selectAll()
         .where('executionId', '=', executionId)
         .orderBy('createdAt', 'asc')
@@ -176,7 +176,7 @@ export function createSqlExecutionStore(
 
     async saveLog(log) {
       await db
-        .insertInto('relayosExecutionLogs')
+        .insertInto('restaqExecutionLogs')
         .values({
           id: log.id,
           executionId: log.executionId,
@@ -191,7 +191,7 @@ export function createSqlExecutionStore(
 
     async listLogs(executionId) {
       const rows = await db
-        .selectFrom('relayosExecutionLogs')
+        .selectFrom('restaqExecutionLogs')
         .selectAll()
         .where('executionId', '=', executionId)
         .orderBy('createdAt', 'asc')

@@ -1,6 +1,6 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
-import { definePlugin, resolveWebhookSecret } from '@relayos/plugin';
-import type { RelayPlugin } from '@relayos/core';
+import { definePlugin, resolveWebhookSecret } from '@restaq/plugin';
+import type { RelayPlugin } from '@restaq/core';
 import type { ShopifyEventMap } from './events';
 
 export type { ShopifyEventMap, ShopifyWebhookPayload } from './events';

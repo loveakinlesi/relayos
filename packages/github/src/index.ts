@@ -1,5 +1,5 @@
-import { definePlugin, hmacSha256Hex, resolveWebhookSecret, safeEqualHex } from '@relayos/plugin';
-import type { RelayPlugin } from '@relayos/core';
+import { definePlugin, hmacSha256Hex, resolveWebhookSecret, safeEqualHex } from '@restaq/plugin';
+import type { RelayPlugin } from '@restaq/core';
 import type { GitHubEventMap } from './events';
 
 export type { GitHubEventMap } from './events';

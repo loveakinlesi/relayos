@@ -1,5 +1,5 @@
 import { describe, it, expect, expectTypeOf, afterEach } from 'vitest';
-import type { RelayPlugin } from '@relayos/core';
+import type { RelayPlugin } from '@restaq/core';
 import { definePlugin, resolveWebhookSecret } from './index';
 
 describe('resolveWebhookSecret', () => {

@@ -14,7 +14,7 @@ export type HonoRelayOptions = {
 
 /**
  * Adapts a relay to a Hono handler. Hono already uses the web-standard
- * Request/Response model, so this only maps route params into RelayOS.
+ * Request/Response model, so this only maps route params into Restaq.
  */
 export function toHonoHandler<TEventMap extends Record<string, unknown>>(
   relay: Relay<TEventMap>,

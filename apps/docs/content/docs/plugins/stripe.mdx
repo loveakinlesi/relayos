@@ -3,45 +3,45 @@ title: Stripe Plugin
 description: Receive and verify Stripe webhooks with full type safety.
 ---
 
-The `@relayos/stripe` plugin handles [Stripe webhook](https://docs.stripe.com/webhooks) verification and provides a fully-typed event catalog. The plugin requires the `stripe` npm package as a peer dependency so event types track your installed Stripe SDK version.
+The `@restaq/stripe` plugin handles [Stripe webhook](https://docs.stripe.com/webhooks) verification and provides a fully-typed event catalog. The plugin requires the `stripe` npm package as a peer dependency so event types track your installed Stripe SDK version.
 
 ## Installation
 
 <Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
   <Tab value="pnpm">
   ```sh
-  pnpm add @relayos/stripe stripe
+  pnpm add @restaq/stripe stripe
   ```
   </Tab>
   <Tab value="npm">
   ```sh
-  npm install @relayos/stripe stripe
+  npm install @restaq/stripe stripe
   ```
   </Tab>
   <Tab value="yarn">
   ```sh
-  yarn add @relayos/stripe stripe
+  yarn add @restaq/stripe stripe
   ```
   </Tab>
   <Tab value="bun">
   ```sh
-  bun add @relayos/stripe stripe
+  bun add @restaq/stripe stripe
   ```
   </Tab>
 </Tabs>
 
 ```ts
-import { stripe } from '@relayos/stripe';
+import { stripe } from '@restaq/stripe';
 ```
 
 ## Setup
 
 ```ts
 // relay.ts
-import { relayos } from 'relayos';
-import { stripe } from '@relayos/stripe';
+import { restaq } from 'restaq';
+import { stripe } from '@restaq/stripe';
 
-export const relay = relayos({
+export const relay = restaq({
   plugins: [
     stripe(), // reads STRIPE_WEBHOOK_SECRET automatically
   ],
@@ -92,7 +92,7 @@ export function registerHandlers(relay: AppRelay): void {
 
 ## Deduplication
 
-Every Stripe event carries its own permanent [event ID](https://docs.stripe.com/api/events/object) (`evt_...`). The plugin uses that as the RelayOS event ID, so a redelivered event (Stripe retries on non-2xx responses) collapses into the same execution instead of running your handler twice.
+Every Stripe event carries its own permanent [event ID](https://docs.stripe.com/api/events/object) (`evt_...`). The plugin uses that as the Restaq event ID, so a redelivered event (Stripe retries on non-2xx responses) collapses into the same execution instead of running your handler twice.
 
 ## Testing locally
 

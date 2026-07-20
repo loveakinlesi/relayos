@@ -1,9 +1,9 @@
 ---
 title: Postgres
-description: Use a pg.Pool as your RelayOS execution store.
+description: Use a pg.Pool as your Restaq execution store.
 ---
 
-Pass a `pg.Pool` straight into `relayos({ database })`. RelayOS detects the
+Pass a `pg.Pool` straight into `restaq({ database })`. Restaq detects the
 dialect automatically and applies its own schema migrations.
 
 <Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
@@ -31,10 +31,10 @@ dialect automatically and applies its own schema migrations.
 
 ```ts
 // relay.ts
-import { relayos } from 'relayos';
+import { restaq } from 'restaq';
 import { Pool } from 'pg';
 
-export const relay = relayos({
+export const relay = restaq({
   database: new Pool({ connectionString: process.env.DATABASE_URL! }),
   plugins: [
     // ...

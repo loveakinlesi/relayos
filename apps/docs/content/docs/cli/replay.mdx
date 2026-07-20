@@ -21,7 +21,7 @@ relay replay <eventId|executionId> [--forward <url>] [--print] [--dir <path>]
 
 | Flag              | Default                                       | Description                                                            |
 | ----------------- | --------------------------------------------- | ---------------------------------------------------------------------- |
-| `--forward <url>` | `RELAYOS_BASE_URL` or `http://localhost:3000` | URL to POST the replay to                                              |
+| `--forward <url>` | `RESTAQ_BASE_URL` or `http://localhost:3000` | URL to POST the replay to                                              |
 | `--print`         | false                                         | Dry-run: show what would be replayed without POSTing                   |
 | `--dir`           | current directory                             | Directory containing `relay.ts`, used to load the historical execution |
 
@@ -77,7 +77,7 @@ $ relay replay evt_abc123 --forward https://api.example.com
 Or use the environment variable:
 
 ```sh
-RELAYOS_BASE_URL=https://staging.example.com relay replay evt_abc123
+RESTAQ_BASE_URL=https://staging.example.com relay replay evt_abc123
 ```
 
 ## When to use replay

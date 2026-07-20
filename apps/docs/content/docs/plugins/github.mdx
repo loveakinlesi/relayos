@@ -3,45 +3,45 @@ title: GitHub Plugin
 description: Receive and verify GitHub webhooks with full type safety.
 ---
 
-The `@relayos/github` plugin handles [GitHub webhook](https://docs.github.com/en/webhooks) verification and provides a fully-typed event catalog for all GitHub webhook events.
+The `@restaq/github` plugin handles [GitHub webhook](https://docs.github.com/en/webhooks) verification and provides a fully-typed event catalog for all GitHub webhook events.
 
 ## Installation
 
 <Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
   <Tab value="pnpm">
   ```sh
-  pnpm add @relayos/github
+  pnpm add @restaq/github
   ```
   </Tab>
   <Tab value="npm">
   ```sh
-  npm install @relayos/github
+  npm install @restaq/github
   ```
   </Tab>
   <Tab value="yarn">
   ```sh
-  yarn add @relayos/github
+  yarn add @restaq/github
   ```
   </Tab>
   <Tab value="bun">
   ```sh
-  bun add @relayos/github
+  bun add @restaq/github
   ```
   </Tab>
 </Tabs>
 
 ```ts
-import { github } from '@relayos/github';
+import { github } from '@restaq/github';
 ```
 
 ## Setup
 
 ```ts
 // relay.ts
-import { relayos } from 'relayos';
-import { github } from '@relayos/github';
+import { restaq } from 'restaq';
+import { github } from '@restaq/github';
 
-export const relay = relayos({
+export const relay = restaq({
   plugins: [
     github(), // reads GITHUB_WEBHOOK_SECRET automatically
   ],

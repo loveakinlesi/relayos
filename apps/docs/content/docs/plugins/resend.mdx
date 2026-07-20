@@ -1,47 +1,47 @@
 ---
 title: Resend Plugin
-description: Receive and verify Resend webhooks with RelayOS.
+description: Receive and verify Resend webhooks with Restaq.
 ---
 
-The `@relayos/resend` plugin handles [Resend webhook](https://resend.com/docs/dashboard/webhooks/introduction) verification and provides typed RelayOS event names for Resend email events. Like Clerk, Resend delivers webhooks via [Svix](https://www.svix.com), so verification follows the same Svix signature scheme.
+The `@restaq/resend` plugin handles [Resend webhook](https://resend.com/docs/dashboard/webhooks/introduction) verification and provides typed Restaq event names for Resend email events. Like Clerk, Resend delivers webhooks via [Svix](https://www.svix.com), so verification follows the same Svix signature scheme.
 
 ## Installation
 
 <Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
   <Tab value="pnpm">
   ```sh
-  pnpm add @relayos/resend
+  pnpm add @restaq/resend
   ```
   </Tab>
   <Tab value="npm">
   ```sh
-  npm install @relayos/resend
+  npm install @restaq/resend
   ```
   </Tab>
   <Tab value="yarn">
   ```sh
-  yarn add @relayos/resend
+  yarn add @restaq/resend
   ```
   </Tab>
   <Tab value="bun">
   ```sh
-  bun add @relayos/resend
+  bun add @restaq/resend
   ```
   </Tab>
 </Tabs>
 
 ```ts
-import { resend } from '@relayos/resend';
+import { resend } from '@restaq/resend';
 ```
 
 ## Setup
 
 ```ts
 // relay.ts
-import { relayos } from 'relayos';
-import { resend } from '@relayos/resend';
+import { restaq } from 'restaq';
+import { resend } from '@restaq/resend';
 
-export const relay = relayos({
+export const relay = restaq({
   plugins: [
     resend(), // reads RESEND_WEBHOOK_SECRET automatically
   ],
@@ -94,7 +94,7 @@ export function registerHandlers(relay: AppRelay): void {
 
 ## Deduplication
 
-Every Svix-delivered webhook carries a `svix-id` header that stays the same across delivery retries. The plugin uses it as the RelayOS event ID, so a redelivered event collapses into the same execution instead of running your handler twice.
+Every Svix-delivered webhook carries a `svix-id` header that stays the same across delivery retries. The plugin uses it as the Restaq event ID, so a redelivered event collapses into the same execution instead of running your handler twice.
 
 ## Testing locally
 

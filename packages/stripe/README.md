@@ -1,20 +1,20 @@
-# @relayos/stripe
+# @restaq/stripe
 
-The RelayOS Stripe plugin: real `stripe-signature` HMAC verification against the raw request body, plus a fully-typed catalog of every Stripe webhook event derived from the official `stripe` package.
+The Restaq Stripe plugin: real `stripe-signature` HMAC verification against the raw request body, plus a fully-typed catalog of every Stripe webhook event derived from the official `stripe` package.
 
 ```sh
-pnpm add @relayos/stripe stripe
+pnpm add @restaq/stripe stripe
 ```
 
 `stripe` is a peer dependency — the typed event catalog tracks whichever Stripe SDK version your application has installed.
 
 ```ts
 // relay.ts — wiring only
-import { relayos } from 'relayos';
-import { stripe } from '@relayos/stripe';
+import { restaq } from 'restaq';
+import { stripe } from '@restaq/stripe';
 import { registerHandlers } from './relay.handlers';
 
-export const relay = relayos({
+export const relay = restaq({
   plugins: [stripe()], // reads STRIPE_WEBHOOK_SECRET automatically
 });
 export type AppRelay = typeof relay;
@@ -35,4 +35,4 @@ export function registerHandlers(relay: AppRelay): void {
 
 Point your Stripe webhook endpoint at `/api/webhook/stripe`. Events are namespaced `stripe.<event type>` (`stripe.invoice.paid`, `stripe.customer.subscription.created`, …). Signatures are verified with a timestamp tolerance of 300 seconds by default (`toleranceSeconds` option).
 
-See the [RelayOS documentation](https://github.com/loveakinlesi/relayos#readme) for guides.
+See the [Restaq documentation](https://github.com/loveakinlesi/restaq#readme) for guides.

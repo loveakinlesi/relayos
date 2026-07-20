@@ -3,11 +3,11 @@ title: Idempotency
 description: How event deduplication and step caching prevent duplicate processing
 ---
 
-RelayOS prevents duplicate processing at two levels: the event level (deduplication) and the step level (caching).
+Restaq prevents duplicate processing at two levels: the event level (deduplication) and the step level (caching).
 
 ## Event deduplication
 
-When a webhook arrives, RelayOS checks if an execution for that event already exists by looking up the event's unique ID. If one exists, it returns that execution instead of creating a new one—no duplicate handlers run.
+When a webhook arrives, Restaq checks if an execution for that event already exists by looking up the event's unique ID. If one exists, it returns that execution instead of creating a new one—no duplicate handlers run.
 
 The lookup is a fast-path check:
 
@@ -39,7 +39,7 @@ The event ID comes from the provider:
 - **GitHub**: `x-github-delivery` header (UUID per delivery)
 - **Custom plugins**: Whatever you define in `normalize()`
 
-Providers guarantee that the same webhook event always has the same ID, so RelayOS's deduplication is reliable.
+Providers guarantee that the same webhook event always has the same ID, so Restaq's deduplication is reliable.
 
 ## Step-level idempotency
 
@@ -78,7 +78,7 @@ That last case is the one exception to caching: if you call `restartExecution()`
 
 ## In-process execution locking
 
-Within a single process, RelayOS uses an in-memory map (`inFlight`) to ensure only one attempt runs at a time for a given execution. If a manual retry call arrives while an automatic retry is in progress, the manual call waits for (and piggybracks on) the in-flight attempt:
+Within a single process, Restaq uses an in-memory map (`inFlight`) to ensure only one attempt runs at a time for a given execution. If a manual retry call arrives while an automatic retry is in progress, the manual call waits for (and piggybracks on) the in-flight attempt:
 
 ```ts
 function runExclusive(executionId: string, fn: () => Promise<Execution>): Promise<Execution> {

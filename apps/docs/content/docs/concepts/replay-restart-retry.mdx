@@ -3,7 +3,7 @@ title: Replay, Restart, and Retry
 description: Three ways to re-process an event or execution, and when to use each
 ---
 
-RelayOS gives you three ways to recover from or debug a failed execution. They sound similar but mean very different things, so it's worth knowing which one you actually want.
+Restaq gives you three ways to recover from or debug a failed execution. They sound similar but mean very different things, so it's worth knowing which one you actually want.
 
 ## Three operations, one table
 
@@ -61,7 +61,7 @@ await relay.replayExecution(executionId);
 
 ## Automatic vs. manual
 
-- **Automatic retry**: When a handler fails, RelayOS schedules the next retry automatically after a backoff delay. No human action needed.
+- **Automatic retry**: When a handler fails, Restaq schedules the next retry automatically after a backoff delay. No human action needed.
 - **Manual**: You explicitly call `retryExecution`, `restartExecution`, or `replayExecution` via the API or CLI.
 
 ## Implementation details

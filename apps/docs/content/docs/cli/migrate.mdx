@@ -1,9 +1,9 @@
 ---
 title: relay migrate
-description: Apply RelayOS's database migrations, for whichever dialect your relay.ts uses.
+description: Apply Restaq's database migrations, for whichever dialect your relay.ts uses.
 ---
 
-Apply RelayOS's schema to your database — Postgres, SQLite, or MySQL, whichever client your `relay.ts` configures.
+Apply Restaq's schema to your database — Postgres, SQLite, or MySQL, whichever client your `relay.ts` configures.
 
 ## Usage
 
@@ -22,11 +22,11 @@ relay migrate [--dir <path>]
 
 Creates three tables, named to match whichever dialect you're using:
 
-- **relayos_executions** — one row per execution, tracking status, attempt, timestamps, and event data
-- **relayos_execution_steps** — append-only step history; a step that failed and later succeeded stores both attempts
-- **relayos_execution_logs** — interleaved logs from the runtime and handler
+- **restaq_executions** — one row per execution, tracking status, attempt, timestamps, and event data
+- **restaq_execution_steps** — append-only step history; a step that failed and later succeeded stores both attempts
+- **restaq_execution_logs** — interleaved logs from the runtime and handler
 
-A `relayos_migrations` tracking table records which migrations have already applied, so re-running `relay migrate` is always safe.
+A `restaq_migrations` tracking table records which migrations have already applied, so re-running `relay migrate` is always safe.
 
 ## Example
 
@@ -37,7 +37,7 @@ relay migrate
 Output:
 
 ```
-Applying RelayOS migrations...
+Applying Restaq migrations...
 Migrations applied.
 ```
 

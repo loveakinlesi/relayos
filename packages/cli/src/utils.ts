@@ -1,5 +1,5 @@
 import { resolve } from 'node:path';
-import type { ExecutionStep } from '@relayos/core';
+import type { ExecutionStep } from '@restaq/core';
 
 export function getFlag(args: string[], name: string): string | undefined {
   const index = args.indexOf(name);
@@ -11,7 +11,7 @@ export function hasFlag(args: string[], name: string): boolean {
 }
 
 export function resolveBaseUrl(args: string[], env: NodeJS.ProcessEnv = process.env): string {
-  return getFlag(args, '--forward') ?? env['RELAYOS_BASE_URL'] ?? 'http://localhost:3000';
+  return getFlag(args, '--forward') ?? env['RESTAQ_BASE_URL'] ?? 'http://localhost:3000';
 }
 
 export function resolveDir(args: string[]): string {

@@ -7,7 +7,7 @@ const repoRoot = path.resolve(fileURLToPath(import.meta.url), '../../..');
 // version number. packages/postgres is legacy (no package.json) and
 // intentionally excluded.
 export const PACKAGE_DIRS = [
-  'relayos',
+  'restaq',
   'core',
   'plugin',
   'stripe',

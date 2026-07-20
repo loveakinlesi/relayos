@@ -1,9 +1,9 @@
 ---
 title: MySQL
-description: Use a mysql2 pool as your RelayOS execution store.
+description: Use a mysql2 pool as your Restaq execution store.
 ---
 
-Pass a `mysql2` pool straight into `relayos({ database })`. RelayOS detects
+Pass a `mysql2` pool straight into `restaq({ database })`. Restaq detects
 the dialect automatically and applies its own schema migrations.
 
 <Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
@@ -31,10 +31,10 @@ the dialect automatically and applies its own schema migrations.
 
 ```ts
 // relay.ts
-import { relayos } from 'relayos';
+import { restaq } from 'restaq';
 import { createPool } from 'mysql2';
 
-export const relay = relayos({
+export const relay = restaq({
   database: createPool({
     uri: process.env.DATABASE_URL!,
     timezone: 'Z', // keeps timestamps consistent in UTC
@@ -45,7 +45,7 @@ export const relay = relayos({
 });
 ```
 
-Use `mysql2`'s pool directly, not `mysql2/promise`. Both RelayOS's dialect
+Use `mysql2`'s pool directly, not `mysql2/promise`. Both Restaq's dialect
 detection and Kysely, the query engine underneath, expect the callback-style
 pool.
 

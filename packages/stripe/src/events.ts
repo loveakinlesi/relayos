@@ -1,7 +1,7 @@
 import type Stripe from 'stripe';
 
 /**
- * Every Stripe webhook event, keyed the way RelayOS namespaces them
+ * Every Stripe webhook event, keyed the way Restaq namespaces them
  * ("stripe." + Stripe's own event type), mapped to that event's `data`
  * payload - data.object is the concrete resource, e.g. a Stripe.Charge for
  * "stripe.charge.succeeded".

@@ -8,11 +8,11 @@ export const databasePackages: Record<DatabaseChoice, string> = {
 };
 
 export const pluginPackages: Record<PluginChoice, string> = {
-  stripe: '@relayos/stripe',
-  github: '@relayos/github',
-  clerk: '@relayos/clerk',
-  shopify: '@relayos/shopify',
-  resend: '@relayos/resend',
+  stripe: '@restaq/stripe',
+  github: '@restaq/github',
+  clerk: '@restaq/clerk',
+  shopify: '@restaq/shopify',
+  resend: '@restaq/resend',
 };
 
 const databaseImportLine: Record<DatabaseChoice, string> = {
@@ -28,11 +28,11 @@ const databaseExpression: Record<DatabaseChoice, string> = {
 };
 
 const pluginImportLine: Record<PluginChoice, string> = {
-  stripe: "import { stripe } from '@relayos/stripe';",
-  github: "import { github } from '@relayos/github';",
-  clerk: "import { clerk } from '@relayos/clerk';",
-  shopify: "import { shopify } from '@relayos/shopify';",
-  resend: "import { resend } from '@relayos/resend';",
+  stripe: "import { stripe } from '@restaq/stripe';",
+  github: "import { github } from '@restaq/github';",
+  clerk: "import { clerk } from '@restaq/clerk';",
+  shopify: "import { shopify } from '@restaq/shopify';",
+  resend: "import { resend } from '@restaq/resend';",
 };
 
 const pluginExpression: Record<PluginChoice, string> = {
@@ -50,7 +50,7 @@ export function buildRelayConfigTemplate(options: {
   plugins: PluginChoice[];
 }): string {
   const imports = [
-    "import { relayos } from 'relayos';",
+    "import { restaq } from 'restaq';",
     databaseImportLine[options.database],
     ...options.plugins.map((plugin) => pluginImportLine[plugin]),
     "import { registerHandlers } from './relay.handlers';",
@@ -62,7 +62,7 @@ export function buildRelayConfigTemplate(options: {
 
   return `${imports}
 
-export const relay = relayos({
+export const relay = restaq({
   database: ${databaseExpression[options.database]},
   plugins: [
 ${pluginLines}
@@ -87,7 +87,7 @@ export const RELAY_HANDLERS_TEMPLATE = `import type { AppRelay } from './relay';
 // this across multiple files (e.g. one per feature) and call each from
 // registerHandlers.
 export function registerHandlers(relay: AppRelay): void {
-  // Events from @relayos provider plugins are fully typed - relay.on()
+  // Events from @restaq provider plugins are fully typed - relay.on()
   // autocompletes their event names and types event.data per event:
   //
   // relay.on('stripe.charge.succeeded', async (event, ctx) => {

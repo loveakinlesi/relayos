@@ -1,17 +1,17 @@
 {
-  "name": "@relayos/stripe",
+  "name": "@restaq/stripe",
   "version": "0.1.1",
-  "description": "The RelayOS Stripe plugin: signature-verified webhook ingestion with a fully-typed catalog of every Stripe event.",
+  "description": "The Restaq Stripe plugin: signature-verified webhook ingestion with a fully-typed catalog of every Stripe event.",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/loveakinlesi/relayos.git",
+    "url": "git+https://github.com/loveakinlesi/restaq.git",
     "directory": "packages/stripe"
   },
-  "homepage": "https://github.com/loveakinlesi/relayos#readme",
-  "bugs": "https://github.com/loveakinlesi/relayos/issues",
+  "homepage": "https://github.com/loveakinlesi/restaq#readme",
+  "bugs": "https://github.com/loveakinlesi/restaq/issues",
   "keywords": [
-    "relayos",
+    "restaq",
     "webhooks",
     "events",
     "durable-execution",
@@ -55,14 +55,14 @@
     "clean": "rimraf dist coverage tsconfig.tsbuildinfo"
   },
   "dependencies": {
-    "@relayos/plugin": "workspace:^"
+    "@restaq/plugin": "workspace:^"
   },
   "peerDependencies": {
-    "@relayos/core": "0.x",
+    "@restaq/core": "0.x",
     "stripe": ">=17"
   },
   "devDependencies": {
-    "@relayos/core": "workspace:^",
+    "@restaq/core": "workspace:^",
     "stripe": "^22.3.1",
     "rimraf": "^6.0.0",
     "tsup": "^8.0.0",

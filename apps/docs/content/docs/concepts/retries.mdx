@@ -3,7 +3,7 @@ title: Retries
 description: Automatic exponential backoff and configurable retry policies
 ---
 
-When a handler fails, RelayOS automatically schedules a retry—no queue infrastructure, no manual intervention needed.
+When a handler fails, Restaq automatically schedules a retry—no queue infrastructure, no manual intervention needed.
 
 ## Default retry policy
 
@@ -28,7 +28,7 @@ This means the delay doubles each time, capped at 30 seconds. After the 3rd atte
 You can override the retry policy when creating the relay:
 
 ```ts
-const relay = relayos({
+const relay = restaq({
   database: pool,
   plugins: [stripe()],
   retry: {

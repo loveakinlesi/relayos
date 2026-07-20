@@ -1,18 +1,18 @@
-# @relayos/shopify
+# @restaq/shopify
 
-The RelayOS Shopify plugin: `X-Shopify-Hmac-Sha256` verification against the raw request body, plus typed RelayOS event names for common Shopify topics.
+The Restaq Shopify plugin: `X-Shopify-Hmac-Sha256` verification against the raw request body, plus typed Restaq event names for common Shopify topics.
 
 ```sh
-pnpm add @relayos/shopify
+pnpm add @restaq/shopify
 ```
 
 ```ts
 // relay.ts - wiring only
-import { relayos } from 'relayos';
-import { shopify } from '@relayos/shopify';
+import { restaq } from 'restaq';
+import { shopify } from '@restaq/shopify';
 import { registerHandlers } from './relay.handlers';
 
-export const relay = relayos({
+export const relay = restaq({
   plugins: [shopify()], // reads SHOPIFY_WEBHOOK_SECRET automatically
 });
 export type AppRelay = typeof relay;

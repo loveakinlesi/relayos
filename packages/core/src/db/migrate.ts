@@ -14,7 +14,7 @@ async function ensureMigrationsTable(db: Kysely<any>, dialect: SqlDialectName): 
         : sql.raw('text');
 
   await sql`
-    create table if not exists relayos_migrations (
+    create table if not exists restaq_migrations (
       name ${nameType} primary key,
       executed_at ${timestampType} not null
     )
@@ -23,7 +23,7 @@ async function ensureMigrationsTable(db: Kysely<any>, dialect: SqlDialectName): 
 
 /**
  * Applies every not-yet-applied migration in order, tracked in
- * relayos_migrations. Postgres and sqlite wrap each migration's DDL and its
+ * restaq_migrations. Postgres and sqlite wrap each migration's DDL and its
  * tracking-row insert in one transaction. MySQL can't: CREATE TABLE causes
  * an implicit commit there, so the DDL and the tracking insert run as two
  * sequential statements instead - not atomic, but each migration's DDL is
@@ -35,7 +35,7 @@ export async function migrateToLatest(db: Kysely<any>, dialect: SqlDialectName):
 
   for (const migration of migrations) {
     const applied = await db
-      .selectFrom('relayos_migrations')
+      .selectFrom('restaq_migrations')
       .select('name')
       .where('name', '=', migration.name)
       .executeTakeFirst();
@@ -44,7 +44,7 @@ export async function migrateToLatest(db: Kysely<any>, dialect: SqlDialectName):
     if (dialect === 'mysql') {
       await migration.up(db, dialect);
       await db
-        .insertInto('relayos_migrations')
+        .insertInto('restaq_migrations')
         .values({ name: migration.name, executed_at: new Date() })
         .execute();
       continue;
@@ -53,7 +53,7 @@ export async function migrateToLatest(db: Kysely<any>, dialect: SqlDialectName):
     await db.transaction().execute(async (trx) => {
       await migration.up(trx, dialect);
       await trx
-        .insertInto('relayos_migrations')
+        .insertInto('restaq_migrations')
         .values({
           name: migration.name,
           executed_at: dialect === 'sqlite' ? new Date().toISOString() : new Date(),

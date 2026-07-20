@@ -1,18 +1,18 @@
-# @relayos/github
+# @restaq/github
 
-The RelayOS GitHub plugin: `x-hub-signature-256` HMAC verification against the raw request body, plus a fully-typed catalog of every GitHub webhook event derived from `@octokit/webhooks-types` (GitHub's official JSON schemas).
+The Restaq GitHub plugin: `x-hub-signature-256` HMAC verification against the raw request body, plus a fully-typed catalog of every GitHub webhook event derived from `@octokit/webhooks-types` (GitHub's official JSON schemas).
 
 ```sh
-pnpm add @relayos/github
+pnpm add @restaq/github
 ```
 
 ```ts
 // relay.ts — wiring only
-import { relayos } from 'relayos';
-import { github } from '@relayos/github';
+import { restaq } from 'restaq';
+import { github } from '@restaq/github';
 import { registerHandlers } from './relay.handlers';
 
-export const relay = relayos({
+export const relay = restaq({
   plugins: [github()], // reads GITHUB_WEBHOOK_SECRET automatically
 });
 export type AppRelay = typeof relay;
@@ -36,4 +36,4 @@ export function registerHandlers(relay: AppRelay): void {
 
 Point your GitHub webhook (JSON content type) at `/api/webhook/github`. Events are namespaced `github.<event>` for action-less events (`github.push`) and `github.<event>.<action>` for action-carrying ones (`github.issues.closed`) — matching exactly what GitHub delivers. The delivery ID deduplicates redeliveries.
 
-See the [RelayOS documentation](https://github.com/loveakinlesi/relayos#readme) for guides.
+See the [Restaq documentation](https://github.com/loveakinlesi/restaq#readme) for guides.

@@ -1,0 +1,118 @@
+---
+title: restaq
+description: The main Restaq runtime package with restaq() and re-exports of core types.
+---
+
+## Install
+
+<Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
+  <Tab value="pnpm">
+  ```sh
+  pnpm add restaq
+  ```
+  </Tab>
+  <Tab value="npm">
+  ```sh
+  npm install restaq
+  ```
+  </Tab>
+  <Tab value="yarn">
+  ```sh
+  yarn add restaq
+  ```
+  </Tab>
+  <Tab value="bun">
+  ```sh
+  bun add restaq
+  ```
+  </Tab>
+</Tabs>
+
+## Exports
+
+| Export                | Kind     | Description                                                                            |
+| --------------------- | -------- | -------------------------------------------------------------------------------------- |
+| `restaq`             | Function | Convenience wrapper around createRelayEngine that returns a typed relay runtime.       |
+| `NormalizedEvent`     | Type     | Re-exported from @restaq/core.                                                        |
+| `StepStatus`          | Type     | Re-exported from @restaq/core.                                                        |
+| `ExecutionStep`       | Type     | Re-exported from @restaq/core.                                                        |
+| `LogLevel`            | Type     | Re-exported from @restaq/core.                                                        |
+| `LogSource`           | Type     | Re-exported from @restaq/core.                                                        |
+| `ExecutionLog`        | Type     | Re-exported from @restaq/core.                                                        |
+| `RuntimeContext`      | Type     | Re-exported from @restaq/core.                                                        |
+| `EventHandler`        | Type     | Re-exported from @restaq/core.                                                        |
+| `ExecutionStatus`     | Type     | Re-exported from @restaq/core.                                                        |
+| `Execution`           | Type     | Re-exported from @restaq/core.                                                        |
+| `ExecutionStore`      | Type     | Re-exported from @restaq/core.                                                        |
+| `RelayPlugin`         | Type     | Re-exported from @restaq/core.                                                        |
+| `EventMapOf`          | Type     | Re-exported from @restaq/core.                                                        |
+| `RelayHandlerContext` | Type     | Re-exported from @restaq/core.                                                        |
+| `Relay`               | Type     | Re-exported from @restaq/core.                                                        |
+| `RetryPolicy`         | Type     | Re-exported from @restaq/core.                                                        |
+| `RelayConfig`         | Type     | Re-exported from @restaq/core.                                                        |
+| `toNextJsHandler`     | Function | Exported from `restaq/next-js`; adapts a relay to a Next.js App Router route handler. |
+| `toExpressHandler`    | Function | Exported from `restaq/express`; adapts a relay to an Express route handler.           |
+| `toHonoHandler`       | Function | Exported from `restaq/hono`; adapts a relay to a Hono handler.                        |
+| `toNestJsHandler`     | Function | Exported from `restaq/nestjs`; adapts a relay to a NestJS controller method.          |
+
+## Functions
+
+### restaq
+
+```ts
+function restaq<const TPlugins extends readonly RelayPlugin<any>[] = []>(
+  config: RelayConfig<TPlugins>,
+): Relay<EventMapOf<TPlugins>>;
+```
+
+Creates a Restaq runtime instance. This is the main entry point for developers: register event handlers via `relay.on()`, receive provider webhooks through `relay.handler`, and configure persistence via `config.database` — a Postgres/SQLite/MySQL client (auto-detected), a `{ dialect }` Kysely escape hatch, or a custom `ExecutionStore`. The relay's event types are inferred from the plugins you register—typed plugins make `relay.on()` autocomplete event names and narrow event payloads.
+
+## `restaq/next-js`
+
+Next.js support is a subpath export of this package — no separate install.
+
+| Export            | Kind     | Description                                                     |
+| ----------------- | -------- | --------------------------------------------------------------- |
+| `toNextJsHandler` | Function | Adapts a relay to a Next.js App Router catch-all route handler. |
+
+```ts
+function toNextJsHandler<TEventMap extends Record<string, unknown>>(
+  relay: Relay<TEventMap>,
+): {
+  POST: (req: Request, ctx: { params: Promise<{ all: string[] }> }) => Promise<Response>;
+};
+```
+
+Adapts a relay instance to a Next.js App Router catch-all route. Returns an object with a `POST` handler that integrates the relay's webhook handler. Uses only web-standard `Request`/`Response` plus Next.js's promise-shaped route `params`—no `import from 'next'` is required.
+
+```ts
+// app/api/webhook/[...all]/route.ts
+import { toNextJsHandler } from 'restaq/next-js';
+import { relay } from '@/relay';
+
+export const { POST } = toNextJsHandler(relay);
+```
+
+Provider webhooks are then received at `/api/webhook/<provider>` (e.g., `/api/webhook/stripe`).
+
+## Other framework adapters
+
+Express, Hono, and NestJS support are subpath exports of this package — no separate installs.
+
+```ts
+import { toExpressHandler } from 'restaq/express';
+import { toHonoHandler } from 'restaq/hono';
+import { toNestJsHandler } from 'restaq/nestjs';
+```
+
+See the framework guides for setup examples and raw-body notes.
+
+## See also
+
+- [@restaq/core](/docs/reference/core)
+- [Installation](/docs/installation)
+- [Next.js guide](/docs/frameworks/nextjs)
+- [Express guide](/docs/frameworks/express)
+- [Hono guide](/docs/frameworks/hono)
+- [NestJS guide](/docs/frameworks/nestjs)
+- [Plugins](/docs/plugins/stripe)

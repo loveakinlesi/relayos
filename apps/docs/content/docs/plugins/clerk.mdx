@@ -1,47 +1,47 @@
 ---
 title: Clerk Plugin
-description: Receive and verify Clerk webhooks with RelayOS.
+description: Receive and verify Clerk webhooks with Restaq.
 ---
 
-The `@relayos/clerk` plugin handles [Clerk webhook](https://clerk.com/docs/webhooks/overview) verification and provides typed RelayOS event names for common Clerk webhook events. Clerk delivers webhooks via [Svix](https://www.svix.com), so verification follows the Svix signature scheme.
+The `@restaq/clerk` plugin handles [Clerk webhook](https://clerk.com/docs/webhooks/overview) verification and provides typed Restaq event names for common Clerk webhook events. Clerk delivers webhooks via [Svix](https://www.svix.com), so verification follows the Svix signature scheme.
 
 ## Installation
 
 <Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
   <Tab value="pnpm">
   ```sh
-  pnpm add @relayos/clerk
+  pnpm add @restaq/clerk
   ```
   </Tab>
   <Tab value="npm">
   ```sh
-  npm install @relayos/clerk
+  npm install @restaq/clerk
   ```
   </Tab>
   <Tab value="yarn">
   ```sh
-  yarn add @relayos/clerk
+  yarn add @restaq/clerk
   ```
   </Tab>
   <Tab value="bun">
   ```sh
-  bun add @relayos/clerk
+  bun add @restaq/clerk
   ```
   </Tab>
 </Tabs>
 
 ```ts
-import { clerk } from '@relayos/clerk';
+import { clerk } from '@restaq/clerk';
 ```
 
 ## Setup
 
 ```ts
 // relay.ts
-import { relayos } from 'relayos';
-import { clerk } from '@relayos/clerk';
+import { restaq } from 'restaq';
+import { clerk } from '@restaq/clerk';
 
-export const relay = relayos({
+export const relay = restaq({
   plugins: [
     clerk(), // reads CLERK_WEBHOOK_SECRET automatically
   ],
@@ -94,7 +94,7 @@ export function registerHandlers(relay: AppRelay): void {
 
 ## Deduplication
 
-Every Svix-delivered webhook carries a `svix-id` header that stays the same across delivery retries. The plugin uses it as the RelayOS event ID, so a redelivered event collapses into the same execution instead of running your handler twice.
+Every Svix-delivered webhook carries a `svix-id` header that stays the same across delivery retries. The plugin uses it as the Restaq event ID, so a redelivered event collapses into the same execution instead of running your handler twice.
 
 ## Testing locally
 

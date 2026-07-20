@@ -6,7 +6,7 @@ export const name = '001_initial';
 export async function up(db: Kysely<any>, dialect: SqlDialectName): Promise<void> {
   if (dialect === 'postgres') {
     await sql`
-      create table if not exists relayos_executions (
+      create table if not exists restaq_executions (
         id text primary key,
         event_id text not null unique,
         event_type text not null,
@@ -20,9 +20,9 @@ export async function up(db: Kysely<any>, dialect: SqlDialectName): Promise<void
       )
     `.execute(db);
     await sql`
-      create table if not exists relayos_execution_steps (
+      create table if not exists restaq_execution_steps (
         id text primary key,
-        execution_id text not null references relayos_executions(id),
+        execution_id text not null references restaq_executions(id),
         name text not null,
         status text not null,
         output jsonb,
@@ -31,9 +31,9 @@ export async function up(db: Kysely<any>, dialect: SqlDialectName): Promise<void
       )
     `.execute(db);
     await sql`
-      create table if not exists relayos_execution_logs (
+      create table if not exists restaq_execution_logs (
         id text primary key,
-        execution_id text not null references relayos_executions(id),
+        execution_id text not null references restaq_executions(id),
         level text not null,
         source text not null,
         message text not null,
@@ -46,7 +46,7 @@ export async function up(db: Kysely<any>, dialect: SqlDialectName): Promise<void
 
   if (dialect === 'mysql') {
     await sql`
-      create table if not exists relayos_executions (
+      create table if not exists restaq_executions (
         id varchar(36) primary key,
         event_id varchar(255) not null unique,
         event_type varchar(255) not null,
@@ -60,7 +60,7 @@ export async function up(db: Kysely<any>, dialect: SqlDialectName): Promise<void
       )
     `.execute(db);
     await sql`
-      create table if not exists relayos_execution_steps (
+      create table if not exists restaq_execution_steps (
         id varchar(36) primary key,
         execution_id varchar(36) not null,
         name varchar(255) not null,
@@ -68,11 +68,11 @@ export async function up(db: Kysely<any>, dialect: SqlDialectName): Promise<void
         output json,
         error text,
         created_at datetime(3) not null,
-        foreign key (execution_id) references relayos_executions(id)
+        foreign key (execution_id) references restaq_executions(id)
       )
     `.execute(db);
     await sql`
-      create table if not exists relayos_execution_logs (
+      create table if not exists restaq_execution_logs (
         id varchar(36) primary key,
         execution_id varchar(36) not null,
         level varchar(32) not null,
@@ -80,7 +80,7 @@ export async function up(db: Kysely<any>, dialect: SqlDialectName): Promise<void
         message text not null,
         data json,
         created_at datetime(3) not null,
-        foreign key (execution_id) references relayos_executions(id)
+        foreign key (execution_id) references restaq_executions(id)
       )
     `.execute(db);
     return;
@@ -88,7 +88,7 @@ export async function up(db: Kysely<any>, dialect: SqlDialectName): Promise<void
 
   // sqlite
   await sql`
-    create table if not exists relayos_executions (
+    create table if not exists restaq_executions (
       id text primary key,
       event_id text not null unique,
       event_type text not null,
@@ -102,9 +102,9 @@ export async function up(db: Kysely<any>, dialect: SqlDialectName): Promise<void
     )
   `.execute(db);
   await sql`
-    create table if not exists relayos_execution_steps (
+    create table if not exists restaq_execution_steps (
       id text primary key,
-      execution_id text not null references relayos_executions(id),
+      execution_id text not null references restaq_executions(id),
       name text not null,
       status text not null,
       output text,
@@ -113,9 +113,9 @@ export async function up(db: Kysely<any>, dialect: SqlDialectName): Promise<void
     )
   `.execute(db);
   await sql`
-    create table if not exists relayos_execution_logs (
+    create table if not exists restaq_execution_logs (
       id text primary key,
-      execution_id text not null references relayos_executions(id),
+      execution_id text not null references restaq_executions(id),
       level text not null,
       source text not null,
       message text not null,

@@ -1,15 +1,15 @@
 ---
-title: '@relayos/plugin'
+title: '@restaq/plugin'
 description: Plugin authoring kit with signature verification helpers and definePlugin.
 ---
 
 ## Install
 
 ```sh
-pnpm add @relayos/plugin
+pnpm add @restaq/plugin
 ```
 
-Peer dependency: `@relayos/core`
+Peer dependency: `@restaq/core`
 
 ## Exports
 
@@ -18,8 +18,8 @@ Peer dependency: `@relayos/core`
 | `definePlugin`    | Function | Identity helper for authoring plugins with full type inference.               |
 | `hmacSha256Hex`   | Function | HMAC-SHA256 signature generation used by Stripe, GitHub, and other providers. |
 | `safeEqualHex`    | Function | Constant-time hex signature comparison to prevent timing attacks.             |
-| `NormalizedEvent` | Type     | Re-exported from @relayos/core.                                               |
-| `RelayPlugin`     | Type     | Re-exported from @relayos/core.                                               |
+| `NormalizedEvent` | Type     | Re-exported from @restaq/core.                                               |
+| `RelayPlugin`     | Type     | Re-exported from @restaq/core.                                               |
 
 ## Functions
 
@@ -31,7 +31,7 @@ function definePlugin<TEventMap extends Record<string, unknown> = {}>(
 ): RelayPlugin<TEventMap>;
 ```
 
-An identity helper for authoring plugins. Acts like `defineConfig` in other frameworks: it gives full inference and type checking of the plugin shape and pins the plugin's typed event map so it survives through `relayos`'s plugins array without widening to `any`. Use this when building custom provider plugins.
+An identity helper for authoring plugins. Acts like `defineConfig` in other frameworks: it gives full inference and type checking of the plugin shape and pins the plugin's typed event map so it survives through `restaq`'s plugins array without widening to `any`. Use this when building custom provider plugins.
 
 ### hmacSha256Hex
 
@@ -52,5 +52,5 @@ Constant-time comparison of two hex-encoded signatures. Returns `false` (instead
 ## See also
 
 - [Writing plugins](/docs/plugins/writing-plugins)
-- [@relayos/core](/docs/reference/core)
-- [@relayos/stripe](/docs/reference/stripe) (example plugin implementation)
+- [@restaq/core](/docs/reference/core)
+- [@restaq/stripe](/docs/reference/stripe) (example plugin implementation)

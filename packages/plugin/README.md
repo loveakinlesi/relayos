@@ -1,13 +1,13 @@
-# @relayos/plugin
+# @restaq/plugin
 
-The RelayOS plugin authoring kit: `definePlugin` plus the webhook signature helpers (`hmacSha256Hex`, `safeEqualHex`) used by the official Stripe and GitHub plugins.
+The Restaq plugin authoring kit: `definePlugin` plus the webhook signature helpers (`hmacSha256Hex`, `safeEqualHex`) used by the official Stripe and GitHub plugins.
 
 ```sh
-pnpm add @relayos/plugin @relayos/core
+pnpm add @restaq/plugin @restaq/core
 ```
 
 ```ts
-import { definePlugin, hmacSha256Hex, safeEqualHex } from '@relayos/plugin';
+import { definePlugin, hmacSha256Hex, safeEqualHex } from '@restaq/plugin';
 
 type MyEventMap = {
   'acme.order.created': { orderId: string; total: number };
@@ -43,4 +43,4 @@ export function acme(options: { webhookSecret: string }) {
 
 Registering the plugin makes `relay.on('acme.order.created', ...)` autocomplete with typed `event.data`.
 
-See the [RelayOS documentation](https://github.com/loveakinlesi/relayos#readme) for the full plugin-authoring guide.
+See the [Restaq documentation](https://github.com/loveakinlesi/restaq#readme) for the full plugin-authoring guide.

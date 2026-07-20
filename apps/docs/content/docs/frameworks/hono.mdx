@@ -1,15 +1,15 @@
 ---
 title: Hono
-description: Wire RelayOS into a Hono route.
+description: Wire Restaq into a Hono route.
 ---
 
-Hono support ships with `relayos` — no separate package, just import from the `relayos/hono` subpath. `toHonoHandler` turns your Relay instance into a Hono handler.
+Hono support ships with `restaq` — no separate package, just import from the `restaq/hono` subpath. `toHonoHandler` turns your Relay instance into a Hono handler.
 
 ## Setup
 
 ```ts
 import { Hono } from 'hono';
-import { toHonoHandler } from 'relayos/hono';
+import { toHonoHandler } from 'restaq/hono';
 import { relay } from './relay';
 
 const app = new Hono();

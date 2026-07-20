@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { resolve } from 'node:path';
-import type { ExecutionStep } from '@relayos/core';
+import type { ExecutionStep } from '@restaq/core';
 import {
   getFlag,
   hasFlag,
@@ -38,13 +38,13 @@ describe('hasFlag', () => {
 describe('resolveBaseUrl', () => {
   it('prefers --forward over everything else', () => {
     const url = resolveBaseUrl(['--forward', 'http://example.com'], {
-      RELAYOS_BASE_URL: 'http://env.example.com',
+      RESTAQ_BASE_URL: 'http://env.example.com',
     });
     expect(url).toBe('http://example.com');
   });
 
-  it('falls back to RELAYOS_BASE_URL when --forward is absent', () => {
-    const url = resolveBaseUrl([], { RELAYOS_BASE_URL: 'http://env.example.com' });
+  it('falls back to RESTAQ_BASE_URL when --forward is absent', () => {
+    const url = resolveBaseUrl([], { RESTAQ_BASE_URL: 'http://env.example.com' });
     expect(url).toBe('http://env.example.com');
   });
 

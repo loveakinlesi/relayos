@@ -1,47 +1,47 @@
 ---
 title: Shopify Plugin
-description: Receive and verify Shopify webhooks with RelayOS.
+description: Receive and verify Shopify webhooks with Restaq.
 ---
 
-The `@relayos/shopify` plugin verifies [Shopify webhook](https://shopify.dev/docs/apps/build/webhooks) HMAC signatures and normalizes Shopify topics into RelayOS event names.
+The `@restaq/shopify` plugin verifies [Shopify webhook](https://shopify.dev/docs/apps/build/webhooks) HMAC signatures and normalizes Shopify topics into Restaq event names.
 
 ## Installation
 
 <Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
   <Tab value="pnpm">
   ```sh
-  pnpm add @relayos/shopify
+  pnpm add @restaq/shopify
   ```
   </Tab>
   <Tab value="npm">
   ```sh
-  npm install @relayos/shopify
+  npm install @restaq/shopify
   ```
   </Tab>
   <Tab value="yarn">
   ```sh
-  yarn add @relayos/shopify
+  yarn add @restaq/shopify
   ```
   </Tab>
   <Tab value="bun">
   ```sh
-  bun add @relayos/shopify
+  bun add @restaq/shopify
   ```
   </Tab>
 </Tabs>
 
 ```ts
-import { shopify } from '@relayos/shopify';
+import { shopify } from '@restaq/shopify';
 ```
 
 ## Setup
 
 ```ts
 // relay.ts
-import { relayos } from 'relayos';
-import { shopify } from '@relayos/shopify';
+import { restaq } from 'restaq';
+import { shopify } from '@restaq/shopify';
 
-export const relay = relayos({
+export const relay = restaq({
   plugins: [
     shopify(), // reads SHOPIFY_WEBHOOK_SECRET automatically
   ],
@@ -74,7 +74,7 @@ Unlike Stripe/Clerk/Resend, Shopify's scheme has no timestamp — it's a plain H
 
 ## Event types
 
-Shopify topics arrive slash-separated (e.g. `orders/create`) and are converted to dot-separated RelayOS event names, namespaced under `shopify.`:
+Shopify topics arrive slash-separated (e.g. `orders/create`) and are converted to dot-separated Restaq event names, namespaced under `shopify.`:
 
 ```ts
 // relay.handlers.ts
@@ -95,7 +95,7 @@ See the [webhooks reference](https://shopify.dev/docs/api/webhooks) for the full
 
 ## Deduplication
 
-Every Shopify webhook includes an `X-Shopify-Webhook-Id` header that uniquely identifies the delivery. The plugin uses it as the RelayOS event ID, so a redelivered webhook collapses into the same execution instead of running your handler twice.
+Every Shopify webhook includes an `X-Shopify-Webhook-Id` header that uniquely identifies the delivery. The plugin uses it as the Restaq event ID, so a redelivered webhook collapses into the same execution instead of running your handler twice.
 
 ## Testing locally
 

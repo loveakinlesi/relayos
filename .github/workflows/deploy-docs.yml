@@ -36,7 +36,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       # GITHUB_PAGES=true switches next.config.mjs into static export mode
-      # (output: 'export', basePath: '/relayos') - regular `pnpm build`
+      # (output: 'export', basePath: '/restaq') - regular `pnpm build`
       # elsewhere (dev, CI, Vercel-style hosting) is unaffected.
       - name: Build docs (static export)
         working-directory: apps/docs

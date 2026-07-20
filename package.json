@@ -1,5 +1,5 @@
 {
-  "name": "@relayos/monorepo",
+  "name": "@restaq/monorepo",
   "description": "A durable webhook execution platform for building reliable, replayable, and observable event-driven backends.",
   "private": true,
   "scripts": {
@@ -17,7 +17,7 @@
   "devDependencies": {
     "@commitlint/cli": "^19.6.1",
     "@commitlint/config-conventional": "^19.6.0",
-    "@relayos/cli": "workspace:*",
+    "@restaq/cli": "workspace:*",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/exec": "^6.0.3",
     "@semantic-release/git": "^10.0.1",

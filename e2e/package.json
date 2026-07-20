@@ -10,10 +10,10 @@
     "clean": "rimraf .tmp coverage tsconfig.tsbuildinfo"
   },
   "devDependencies": {
-    "relayos": "workspace:*",
-    "@relayos/core": "workspace:*",
-    "@relayos/cli": "workspace:*",
-    "@relayos/stripe": "workspace:*",
+    "restaq": "workspace:*",
+    "@restaq/core": "workspace:*",
+    "@restaq/cli": "workspace:*",
+    "@restaq/stripe": "workspace:*",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^22.0.0",
     "better-sqlite3": "^12.11.1",

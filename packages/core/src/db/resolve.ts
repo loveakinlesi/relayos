@@ -40,7 +40,7 @@ export function resolveDatabase(config: RelayDatabaseConfig): {
     async migrate() {
       if (!name) {
         console.warn(
-          '[relayos] migrate(): no built-in migrations for a custom Kysely dialect - manage your own schema.',
+          '[restaq] migrate(): no built-in migrations for a custom Kysely dialect - manage your own schema.',
         );
         return;
       }

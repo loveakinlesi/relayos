@@ -1,14 +1,14 @@
 ---
-title: RelayOS
+title: Restaq
 description: Durable webhook execution platform for reliable, replayable, observable event-driven backends
 ---
 
-RelayOS is a durable webhook execution platform that helps developers build reliable, replayable, and observable event-driven backends. Receiving a webhook is easy—reliably processing everything that has to happen after it is the hard part.
+Restaq is a durable webhook execution platform that helps developers build reliable, replayable, and observable event-driven backends. Receiving a webhook is easy—reliably processing everything that has to happen after it is the hard part.
 
 Webhook handlers are usually a pile of `if` statements with no memory of what already happened. A provider retries, and you double-charge a customer. A step three-quarters through a handler fails, and you re-run everything from scratch—or worse, nothing at all, silently. Debugging means grepping logs, because there's no record of what actually executed.
 
 ```sh
-npx relayos@latest init
+npx restaq@latest init
 ```
 
 Nothing to install first — scaffolds `relay.ts` + `relay.handlers.ts` and installs exactly what you choose. See [Installation](/docs/installation) for the full walkthrough.
@@ -27,18 +27,18 @@ Nothing to install first — scaffolds `relay.ts` + `relay.handlers.ts` and inst
 
 **Fully-typed event catalogs** — `relay.on('stripe.charge.succeeded', ...)` autocompletes every event of the plugins you registered, and `event.data` is typed per event (`event.data.object` is a real `Stripe.Charge`).
 
-**Postgres, SQLite, or MySQL, auto-detected** — pass a raw client straight into `relayos({ database })` and RelayOS detects the dialect and applies its own prefixed tables (`relayos_executions`, etc.), so they never collide with your application's own.
+**Postgres, SQLite, or MySQL, auto-detected** — pass a raw client straight into `restaq({ database })` and Restaq detects the dialect and applies its own prefixed tables (`restaq_executions`, etc.), so they never collide with your application's own.
 
-**First-class local dev tooling, bundled** — the `relay` CLI ships inside `relayos` itself, no separate install. `relay migrate` applies the schema with one command; `relay dev` runs your app and tails live execution activity to the terminal.
+**First-class local dev tooling, bundled** — the `relay` CLI ships inside `restaq` itself, no separate install. `relay migrate` applies the schema with one command; `relay dev` runs your app and tails live execution activity to the terminal.
 
-## Where RelayOS Fits
+## Where Restaq Fits
 
 |             | Category                       |
 | ----------- | ------------------------------ |
 | Better Auth | Authentication framework       |
 | Drizzle     | ORM                            |
 | Hono        | Web framework                  |
-| **RelayOS** | **Webhook execution platform** |
+| **Restaq** | **Webhook execution platform** |
 
 <Cards>
   <Card title="Installation" href="/docs/installation" />

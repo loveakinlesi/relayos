@@ -1,7 +1,7 @@
-import type { RelayPlugin } from '@relayos/core';
+import type { RelayPlugin } from '@restaq/core';
 
 export { hmacSha256Hex, safeEqualHex } from './hmac';
-export type { NormalizedEvent, RelayPlugin } from '@relayos/core';
+export type { NormalizedEvent, RelayPlugin } from '@restaq/core';
 
 /**
  * Resolves a plugin's webhook secret: an explicit option always wins,
@@ -20,7 +20,7 @@ export function resolveWebhookSecret(explicit: string | undefined, envVar: strin
 /**
  * Identity helper for authoring plugins (like defineConfig): gives full
  * inference/checking of the plugin shape and pins the plugin's typed event
- * map so it survives through relayos's plugins array.
+ * map so it survives through restaq's plugins array.
  */
 export function definePlugin<TEventMap extends Record<string, unknown> = {}>(
   plugin: RelayPlugin<TEventMap>,

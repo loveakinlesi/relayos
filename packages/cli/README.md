@@ -1,11 +1,11 @@
-# @relayos/cli
+# @restaq/cli
 
-The RelayOS CLI (`relay`): scaffolding, migrations, and local dev tooling for the RelayOS runtime.
+The Restaq CLI (`relay`): scaffolding, migrations, and local dev tooling for the Restaq runtime.
 
-`relayos` bundles this package's `relay` bin automatically - most projects never need to install `@relayos/cli` directly. Nothing installed at all? `npx relayos@latest init` scaffolds a project from scratch. Want the CLI as its own dependency (e.g. a CI image that only runs `relay migrate`)?
+`restaq` bundles this package's `relay` bin automatically - most projects never need to install `@restaq/cli` directly. Nothing installed at all? `npx restaq@latest init` scaffolds a project from scratch. Want the CLI as its own dependency (e.g. a CI image that only runs `relay migrate`)?
 
 ```sh
-pnpm add -D @relayos/cli
+pnpm add -D @restaq/cli
 ```
 
 | Command                                                     | What it does                                                     |
@@ -23,4 +23,4 @@ pnpm exec relay dev
 pnpm exec relay trigger stripe charge.succeeded --data '{"id":"ch_1","amount":1000,"currency":"usd"}'
 ```
 
-See the [RelayOS documentation](https://github.com/loveakinlesi/relayos#readme) for the full command reference.
+See the [Restaq documentation](https://github.com/loveakinlesi/restaq#readme) for the full command reference.

@@ -8,7 +8,7 @@ A RelayPlugin is a webhook adapter: it knows how to verify a provider's signatur
 ## The RelayPlugin interface
 
 ```ts
-import type { RelayPlugin, NormalizedEvent } from '@relayos/core';
+import type { RelayPlugin, NormalizedEvent } from '@restaq/core';
 
 const myPlugin: RelayPlugin = {
   id: 'myprovider', // Used as the URL segment: /api/webhook/myprovider
@@ -55,7 +55,7 @@ const myPlugin: RelayPlugin = {
 Use `definePlugin<TEventMap>` to get full type inference and pin your plugin's event map:
 
 ```ts
-import { definePlugin } from '@relayos/plugin';
+import { definePlugin } from '@restaq/plugin';
 
 type MyEventMap = {
   'myprovider.user.created': { userId: string; email: string };
@@ -78,7 +78,7 @@ const myPlugin = definePlugin<MyEventMap>({
   },
 });
 
-// Now when you pass myPlugin to relayos, relay.on() autocompletes the event names
+// Now when you pass myPlugin to restaq, relay.on() autocompletes the event names
 // and types event.data per event.
 ```
 
@@ -87,7 +87,7 @@ const myPlugin = definePlugin<MyEventMap>({
 Use `hmacSha256Hex` and `safeEqualHex` for secure signature verification:
 
 ```ts
-import { hmacSha256Hex, safeEqualHex } from '@relayos/plugin';
+import { hmacSha256Hex, safeEqualHex } from '@restaq/plugin';
 
 // Compute HMAC-SHA256 signature (what most providers use)
 const expected = hmacSha256Hex(secret, payload);
@@ -104,8 +104,8 @@ const isValid = safeEqualHex(expected, actualSignature);
 Here's a dev-only test plugin — it never verifies signatures, and forces all events under the `test.*` namespace so it can't spoof real providers:
 
 ```ts
-import { definePlugin } from '@relayos/plugin';
-import type { RelayPlugin } from '@relayos/core';
+import { definePlugin } from '@restaq/plugin';
+import type { RelayPlugin } from '@restaq/core';
 
 const testPlugin: RelayPlugin = {
   id: 'test',
@@ -136,7 +136,7 @@ Use it in dev only:
 ```ts
 const isProduction = process.env.NODE_ENV === 'production';
 
-export const relay = relayos({
+export const relay = restaq({
   database: pool,
   plugins: [...(isProduction ? [] : [testPlugin]), stripe()],
 });
@@ -147,7 +147,7 @@ export const relay = relayos({
 Here's a custom plugin with event typing:
 
 ```ts
-import { definePlugin, hmacSha256Hex, safeEqualHex } from '@relayos/plugin';
+import { definePlugin, hmacSha256Hex, safeEqualHex } from '@restaq/plugin';
 
 type MyEventMap = {
   'acme.order.placed': {
@@ -202,5 +202,5 @@ const acmePlugin = definePlugin<MyEventMap>({
 
 ## See also
 
-- [@relayos/plugin](/docs/reference/plugin) — the `definePlugin` and HMAC helpers used above
-- [@relayos/stripe](/docs/reference/stripe) — a real plugin implementation to read alongside this guide
+- [@restaq/plugin](/docs/reference/plugin) — the `definePlugin` and HMAC helpers used above
+- [@restaq/stripe](/docs/reference/stripe) — a real plugin implementation to read alongside this guide

@@ -1,4 +1,4 @@
-# RelayOS Core v1 — Agile Story Backlog
+# Restaq Core v1 — Agile Story Backlog
 
 # Epic 1 — Workspace & Tooling
 
@@ -8,7 +8,7 @@
 
 ### Context
 
-RelayOS is a multi-package runtime ecosystem. Establish the foundational workspace configuration required for package management and shared tooling.
+Restaq is a multi-package runtime ecosystem. Establish the foundational workspace configuration required for package management and shared tooling.
 
 ### Tasks
 
@@ -28,7 +28,7 @@ RelayOS is a multi-package runtime ecosystem. Establish the foundational workspa
 
 ### Context
 
-All RelayOS packages should support fast ESM/CJS builds with generated type declarations.
+All Restaq packages should support fast ESM/CJS builds with generated type declarations.
 
 ### Tasks
 
@@ -60,7 +60,7 @@ Execution runtimes require strong automated testing from the beginning due to re
 
 ---
 
-## REL-004 — Bootstrap `@relayos/types`
+## REL-004 — Bootstrap `@restaq/types`
 
 ### Context
 
@@ -78,7 +78,7 @@ Shared runtime contracts should exist independently from implementation details.
 
 ---
 
-## REL-005 — Bootstrap `@relayos/core`
+## REL-005 — Bootstrap `@restaq/core`
 
 ### Context
 
@@ -96,7 +96,7 @@ The core runtime package contains execution orchestration and durable runtime lo
 
 ---
 
-## REL-006 — Bootstrap `@relayos/postgres`
+## REL-006 — Bootstrap `@restaq/postgres`
 
 ### Context
 
@@ -118,7 +118,7 @@ The Postgres package will implement durable execution persistence.
 
 ### Context
 
-The SDK package provides the public RelayOS developer experience.
+The SDK package provides the public Restaq developer experience.
 
 ### Tasks
 
@@ -135,7 +135,7 @@ The SDK package provides the public RelayOS developer experience.
 
 ### Context
 
-Provider packages normalize external webhook systems into RelayOS runtime events.
+Provider packages normalize external webhook systems into Restaq runtime events.
 
 ### Packages
 
@@ -154,7 +154,7 @@ provider-github
 
 ### Context
 
-Framework adapters connect RelayOS to HTTP runtimes while keeping the runtime core framework-agnostic.
+Framework adapters connect Restaq to HTTP runtimes while keeping the runtime core framework-agnostic.
 
 ### Packages
 
@@ -189,7 +189,7 @@ The CLI package will provide runtime operational tooling.
 
 ### Context
 
-Executions are the primary runtime unit inside RelayOS.
+Executions are the primary runtime unit inside Restaq.
 
 ### Types
 
@@ -202,7 +202,7 @@ ExecutionAttempt;
 
 ### Acceptance Criteria
 
-- Types exported from `@relayos/types`
+- Types exported from `@restaq/types`
 
 ---
 
@@ -222,7 +222,7 @@ All providers should normalize into a single provider-agnostic event shape.
 
 ### Context
 
-Handlers define how developers interact with RelayOS events.
+Handlers define how developers interact with Restaq events.
 
 ### Acceptance Criteria
 
@@ -262,7 +262,7 @@ Retry configuration should support future extensibility while remaining determin
 
 ### Context
 
-RelayOS requires a reusable and resilient Postgres connection layer.
+Restaq requires a reusable and resilient Postgres connection layer.
 
 ### Acceptance Criteria
 
@@ -662,7 +662,7 @@ Stripe integrations require secure webhook verification.
 
 ### Context
 
-Stripe events should convert into RelayOS normalized events.
+Stripe events should convert into Restaq normalized events.
 
 ### Acceptance Criteria
 
@@ -698,7 +698,7 @@ GitHub integrations require secure signature validation.
 
 ### Context
 
-GitHub events should normalize into RelayOS events.
+GitHub events should normalize into Restaq events.
 
 ### Acceptance Criteria
 
@@ -738,7 +738,7 @@ Next.js is critical for developer adoption.
 
 ---
 
-## REL-052 — Initialize RelayOS CLI
+## REL-052 — Initialize Restaq CLI
 
 ### Context
 
@@ -914,7 +914,7 @@ The runtime should behave safely under concurrent load.
 
 ### Context
 
-RelayOS should provide strong onboarding and developer ergonomics.
+Restaq should provide strong onboarding and developer ergonomics.
 
 ### Acceptance Criteria
 

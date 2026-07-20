@@ -1,10 +1,10 @@
 import { spawn } from 'node:child_process';
-import type { Execution, Relay, RelayPlugin } from '@relayos/core';
-import { stripe } from '@relayos/stripe';
-import { github } from '@relayos/github';
-import { clerk } from '@relayos/clerk';
-import { shopify } from '@relayos/shopify';
-import { resend } from '@relayos/resend';
+import type { Execution, Relay, RelayPlugin } from '@restaq/core';
+import { stripe } from '@restaq/stripe';
+import { github } from '@restaq/github';
+import { clerk } from '@restaq/clerk';
+import { shopify } from '@restaq/shopify';
+import { resend } from '@restaq/resend';
 import { loadRelay } from './load-relay';
 import { runInitWizard } from './wizard';
 import {
@@ -28,7 +28,7 @@ Commands:
                                           (loads relay.ts from --dir, defaults to cwd)
   trigger <provider> <eventType>          Simulate a signed provider webhook delivery
     [--data '<json>'] [--forward <url>]   (reads <PROVIDER>_WEBHOOK_SECRET; --forward defaults to
-                                          RELAYOS_BASE_URL or http://localhost:3000)
+                                          RESTAQ_BASE_URL or http://localhost:3000)
   inspect <eventId|executionId>           Show an execution's status, steps, and logs
     [--json] [--history] [--dir <path>]   (loads relay.ts directly, no running app needed)
   replay <eventId|executionId>            Replay a historical execution as a new one
@@ -66,7 +66,7 @@ async function init(args: string[]) {
 
 async function migrate(args: string[]) {
   const relay = await loadRelay(resolveDir(args));
-  console.log('Applying RelayOS migrations...');
+  console.log('Applying Restaq migrations...');
   await relay.migrate();
   console.log('Migrations applied.');
 }

@@ -3,7 +3,7 @@ title: Database
 description: Persist executions, steps, and logs to Postgres, SQLite, or MySQL.
 ---
 
-Pass a database client straight into `relayos({ database })`. RelayOS detects
+Pass a database client straight into `restaq({ database })`. Restaq detects
 the dialect from the client itself and applies its own schema migrations —
 there's no separate ORM or config to wire up.
 
@@ -28,17 +28,17 @@ This loads `relay.ts` and applies whatever schema your dialect needs, using
 the same client you already configured — no connection string to repeat. It's
 idempotent, so it's safe to run on every deploy from CI.
 
-It creates three tables: `relayos_executions`, `relayos_execution_steps` (an
+It creates three tables: `restaq_executions`, `restaq_execution_steps` (an
 append-only audit trail — a step that fails and later succeeds keeps both
-attempts), and `relayos_execution_logs` (interleaved system and handler logs).
+attempts), and `restaq_execution_logs` (interleaved system and handler logs).
 
 ## Writing a custom store
 
 `database` also accepts a plain `ExecutionStore`, for any persistence layer
-RelayOS doesn't support natively:
+Restaq doesn't support natively:
 
 ```ts
-import type { ExecutionStore } from '@relayos/core';
+import type { ExecutionStore } from '@restaq/core';
 
 const myStore: ExecutionStore = {
   async create(execution) {},
@@ -53,7 +53,7 @@ const myStore: ExecutionStore = {
   async listLogs(executionId) {},
 };
 
-export const relay = relayos({
+export const relay = restaq({
   database: myStore,
   plugins: [
     // ...
@@ -65,15 +65,15 @@ Three invariants matter:
 
 - **`create()` is atomic.** Concurrent calls for the same `eventId` must
   collapse into one execution — the winner returns `true`, everyone else
-  returns `false`. This is the dedup guarantee the rest of RelayOS relies on.
+  returns `false`. This is the dedup guarantee the rest of Restaq relies on.
 - **`saveStep()` never overwrites.** Every call appends a new row, so step
   history stays a full audit trail, retries included.
 - **`getStep()` returns the latest attempt.** `ctx.step.run()` reads the most
   recent row by `createdAt` to decide whether a step already succeeded.
 
-`migrate()` is a no-op on a custom store — RelayOS has no schema to apply for
+`migrate()` is a no-op on a custom store — Restaq has no schema to apply for
 a persistence layer it doesn't own.
 
-Need a Kysely dialect RelayOS doesn't auto-detect? Pass `{ dialect }` directly
-instead of a raw client and RelayOS builds the store on top of it (though
+Need a Kysely dialect Restaq doesn't auto-detect? Pass `{ dialect }` directly
+instead of a raw client and Restaq builds the store on top of it (though
 without built-in migrations for that dialect).

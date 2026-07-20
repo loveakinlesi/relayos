@@ -3,7 +3,7 @@ title: Events
 description: Understanding the normalized event shape and how providers are namespaced
 ---
 
-When a webhook arrives from a provider, RelayOS normalizes it into a standard shape before it reaches your handler.
+When a webhook arrives from a provider, Restaq normalizes it into a standard shape before it reaches your handler.
 
 ## Event shape
 
@@ -26,7 +26,7 @@ Events are namespaced by their provider to avoid conflicts:
 - **GitHub events (no action)**: `github.push`, `github.ping`
 - **GitHub events (with action)**: `github.pull_request.opened`, `github.issues.closed`, `github.workflow_run.completed`, etc.
 
-The pattern for GitHub reflects reality: when GitHub sends a webhook for a pull request, it includes an `action` field in the payload that qualifies the event. RelayOS's type system respects this—you won't see `github.pull_request` by itself, only action-qualified names like `github.pull_request.opened`.
+The pattern for GitHub reflects reality: when GitHub sends a webhook for a pull request, it includes an `action` field in the payload that qualifies the event. Restaq's type system respects this—you won't see `github.pull_request` by itself, only action-qualified names like `github.pull_request.opened`.
 
 ## Registering handlers
 
@@ -50,11 +50,11 @@ Multiple handlers can listen to the same event type—they run in the order they
 
 `relay.on(...)` calls don't belong in `relay.ts`. That file's job is wiring — storage, plugins, retry policy — and if every event's business logic gets appended there too, it turns into an unmaintainable dumping ground as the app grows.
 
-Keep `relay.ts` wiring-only, and register handlers from a separate module (or several, one per feature). The trick is preserving type inference: `relay`'s event map is inferred from the plugins array at the `relayos(...)` call site, so a handler-registration function needs the _concrete_ relay type, not a generic `Relay`. Export it with `typeof`:
+Keep `relay.ts` wiring-only, and register handlers from a separate module (or several, one per feature). The trick is preserving type inference: `relay`'s event map is inferred from the plugins array at the `restaq(...)` call site, so a handler-registration function needs the _concrete_ relay type, not a generic `Relay`. Export it with `typeof`:
 
 ```ts
 // relay.ts
-export const relay = relayos({ plugins: [stripe({ ... })] });
+export const relay = restaq({ plugins: [stripe({ ... })] });
 
 // typeof relay carries the concrete, inferred event map forward.
 export type AppRelay = typeof relay;
@@ -79,6 +79,6 @@ For a larger app, split further: one file per feature (`relay/handlers/payments.
 
 ## Event deduplication
 
-Event `id` is the provider's own unique delivery ID (Stripe's event ID, GitHub's delivery ID). If the same webhook is redelivered (e.g., because of a timeout and retry), RelayOS detects the duplicate by ID and returns the original execution instead of running the handler twice.
+Event `id` is the provider's own unique delivery ID (Stripe's event ID, GitHub's delivery ID). If the same webhook is redelivered (e.g., because of a timeout and retry), Restaq detects the duplicate by ID and returns the original execution instead of running the handler twice.
 
 See [Idempotency](/docs/concepts/idempotency) for the full dedup story.

@@ -6,7 +6,7 @@ import { run, spawnServer } from './fixtures/spawn';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const cliBin = join(here, '..', '..', 'packages', 'cli', 'dist', 'index.js');
-const relayosBin = join(here, '..', '..', 'packages', 'relayos', 'dist', 'bin.js');
+const restaqBin = join(here, '..', '..', 'packages', 'restaq', 'dist', 'bin.js');
 const serverPath = join(here, 'fixtures', 'server.mjs');
 
 // relay trigger prints "[relay trigger] ..." log lines before its JSON blob -
@@ -52,8 +52,8 @@ describe('CLI + app lifecycle', () => {
     expect(result.stdout).toContain('Migrations applied.');
   });
 
-  it("relayos's own bin forwards to the same CLI - zero-install onboarding relies on this", async () => {
-    const result = await run('node', [relayosBin, 'migrate', '--dir', fixture.dir]);
+  it("restaq's own bin forwards to the same CLI - zero-install onboarding relies on this", async () => {
+    const result = await run('node', [restaqBin, 'migrate', '--dir', fixture.dir]);
     expect(result.code).toBe(0);
     expect(result.stdout).toContain('Migrations applied.');
   });

@@ -56,7 +56,7 @@ export function WebhookFlowDiagram() {
         className="size-20 border-violet-500/30 bg-gradient-to-br from-indigo-500/10 via-violet-500/10 to-fuchsia-500/10 p-0"
       >
         <span className="bg-gradient-to-r from-indigo-500 via-violet-500 to-fuchsia-500 bg-clip-text text-xs font-bold text-transparent">
-          RelayOS
+          Restaq
         </span>
       </Circle>
 
