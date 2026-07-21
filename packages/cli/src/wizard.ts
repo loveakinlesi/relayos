@@ -26,6 +26,16 @@ async function detectNextJs(dir: string): Promise<boolean> {
   }
 }
 
+export async function detectPackageName(dir: string): Promise<string | undefined> {
+  try {
+    const raw = await readFile(join(dir, 'package.json'), 'utf8');
+    const pkg = JSON.parse(raw) as { name?: string };
+    return pkg.name || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 async function pathExists(path: string): Promise<boolean> {
   try {
     await access(path);
@@ -38,10 +48,11 @@ async function pathExists(path: string): Promise<boolean> {
 export async function runInitWizard(dir: string, force: boolean): Promise<void> {
   p.intro('relay init');
 
+  const detectedName = await detectPackageName(dir);
   const appName = await p.text({
     message: 'App name',
-    placeholder: 'my-app',
-    defaultValue: 'my-app',
+    placeholder: detectedName ?? 'my-app',
+    defaultValue: detectedName ?? 'my-app',
   });
   if (p.isCancel(appName)) {
     p.cancel('Cancelled.');
