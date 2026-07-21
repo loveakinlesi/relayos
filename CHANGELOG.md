@@ -1,3 +1,10 @@
+## [0.1.4](https://github.com/loveakinlesi/restaq/compare/v0.1.3...v0.1.4) (2026-07-21)
+
+
+### Bug Fixes
+
+* **cli:** default relay init's App name prompt to package.json's name ([a6de045](https://github.com/loveakinlesi/restaq/commit/a6de045f88f5c3301571633b8b8b17d6e7884265))
+
 ## [0.1.3](https://github.com/loveakinlesi/restaq/compare/v0.1.2...v0.1.3) (2026-07-21)
 
 
