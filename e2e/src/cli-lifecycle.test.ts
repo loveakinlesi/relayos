@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { writeFile } from 'node:fs/promises';
 import { createFixtureApp, STRIPE_WEBHOOK_SECRET } from './fixtures/create-fixture-app';
 import { run, spawnServer } from './fixtures/spawn';
 
@@ -81,6 +82,27 @@ describe('CLI + app lifecycle', () => {
     expect(json.execution.status).toBe('completed');
     expect(json.execution.eventType).toBe('stripe.charge.succeeded');
     eventId = json.execution.eventId;
+  });
+
+  it('trigger reads STRIPE_WEBHOOK_SECRET from a .env file in --dir, not just real env', async () => {
+    await writeFile(join(fixture.dir, '.env'), `STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}\n`, {
+      encoding: 'utf8',
+    });
+
+    const result = await run('node', [
+      cliBin,
+      'trigger',
+      'stripe',
+      'charge.succeeded',
+      '--data',
+      '{"id":"ch_e2e_dotenv","amount":250,"currency":"usd"}',
+      '--forward',
+      `http://127.0.0.1:${server.port}`,
+      '--dir',
+      fixture.dir,
+    ]);
+
+    expect(result.code).toBe(0);
   });
 
   it('inspect shows the triggered execution and its step', async () => {

@@ -1,4 +1,6 @@
 import { spawn } from 'node:child_process';
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 import type { Execution, Relay, RelayPlugin } from '@restaq/core';
 import { stripe } from '@restaq/stripe';
 import { github } from '@restaq/github';
@@ -348,6 +350,17 @@ async function events(args: string[]) {
 
 async function main() {
   const [, , command, ...rest] = process.argv;
+
+  // Every command reads config exclusively from process.env (see
+  // resolveBaseUrl, the STRIPE_WEBHOOK_SECRET check in trigger()) - load a
+  // .env file from --dir (defaults to cwd) up front so that actually works,
+  // matching what the docs tell users to create. Values already present in
+  // the real environment win over the file (process.loadEnvFile's default),
+  // so exporting a var still overrides .env like before.
+  const envPath = join(resolveDir(rest), '.env');
+  if (existsSync(envPath)) {
+    process.loadEnvFile(envPath);
+  }
 
   switch (command) {
     case 'init':
