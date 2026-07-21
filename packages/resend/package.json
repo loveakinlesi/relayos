@@ -1,6 +1,6 @@
 {
   "name": "@restaq/resend",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "The Restaq Resend plugin: Svix signature-verified webhook ingestion for Resend email events.",
   "license": "MIT",
   "repository": {

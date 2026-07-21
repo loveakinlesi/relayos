@@ -1,3 +1,10 @@
+## [0.1.5](https://github.com/loveakinlesi/restaq/compare/v0.1.4...v0.1.5) (2026-07-21)
+
+
+### Bug Fixes
+
+* override brace-expansion to patched 5.0.7 (CVE-2026-13149) ([53d40da](https://github.com/loveakinlesi/restaq/commit/53d40da0ce3000f8e359e9be245e8c9b49121f96)), closes [hi#severity](https://github.com/hi/issues/severity)
+
 ## [0.1.4](https://github.com/loveakinlesi/restaq/compare/v0.1.3...v0.1.4) (2026-07-21)
 
 

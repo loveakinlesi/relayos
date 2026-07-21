@@ -1,6 +1,6 @@
 {
   "name": "restaq",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "The Restaq runtime: durable, replayable webhook and event execution for TypeScript backends.",
   "license": "MIT",
   "repository": {

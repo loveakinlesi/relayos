@@ -1,6 +1,6 @@
 {
   "name": "@restaq/core",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "The Restaq engine: durable executions, steps, retries, replay, and the contracts every Restaq package builds on.",
   "license": "MIT",
   "repository": {
