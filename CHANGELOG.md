@@ -1,3 +1,10 @@
+## [0.1.3](https://github.com/loveakinlesi/restaq/compare/v0.1.2...v0.1.3) (2026-07-21)
+
+
+### Bug Fixes
+
+* **cli:** load .env from --dir before every command ([1fe1b9c](https://github.com/loveakinlesi/restaq/commit/1fe1b9cbdf044f576cb863030c09e25968779a53))
+
 ## [0.1.2](https://github.com/loveakinlesi/restaq/compare/v0.1.1...v0.1.2) (2026-07-20)
 
 

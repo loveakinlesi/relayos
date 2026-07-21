@@ -1,6 +1,6 @@
 {
   "name": "@restaq/shopify",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "The Restaq Shopify plugin: signature-verified webhook ingestion for Shopify topics.",
   "license": "MIT",
   "repository": {

@@ -1,6 +1,6 @@
 {
   "name": "@restaq/stripe",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "The Restaq Stripe plugin: signature-verified webhook ingestion with a fully-typed catalog of every Stripe event.",
   "license": "MIT",
   "repository": {
